@@ -70,16 +70,15 @@ export function DryRunResult({
       </div>
 
       <div className="flex gap-3 pt-2">
+        <Button onClick={onCancel} disabled={isLoading} variant="outline">
+          Cancelar
+        </Button>
         <Button
           onClick={onConfirm}
           disabled={isLoading}
-          variant="ghost"
-          className="text-red-500 hover:bg-red-500/10 hover:text-red-600"
+          variant="destructive"
         >
-          {isLoading ? "Procesando..." : "Confirmar restore real"}
-        </Button>
-        <Button onClick={onCancel} disabled={isLoading} variant="outline">
-          Cancelar
+          {isLoading ? "Procesando…" : "Confirmar restore real"}
         </Button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import type { RestoreDto, Connection } from "../types";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 import { ConnectionSelector } from "./ConnectionSelector";
@@ -9,7 +10,9 @@ import { RestoreOptions } from "./RestoreOptions";
 import { RestoreActions } from "./RestoreActions";
 import { Badge } from "@/shared/ui/badge";
 import cloudflareSvg from "@/shared/assets/Cloudflare.svg";
-import { FileText } from "lucide-react";
+import postgresSvg from "@/shared/assets/PostgresSQL.svg";
+import mysqlSvg from "@/shared/assets/MySQL.svg";
+import { FileText, ArrowRight } from "lucide-react";
 
 interface BackupInfo {
   connectionName?: string;
@@ -36,6 +39,11 @@ interface RestoreFormProps {
 const DB_LABELS: Record<string, string> = {
   postgres: "PostgreSQL",
   mysql: "MySQL",
+};
+
+const DB_LOGOS: Record<string, string> = {
+  postgres: postgresSvg as string,
+  mysql: mysqlSvg as string,
 };
 
 export function RestoreForm({
@@ -84,10 +92,6 @@ export function RestoreForm({
 
   function handleExecute() {
     if (!targetConnectionId) return;
-    const confirmed = window.confirm(
-      "¿Estás seguro de que querés ejecutar un restore REAL? Esta operación modificará los datos en la base de datos destino.",
-    );
-    if (!confirmed) return;
     const dto: RestoreDto = {
       sourceBackupId: selectedR2Dump ? undefined : (sourceBackupId ?? ""),
       r2Key: selectedR2Dump?.key,
@@ -120,25 +124,54 @@ export function RestoreForm({
         ) : (
           <RestoreFormSection
             number={1}
-            title="Dump de R2"
-            description="Selecciona el dump que deseas restaurar"
-            icon={<img src={cloudflareSvg} alt="Cloudflare R2" className="h-4 w-4" />}
+            title="Dump seleccionado"
+            description="Backup que vas a restaurar"
+            icon={
+              effectiveDbType && DB_LOGOS[effectiveDbType] ? (
+                <img
+                  src={DB_LOGOS[effectiveDbType]}
+                  alt={DB_LABELS[effectiveDbType] ?? effectiveDbType}
+                  className="h-4 w-4"
+                />
+              ) : (
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              )
+            }
           >
-            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 p-2.5">
-              <FileText className="h-5 w-5 text-muted-foreground" />
+            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 p-3">
+              {effectiveDbType && DB_LOGOS[effectiveDbType] ? (
+                <img
+                  src={DB_LOGOS[effectiveDbType]}
+                  alt={DB_LABELS[effectiveDbType] ?? effectiveDbType}
+                  className="h-6 w-6 shrink-0"
+                />
+              ) : (
+                <FileText className="h-6 w-6 shrink-0 text-muted-foreground" />
+              )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
+                <p
+                  className="truncate text-sm font-medium"
+                  title={backupInfo?.connectionName}
+                >
                   {backupInfo?.connectionName ?? "Backup"}
                 </p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {backupInfo?.environment && (
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider">
+                      {backupInfo.environment}
+                    </span>
+                  )}
                   {backupInfo?.date && <span>{backupInfo.date}</span>}
                   {backupInfo?.fileSizeMb != null && (
-                    <span>• {backupInfo.fileSizeMb.toFixed(1)} MB</span>
+                    <span>· {backupInfo.fileSizeMb.toFixed(1)} MB</span>
                   )}
                 </div>
               </div>
               {effectiveDbType && (
-                <Badge variant="outline" className="shrink-0 rounded-full text-[10px] uppercase">
+                <Badge
+                  variant="outline"
+                  className="shrink-0 rounded-full text-[10px] uppercase"
+                >
                   {DB_LABELS[effectiveDbType] ?? effectiveDbType}
                 </Badge>
               )}
@@ -154,10 +187,19 @@ export function RestoreForm({
         >
           <div className="space-y-2.5">
             {!hasConnections && !connectionsLoading ? (
-              <div className="rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
-                {effectiveDbType
-                  ? `No hay conexiones ${DB_LABELS[effectiveDbType] ?? effectiveDbType} disponibles`
-                  : "No hay conexiones disponibles"}
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 text-sm">
+                <span className="text-muted-foreground">
+                  {effectiveDbType
+                    ? `No hay conexiones ${DB_LABELS[effectiveDbType] ?? effectiveDbType} disponibles`
+                    : "No hay conexiones disponibles"}
+                </span>
+                <Link
+                  to="/connections"
+                  className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  Crear conexión
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
               </div>
             ) : (
               <ConnectionSelector

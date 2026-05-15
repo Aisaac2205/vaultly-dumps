@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -15,10 +15,16 @@ import { RestoreForm } from "./components/RestoreForm";
 import { DryRunResult } from "./components/DryRunResult";
 import { RestoreProgress } from "./components/RestoreProgress";
 import { RestoreHistory } from "./components/RestoreHistory";
+import { ConfirmRestoreDialog } from "./components/ConfirmRestoreDialog";
 import { formatDate } from "@/features/dumps/lib/format";
 import { ChevronRight, Database } from "lucide-react";
 import type { RestoreDto } from "./types";
 import type { EnrichedR2Object } from "@/features/dumps/types";
+
+const DB_LABELS: Record<string, string> = {
+  postgres: "PostgreSQL",
+  mysql: "MySQL",
+};
 
 interface NavState {
   sourceBackupId?: string;
@@ -62,6 +68,21 @@ export default function Restore() {
   const [currentDto, setCurrentDto] = useState<RestoreDto | null>(null);
   const [selectedR2Dump, setSelectedR2Dump] =
     useState<EnrichedR2Object | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const dryRunResultRef = useRef<HTMLDivElement | null>(null);
+
+  const pendingTarget = currentDto
+    ? connections.find((c) => c.id === currentDto.targetConnectionId)
+    : undefined;
+
+  useEffect(() => {
+    if (state === "dry-run" && dryRunResult && dryRunResultRef.current) {
+      dryRunResultRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [state, dryRunResult]);
 
   const { data: backupDetail } = useQuery({
     queryKey: ["backups", sourceBackupIdFromNav],
@@ -91,11 +112,17 @@ export default function Restore() {
 
   function handleDirectRestore(dto: RestoreDto) {
     setCurrentDto(dto);
-    void confirmRestore({ ...dto, isDryRun: false });
+    setConfirmDialogOpen(true);
   }
 
   function handleConfirm() {
     if (!currentDto) return;
+    setConfirmDialogOpen(true);
+  }
+
+  function handleConfirmedRestore() {
+    if (!currentDto) return;
+    setConfirmDialogOpen(false);
     void confirmRestore({ ...currentDto, isDryRun: false });
   }
 
@@ -124,13 +151,28 @@ export default function Restore() {
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-6 lg:p-8">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground"
+      >
         <span>Restaurar</span>
-        <ChevronRight className="h-3 w-3" />
-        <span className="inline-flex items-center gap-1 text-foreground font-medium">
-          <Database className="h-3 w-3" />
-          PostgreSQL
-        </span>
+        {(backupInfo?.connectionName || dbTypeFromNav) && (
+          <>
+            <ChevronRight className="h-3 w-3" />
+            <span className="inline-flex items-center gap-1 text-foreground font-medium">
+              <Database className="h-3 w-3" />
+              {backupInfo?.connectionName ??
+                (dbTypeFromNav
+                  ? (DB_LABELS[dbTypeFromNav] ?? dbTypeFromNav)
+                  : "")}
+            </span>
+            {backupInfo?.connectionName && dbTypeFromNav && (
+              <span className="text-muted-foreground/70">
+                · {DB_LABELS[dbTypeFromNav] ?? dbTypeFromNav}
+              </span>
+            )}
+          </>
+        )}
       </nav>
 
       {/* Title + Description */}
@@ -183,8 +225,8 @@ export default function Restore() {
       )}
 
       {state === "dry-run" && dryRunResult && (
-        <div className="mx-auto max-w-3xl">
-          <Card className="rounded-3xl border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <div ref={dryRunResultRef} className="mx-auto max-w-3xl scroll-mt-6">
+          <Card className="rounded-3xl border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)] animate-in fade-in-0 slide-in-from-top-2 duration-300">
             <CardContent className="p-5">
               <DryRunResult
                 result={dryRunResult}
@@ -209,6 +251,20 @@ export default function Restore() {
           </Card>
         </div>
       )}
+
+      <ConfirmRestoreDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        targetName={pendingTarget?.name ?? "—"}
+        targetEnvironment={pendingTarget?.environment}
+        targetDbType={
+          pendingTarget?.dbType
+            ? (DB_LABELS[pendingTarget.dbType] ?? pendingTarget.dbType)
+            : undefined
+        }
+        isLoading={restoreLoading}
+        onConfirm={handleConfirmedRestore}
+      />
 
       {state === "done" && (
         <div className="mx-auto max-w-lg">

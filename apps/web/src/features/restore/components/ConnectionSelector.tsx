@@ -136,7 +136,9 @@ export function ConnectionSelector({
         <Command shouldFilter={false}>
           <CommandInput placeholder="Buscar por nombre, host o base de datos..." />
           <CommandList>
-            <CommandEmpty>No se encontraron conexiones</CommandEmpty>
+            <CommandEmpty>
+              No se encontraron conexiones que coincidan con la búsqueda
+            </CommandEmpty>
             <CommandGroup>
               {connections.map((conn) => (
                 <ConnectionItem
