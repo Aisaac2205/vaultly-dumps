@@ -22,9 +22,17 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
 
   const port = config.get<number>('PORT', 3000);
-  const corsOrigin = config.get<string>('CORS_ORIGIN', '*');
 
-  app.enableCors({ origin: corsOrigin });
+  // CORS_ORIGIN is required by env.validation.ts — no wildcard fallback here.
+  // Accept a comma-separated list so dev (localhost:5173) and prod
+  // (app.vaultly.io) can coexist in a single deploy artifact.
+  const corsOrigin = config.getOrThrow<string>('CORS_ORIGIN');
+  const allowedOrigins = corsOrigin
+    .split(',')
+    .map((o) => o.trim())
+    .filter((o) => o.length > 0);
+
+  app.enableCors({ origin: allowedOrigins, credentials: true });
   app.enableShutdownHooks();
 
   // Global DTO validation. Without this, decorators like @IsEnum / @IsUUID

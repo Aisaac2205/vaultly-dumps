@@ -15,9 +15,8 @@ export const envValidationSchema = Joi.object({
   KEYCLOAK_URL: Joi.string().required(),
   KEYCLOAK_REALM: Joi.string().required(),
   KEYCLOAK_CLIENT_ID: Joi.string().required(),
-  CORS_ORIGIN: Joi.string().when('NODE_ENV', {
-    is: 'production',
-    then: Joi.string().required(),
-    otherwise: Joi.string().default('*'),
-  }),
+  // Comma-separated list of allowed origins. No wildcard default — if you
+  // forget to set it in production you open the API to any browser. Force
+  // an explicit value (e.g. "http://localhost:5173,https://app.vaultly.io").
+  CORS_ORIGIN: Joi.string().required(),
 });
