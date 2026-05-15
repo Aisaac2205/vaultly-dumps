@@ -1,0 +1,297 @@
+# Connecting to On-Premise Databases
+
+> 🇪🇸 Versión en español: [../es/connecting-on-premise-databases.md](../es/connecting-on-premise-databases.md)
+
+This guide is for DevOps users whose target databases live in **private networks** — corporate data centers, isolated VPCs, on-prem servers, air-gapped environments — where the DB has no public endpoint Vaultly can reach directly.
+
+> **Spoiler**: there is no "magic URL" for on-prem. You need to bring Vaultly and the DB into the same network reachability scope. This doc shows the four practical ways to do that.
+
+---
+
+## 1. The core problem
+
+Cloud DBs solve connectivity by either being publicly addressable (with SSL + allowlist) or living in the same VPC as the caller. On-prem DBs typically **cannot be made publicly addressable** for compliance, security, or just "the firewall team won't approve it" reasons. So Vaultly needs to reach into the private network from outside.
+
+The four practical patterns, ordered from most to least common:
+
+1. **Self-host Vaultly inside the private network** — cleanest, no tunneling needed.
+2. **Site-to-site VPN** — Vaultly's network becomes part of the corporate network.
+3. **SSH tunnel via a bastion / jump host** — fast to set up, requires manual external tunnel.
+4. **Reverse proxy / SOCKS proxy** — niche, but works.
+
+Vaultly does **not** ship native SSH tunnel or VPN client functionality today. All of the patterns below assume the tunnel/VPN is established **outside** the Vaultly process, at the OS or network level. See [architecture-roadmap.md](architecture-roadmap.md) for the planned native support.
+
+---
+
+## 2. Pattern A — Self-host Vaultly inside the private network (recommended)
+
+The simplest and most production-clean option: deploy Vaultly **on a host that already lives inside the private network** where the target DBs are.
+
+```
+┌──────────── Corporate / Private Network ────────────┐
+│                                                     │
+│   ┌──────────┐    direct TCP    ┌──────────────┐    │
+│   │ Vaultly  │ ────────────────▶│  On-prem DB  │    │
+│   │ container│  (private IPs)   │ (10.0.x.y)   │    │
+│   └──────────┘                  └──────────────┘    │
+│        ▲                                            │
+│        │ HTTPS (reverse proxy)                      │
+└────────┼────────────────────────────────────────────┘
+         │
+   ┌─────┴──────┐
+   │   Users    │ (VPN-connected or via WAF / SSO gateway)
+   └────────────┘
+```
+
+**What you need**:
+
+- A Linux host inside the network that can `nc -zv <db-host> <db-port>` successfully.
+- Docker installed on that host (or Kubernetes).
+- An HTTPS-terminating reverse proxy (nginx, Traefik, Caddy) in front of Vaultly's web port.
+- Optional: a WAF or SSO gateway to gate access from the corporate intranet.
+
+**Pros**:
+- No tunneling complexity.
+- Network latency is sub-millisecond.
+- DB credentials never leave the private network in transit.
+- Compliance-friendly (auditors love it).
+
+**Cons**:
+- You need to operate Vaultly on internal infrastructure (patching, monitoring, log shipping).
+- Cloud-native conveniences (Railway's auto-deploy) require a CI pipeline that pushes images into the private network.
+
+**When to choose this**: production deployments, regulated industries (banking, healthcare), or whenever you can run Vaultly on-prem.
+
+---
+
+## 3. Pattern B — Site-to-site VPN
+
+You establish a permanent VPN tunnel between the network where Vaultly runs (a cloud VPC, your laptop's network, anywhere) and the corporate network where the DBs live. Vaultly then sees the DB as if it were local.
+
+```
+┌── Vaultly Network ──┐         ┌── Corporate Network ──┐
+│                     │  VPN    │                       │
+│  ┌──────────┐       │ tunnel  │  ┌────────────────┐   │
+│  │ Vaultly  │ ◀═══════════════════▶ DB (10.0.x.y) │   │
+│  └──────────┘       │  IPSec  │  └────────────────┘   │
+│                     │  /WG    │                       │
+└─────────────────────┘         └───────────────────────┘
+```
+
+**Tools**:
+- IPSec (corporate standard, supported by AWS, Azure, GCP, Cisco, Fortinet).
+- WireGuard (lighter, modern, easier to debug — `wg-quick`).
+- OpenVPN (legacy but widespread).
+
+**Configuration on Vaultly's side**:
+
+When connecting from Vaultly, use the DB's **private IP** (as seen from inside the corporate network):
+
+| Field | Value |
+|-------|-------|
+| Host | `10.42.1.50` (or whatever private IP) |
+| Port | `5432` |
+| Database | corporate DB name |
+| Username | dedicated Vaultly backup user |
+| Password | rotated secret |
+| DB Type | `postgres` or `mysql` |
+
+**Verification before saving the connection**:
+
+```bash
+# From the host running Vaultly:
+ping 10.42.1.50                           # confirms VPN route
+nc -zv 10.42.1.50 5432                    # confirms TCP reachability
+psql -h 10.42.1.50 -U backup_user -d corp # confirms credentials
+```
+
+**Pros**:
+- Long-lived, stable, transparent to Vaultly.
+- Multiple DBs reachable through one tunnel.
+- Centrally managed by the network team.
+
+**Cons**:
+- Requires coordination with the corporate network team.
+- Failures are operationally invisible to Vaultly until a connection attempt fails.
+
+---
+
+## 4. Pattern C — SSH tunnel via bastion / jump host
+
+You establish an SSH tunnel from the host running Vaultly to a jump host inside the corporate network. Local port forwarding makes the remote DB appear on `localhost:<port>` of the Vaultly host.
+
+```
+┌── Vaultly Host ──┐    ┌─ Jump Host ─┐    ┌── DB ──┐
+│ Vaultly          │    │             │    │        │
+│   │              │    │             │    │        │
+│   └─▶ localhost:5432  │             │    │        │
+│       │          │    │             │    │        │
+│       │ via SSH  │    │             │    │        │
+│       └──────────┼─── SSH tunnel ──▶│ ──▶│ :5432  │
+└──────────────────┘    └─────────────┘    └────────┘
+```
+
+**Setup on the Vaultly host** (outside the Vaultly process):
+
+```bash
+# Persistent tunnel (use autossh or a systemd unit for production)
+ssh -L 5432:db.internal.corp:5432 \
+    -N -f \
+    -i ~/.ssh/vaultly_bastion_key \
+    vaultly@bastion.corp.example.com
+
+# Or with autossh for auto-reconnect
+autossh -M 0 -f -N \
+    -o "ServerAliveInterval=30" \
+    -o "ServerAliveCountMax=3" \
+    -L 5432:db.internal.corp:5432 \
+    -i ~/.ssh/vaultly_bastion_key \
+    vaultly@bastion.corp.example.com
+```
+
+**For Docker-hosted Vaultly**: the tunnel must terminate on the **host's** network namespace, not inside the Vaultly container. Then in Vaultly, register the connection pointing at the host:
+
+| Field | Value |
+|-------|-------|
+| Host | `host.docker.internal` (Docker Desktop) or the host's bridge IP (Linux) |
+| Port | `5432` (the tunnel's local port) |
+| Database | corporate DB name |
+| Username | DB user |
+| Password | DB password |
+| DB Type | `postgres` or `mysql` |
+
+> **Important**: the SSH tunnel encrypts the hop from Vaultly to the bastion. It does **not** encrypt the bastion → DB hop. If the corporate network requires end-to-end encryption, enable SSL on the DB side and combine with §3 (VPN) or wait for native SSL in Vaultly.
+
+**Systemd unit example** (for production stability):
+
+```ini
+# /etc/systemd/system/vaultly-ssh-tunnel.service
+[Unit]
+Description=Vaultly SSH tunnel to corporate Postgres
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=vaultly
+ExecStart=/usr/bin/autossh -M 0 -N \
+  -o "ServerAliveInterval=30" \
+  -o "ServerAliveCountMax=3" \
+  -o "ExitOnForwardFailure=yes" \
+  -L 5432:db.internal.corp:5432 \
+  -i /home/vaultly/.ssh/bastion_key \
+  vaultly@bastion.corp.example.com
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**Pros**:
+- Fast to set up, no firewall team needed beyond SSH access to the bastion.
+- Good for evaluation, demos, or low-volume use.
+- Auditable (every SSH session leaves a trail).
+
+**Cons**:
+- Tunnel managed outside Vaultly — if it drops, connections fail until it's restored.
+- Adds operational complexity (one more service to monitor).
+- Single point of failure unless you run multiple tunnels.
+
+---
+
+## 5. Pattern D — Reverse proxy / SOCKS proxy
+
+Niche, but worth mentioning. If the corporate network has an outbound-only stance (no inbound SSH allowed, no VPN possible), a **reverse tunnel** can be initiated from inside the corporate network outward.
+
+Tools: `frp`, `ngrok` (with caveats around compliance), `bore`, `cloudflared` tunnels.
+
+```
+Corporate Network (initiates)        Vaultly Network
+┌─────────────────┐                  ┌──────────────┐
+│   DB            │                  │              │
+│   ▲             │                  │   Vaultly    │
+│   │             │                  │      ▲       │
+│   reverse tunnel client            │      │       │
+│   │             │ ────outbound───▶ │   tunnel     │
+│                 │     to public    │   server     │
+└─────────────────┘     endpoint     └──────────────┘
+```
+
+**Use this only when**:
+
+- Bidirectional VPN is impossible.
+- Inbound SSH is blocked.
+- Compliance permits the outbound tunnel (many enterprises forbid `ngrok`-class tools — check first).
+
+In Vaultly, register the public endpoint of the tunnel server as the host.
+
+---
+
+## 6. Decision matrix
+
+| | Self-host (A) | Site-to-site VPN (B) | SSH tunnel (C) | Reverse tunnel (D) |
+|---|---|---|---|---|
+| Setup time | Days (infra) | Days (network team) | Hours | Hours |
+| Operational complexity | Medium | Low (once set) | High | High |
+| Compliance friendliness | ⭐⭐⭐ Best | ⭐⭐⭐ Good | ⭐⭐ Mixed | ⭐ Risky |
+| Performance | ⭐⭐⭐ Best | ⭐⭐⭐ Good | ⭐⭐ OK | ⭐ Variable |
+| Resilience | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ | ⭐ |
+| Best for | Production, regulated | Multi-DB, long-term | Eval, low volume | Last resort |
+
+---
+
+## 7. Connectivity troubleshooting checklist
+
+Before opening a "Vaultly can't connect" ticket, run these from the host where Vaultly runs:
+
+```bash
+# 1. Can I resolve the hostname?
+nslookup db.internal.corp
+dig db.internal.corp
+
+# 2. Can I reach the port?
+nc -zv db.internal.corp 5432
+# or
+timeout 5 bash -c 'cat < /dev/tcp/db.internal.corp/5432'
+
+# 3. Is Postgres/MySQL actually listening?
+pg_isready -h db.internal.corp -p 5432
+# (mysql equivalent: mysqladmin ping -h db.internal.corp)
+
+# 4. Can I auth with these credentials?
+PGPASSWORD='...' psql -h db.internal.corp -U backup_user -d corp -c '\conninfo'
+# (mysql: mysql -h ... -u ... -p ... -e 'SELECT 1')
+
+# 5. From inside the Vaultly container, can I reach the host?
+docker exec vaultly-api nc -zv host.docker.internal 5432
+docker exec vaultly-api nc -zv db.internal.corp 5432
+```
+
+If steps 1–4 work from the host but step 5 fails, the issue is Docker networking — likely the tunnel/VPN is on the host but the container is using a bridge network that can't reach it. Solutions:
+
+- Use `--network host` for the Vaultly container (loses some isolation).
+- Set up the tunnel **inside** the container as a sidecar (requires SSH keys mounted in).
+- Run the tunnel as a separate container on the same Docker network.
+
+---
+
+## 8. Production hardening checklist
+
+For a production on-prem connection:
+
+- [ ] Dedicated DB user, **not** the admin/root account
+- [ ] Minimum required privileges (`SELECT` + `LOCK TABLES` for MySQL, `CONNECT` + table-level `SELECT` for Postgres)
+- [ ] SSL enabled at the DB layer (even if the tunnel encrypts, defense in depth)
+- [ ] Password rotation policy documented (90 days max recommended)
+- [ ] Tunnel/VPN monitored with alerts on disconnection
+- [ ] Vaultly's egress IP documented and added to the DB's allowlist (if applicable)
+- [ ] Backups tested end-to-end (a registered connection that never gets backed up is worse than no connection)
+- [ ] Restore tested into a **non-prod** target (PROD restores are blocked by design, see [security-model.md](security-model.md))
+
+---
+
+## 9. What's coming (roadmap)
+
+See [architecture-roadmap.md](architecture-roadmap.md) for the planned design.
+
+Headline: a `Transport` abstraction in the codebase that will let Vaultly natively manage SSH tunnels and SSL configuration per connection. Until then, treat tunneling as **external operational concern**, not a Vaultly feature.
