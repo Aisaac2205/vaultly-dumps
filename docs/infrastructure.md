@@ -1,5 +1,7 @@
 # Infraestructura — Vaultly Control
 
+Este documento cubre la infraestructura de **desarrollo local** (Docker Compose). Para el deploy de producción ver [deployment-railway.md](./deployment-railway.md).
+
 ## Docker
 
 ### Dockerfiles

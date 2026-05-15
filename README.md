@@ -23,6 +23,14 @@ Plataforma de gestión centralizada de bases de datos. Permite administrar conex
 
 ---
 
+## Arquitectura desplegada
+
+Producción corre en [Railway](https://railway.com) con dos projects separados: el stack de la app y la infra de auth. Ver [docs/deployment-railway.md](docs/deployment-railway.md) para los pasos completos.
+
+![Arquitectura en Railway](docs/assets/railway-architecture.png)
+
+---
+
 ## Estructura del monorepo
 
 ```
@@ -34,7 +42,7 @@ vaultly-control/
 │
 ├── docs/                        # Documentación técnica
 │
-├── docker-compose.yml      # Producción (api + web + db)
+├── docker-compose.yml      # Stack en Docker (para CI o servers self-hosted)
 ├── docker-compose.dev.yml  # Overrides dev (hot reload, perfil 'test' opcional)
 │
 ├── .env                    # Variables activas (no commitear)
@@ -126,10 +134,32 @@ pnpm --filter @vaultly-control/web build
 
 ## Documentación
 
+### Empezar
+
 | Doc | Contenido |
 |-----|-----------|
-| [local-development.md](docs/local-development.md) | Guía completa: Node.js vs Docker, comandos, debugging |
+| [local-development.md](docs/local-development.md) | Setup local: Node.js vs Docker, comandos, debugging |
+| [deployment-railway.md](docs/deployment-railway.md) | Deploy en Railway: services, variables, setup de Keycloak |
+
+### Cómo funciona (dominio)
+
+| Doc | Contenido |
+|-----|-----------|
+| [flow-database-management.md](docs/flow-database-management.md) | Connections: environments, permisos por engine, ciclo de vida |
+| [scheduler-architecture.md](docs/scheduler-architecture.md) | Cronjobs, SchedulerRegistry, single-replica |
+| [security-model.md](docs/security-model.md) | Invariantes de PROD, audit, autorización (con refs a código) |
+
+### Arquitectura técnica
+
+| Doc | Contenido |
+|-----|-----------|
 | [architecture.md](docs/architecture.md) | Módulos API, estructura web, SSE |
-| [infrastructure.md](docs/infrastructure.md) | Docker Compose, Kubernetes, credenciales de testing |
-| [environment-variables.md](docs/environment-variables.md) | Referencia completa de variables de entorno |
+| [infrastructure.md](docs/infrastructure.md) | Docker Compose local, credenciales de testing |
+
+### Referencia
+
+| Doc | Contenido |
+|-----|-----------|
+| [environment-variables.md](docs/environment-variables.md) | Todas las variables con tipos y defaults |
+| [database-migrations.md](docs/database-migrations.md) | TypeORM migrations: generate, run, revert |
 | [conventions.md](docs/conventions.md) | Nombrado, imports, commits, TypeScript |

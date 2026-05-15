@@ -25,21 +25,56 @@
 - Nunca commitear `.env` con valores reales — están en `.gitignore`.
 - Los `.env.example` son la fuente de verdad de qué variables existen.
 - Variables del frontend deben comenzar con `VITE_` para que Vite las inyecte en el bundle.
-- En Kubernetes: valores no sensibles en `configmap.yaml`, sensibles en `secret.yaml`.
+- En Railway: configurar como Service Variables. Las `VITE_*` se pasan automáticamente como build args si el Dockerfile las declara como `ARG`.
 
 ---
 
 ## Commits — Conventional Commits
 
+### Tipos que disparan release
+
+Semantic-release lee SOLO estos tres:
+
+| Tipo | Bump | Cuándo usarlo |
+|------|------|---------------|
+| `fix:` | patch (0.1.0 → 0.1.1) | Corrección de bug |
+| `feat:` | minor (0.1.0 → 0.2.0) | Funcionalidad nueva |
+| `feat!:` | major (0.1.0 → 1.0.0) | Breaking change |
+
+### Tipos que NO disparan release (uso libre)
+
+`chore:`, `docs:`, `refactor:`, `build:`, `ci:`, `style:`, `test:`, `perf:` — útiles para historial limpio, pero no generan version bump.
+
+### Regla estricta: SIN paréntesis ni scopes
+
 ```
-feat(backup): add on-demand backup endpoint
-fix(connections): handle connection timeout gracefully
-chore(deps): upgrade NestJS to 11.0.7
-docs(readme): update environment variables reference
-refactor(auth): simplify Keycloak strategy initialization
+✅ fix: handle connection timeout gracefully
+✅ feat: add on-demand backup endpoint
+✅ feat!: change R2 path structure
+✅ chore: upgrade NestJS to 11.0.7
+✅ refactor: simplify Keycloak strategy initialization
+
+❌ fix(connections): handle connection timeout gracefully
+❌ feat(backup): add on-demand backup endpoint
+❌ chore(deps): upgrade NestJS
 ```
 
-Scopes habituales: `backup`, `restore`, `connections`, `jobs`, `audit`, `auth`, `web`, `infra`, `deps`.
+**Por qué sin scopes**: el subject ya describe el qué; el path del diff describe el dónde. Los paréntesis agregan ruido visual sin información que el reviewer no pueda ver mejor en `git show`.
+
+### Breaking changes
+
+Dos formas válidas:
+
+1. **Bang**: `feat!: drop support for Node 20`
+2. **Trailer en el body**:
+   ```
+   feat: redesign auth flow
+
+   BREAKING CHANGE: tokens now expire after 1h instead of 24h.
+   Clients must implement refresh logic.
+   ```
+
+Para releases mayores siempre incluir el trailer con explicación, incluso si ya usaste `!`. El changelog generado por semantic-release lee el trailer.
 
 ---
 
