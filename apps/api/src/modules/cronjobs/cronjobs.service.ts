@@ -9,6 +9,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { CronjobsRepository } from './cronjobs.repository';
 import { BackupService } from '../backup/backup.service';
+import { ConnectionsService } from '../connections/connections.service';
 import { CreateCronjobDto } from './dto/create-cronjob.dto';
 import { UpdateCronjobDto } from './dto/update-cronjob.dto';
 import { CronjobEntity } from '../../database/entities/cronjob.entity';
@@ -24,14 +25,17 @@ const FREQUENCY_TO_CATEGORY: Record<CronFrequency, BackupCategory> = {
   [CronFrequency.CUSTOM]: BackupCategory.CUSTOM,
 };
 
-// Período esperado entre ticks por frecuencia. Usado por el catch-up al boot
-// para detectar cuándo se perdió al menos un tick. CUSTOM se omite porque
-// la expresión es arbitraria — sin parser de cron no se puede inferir.
+// CUSTOM is intentionally omitted: we can't infer a period from a free-form
+// cron expression without parsing it, and cron.lastDate() is unreliable on a
+// freshly-instantiated job (returns the instance's last fire, not the last
+// tick the expression should have produced).
 const FREQUENCY_TO_PERIOD_MS: Partial<Record<CronFrequency, number>> = {
   [CronFrequency.HOURLY]: 60 * 60 * 1000,
   [CronFrequency.DAILY]: 24 * 60 * 60 * 1000,
   [CronFrequency.WEEKLY]: 7 * 24 * 60 * 60 * 1000,
 };
+
+const MISSED_TICK_TOLERANCE = 1.5;
 
 const SYSTEM_USER: KeycloakUser = {
   sub: 'system-cronjob',
@@ -47,24 +51,55 @@ export class CronjobsService implements OnApplicationBootstrap {
     private readonly repository: CronjobsRepository,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly backupService: BackupService,
+    private readonly connectionsService: ConnectionsService,
   ) {}
+
+  private async enrichWithConnectionName(
+    cronjob: CronjobEntity,
+  ): Promise<CronjobEntity & { connectionName: string | null }> {
+    const nameMap = await this.connectionsService.findByIds([cronjob.connectionId]);
+    return Object.assign(cronjob, {
+      connectionName: nameMap.get(cronjob.connectionId) ?? null,
+    });
+  }
+
+  private async enrichManyWithConnectionName(
+    cronjobs: CronjobEntity[],
+  ): Promise<(CronjobEntity & { connectionName: string | null })[]> {
+    if (cronjobs.length === 0) return [];
+    const ids = [...new Set(cronjobs.map((c) => c.connectionId))];
+    const nameMap = await this.connectionsService.findByIds(ids);
+    return cronjobs.map((c) =>
+      Object.assign(c, { connectionName: nameMap.get(c.connectionId) ?? null }),
+    );
+  }
 
   async onApplicationBootstrap(): Promise<void> {
     try {
       const active = await this.repository.findAllActive();
       for (const cronjob of active) {
         this.registerCronJob(cronjob);
+        // Per-iteration catch: if the UPDATE fails we keep the job registered
+        // and let the next execution refresh nextRunAt. Without this, a single
+        // DB blip would skip registration for all remaining cronjobs.
+        await this.syncNextRunAt(cronjob).catch((err) => {
+          this.logger.warn(
+            `syncNextRunAt failed for "${cronjob.name}": ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
         this.catchUpIfMissed(cronjob);
       }
       this.logger.log(`Registered ${active.length} active cronjobs`);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Bootstrap failed: ${message}. Cronjobs NOT registered.`);
+      const message =
+        error instanceof Error ? `${error.message}\n${error.stack}` : String(error);
+      this.logger.error(`onApplicationBootstrap failed: ${message}`);
     }
   }
 
-  findAll() {
-    return this.repository.findAll();
+  async findAll() {
+    const cronjobs = await this.repository.findAll();
+    return this.enrichManyWithConnectionName(cronjobs);
   }
 
   async findById(id: string) {
@@ -72,7 +107,7 @@ export class CronjobsService implements OnApplicationBootstrap {
     if (!cronjob) {
       throw new NotFoundException(`Cronjob con ID "${id}" no encontrado`);
     }
-    return cronjob;
+    return this.enrichWithConnectionName(cronjob);
   }
 
   async create(dto: CreateCronjobDto) {
@@ -81,7 +116,8 @@ export class CronjobsService implements OnApplicationBootstrap {
     if (cronjob.isActive) {
       this.registerCronJob(cronjob);
     }
-    return cronjob;
+    await this.syncNextRunAt(cronjob);
+    return this.enrichWithConnectionName(cronjob);
   }
 
   async update(id: string, dto: UpdateCronjobDto) {
@@ -97,7 +133,8 @@ export class CronjobsService implements OnApplicationBootstrap {
     if (updated.isActive) {
       this.registerCronJob(updated);
     }
-    return updated;
+    await this.syncNextRunAt(updated);
+    return this.enrichWithConnectionName(updated);
   }
 
   async delete(id: string): Promise<void> {
@@ -120,7 +157,8 @@ export class CronjobsService implements OnApplicationBootstrap {
     } else {
       this.unregisterCronJob(id);
     }
-    return updated;
+    await this.syncNextRunAt(updated);
+    return this.enrichWithConnectionName(updated);
   }
 
   async upsertSchedule(
@@ -138,7 +176,17 @@ export class CronjobsService implements OnApplicationBootstrap {
     });
     this.unregisterCronJob(entity.id);
     this.registerCronJob(entity);
+    await this.syncNextRunAt(entity);
     return entity;
+  }
+
+  // Keeps DB nextRunAt in sync with the live scheduler so the UI can show the
+  // upcoming tick immediately (before the first execution writes it). When the
+  // job is inactive there's no scheduler entry, so we null it out.
+  private async syncNextRunAt(cronjob: CronjobEntity): Promise<void> {
+    const nextRunAt = cronjob.isActive ? this.getNextRunDate(cronjob.id) : null;
+    await this.repository.updateRunMetadata(cronjob.id, { nextRunAt });
+    cronjob.nextRunAt = nextRunAt;
   }
 
   private validateCronExpression(expression: string): void {
@@ -155,13 +203,10 @@ export class CronjobsService implements OnApplicationBootstrap {
   private registerCronJob(cronjob: CronjobEntity): void {
     try {
       const job = new CronJob(cronjob.cronExpression, () => {
-        // .catch() en vez de void: red de seguridad para que NUNCA un
-        // unhandledRejection escape al process. Sin esto, en Node 22 un
-        // error de DB / R2 / pg_dump tira el contenedor abajo.
         this.executeCronjob(cronjob.id).catch((err) => {
           this.logger.error(
             `Unhandled error in cronjob "${cronjob.name}": ${
-              err instanceof Error ? err.message : String(err)
+              err instanceof Error ? `${err.message}\n${err.stack}` : String(err)
             }`,
           );
         });
@@ -176,55 +221,31 @@ export class CronjobsService implements OnApplicationBootstrap {
     }
   }
 
-  // Capa 4 — Catch-up al boot. Si el proceso estuvo caído cuando un tick
-  // debía dispararse, al reiniciar se detecta el tick perdido y se ejecuta
-  // inmediatamente. Cubre el caso "API se reinició entre las 01:00 y 02:30,
-  // se perdió el backup horario" sin necesidad de Redis/BullMQ.
-  //
-  // Usa el enum `frequency` (no la cron expression) porque cron v4 no expone
-  // una API para "último tick esperado según la expresión": `lastDate()` solo
-  // devuelve la última vez que la INSTANCIA disparó, lo cual es null para un
-  // job recién creado al boot. El enum es la fuente de verdad del período
-  // y ya está validado por @IsEnum al crear/actualizar el cronjob.
-  //
-  // Tolerancia de 1.5x el período: evita falsos positivos por jitter de
-  // scheduler / clock drift sin permitir que un tick francamente perdido
-  // pase desapercibido.
+  // Why frequency-based (not cron.lastDate()): in cron v3/v4, lastDate()
+  // returns the last fire of THIS instance — for a job just created at boot
+  // it's null and catch-up never triggers. Reference is lastRunAt ?? createdAt
+  // to avoid spurious fires on freshly-created jobs (e.g. a DAILY @ 2am
+  // created at noon would fire on the next restart if we used only lastRunAt).
+  // The 1.5x tolerance absorbs scheduler jitter without missing real gaps.
   private catchUpIfMissed(cronjob: CronjobEntity): void {
-    try {
-      const period = FREQUENCY_TO_PERIOD_MS[cronjob.frequency];
-      if (!period) return; // CUSTOM no participa del catch-up
+    const period = FREQUENCY_TO_PERIOD_MS[cronjob.frequency];
+    if (!period) return;
 
-      // Referencia: la última corrida si existe; si no, la creación. Esto
-      // evita disparar un cron recién creado al próximo deploy (lastRunAt
-      // null no implica "perdió ticks", solo "nunca corrió todavía"), pero
-      // sí cubre cronjobs viejos que nunca llegaron a correr por algún
-      // bootstrap fallido.
-      const reference = cronjob.lastRunAt ?? cronjob.createdAt;
-      const elapsed = Date.now() - reference.getTime();
-      if (elapsed <= period * 1.5) return;
+    const reference = cronjob.lastRunAt ?? cronjob.createdAt;
+    const elapsed = Date.now() - reference.getTime();
 
-      const elapsedMin = Math.floor(elapsed / 60_000);
-      const periodMin = Math.floor(period / 60_000);
-      const sourceLabel = cronjob.lastRunAt ? 'last ran' : 'created';
-
+    if (elapsed > period * MISSED_TICK_TOLERANCE) {
       this.logger.warn(
-        `Catch-up: cronjob "${cronjob.name}" ${sourceLabel} ${elapsedMin}min ago (period ${periodMin}min), executing now`,
+        `Cronjob "${cronjob.name}" missed a tick (elapsed ${Math.round(elapsed / 1000)}s, period ${period / 1000}s). Catching up.`,
       );
-      this.fireCatchUp(cronjob);
-    } catch (error) {
-      this.logger.error(
-        `Catch-up check failed for "${cronjob.name}": ${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.executeCronjob(cronjob.id).catch((err) => {
+        this.logger.error(
+          `Catch-up failed for cronjob "${cronjob.name}": ${
+            err instanceof Error ? `${err.message}\n${err.stack}` : String(err)
+          }`,
+        );
+      });
     }
-  }
-
-  private fireCatchUp(cronjob: CronjobEntity): void {
-    this.executeCronjob(cronjob.id).catch((err) => {
-      this.logger.error(
-        `Catch-up failed for "${cronjob.name}": ${err instanceof Error ? err.message : String(err)}`,
-      );
-    });
   }
 
   private unregisterCronJob(id: string): void {
@@ -235,6 +256,10 @@ export class CronjobsService implements OnApplicationBootstrap {
     }
   }
 
+  // Defensive try/catch wraps the ENTIRE method, including the first findById
+  // and the RUNNING-status write. In Node 22, an unhandledRejection here is
+  // fatal — the process dies, the platform restarts, and the tick is lost
+  // silently. This method must NEVER propagate.
   private async executeCronjob(cronjobId: string): Promise<void> {
     const startedAt = new Date();
     let cronjobName = cronjobId;
@@ -244,44 +269,54 @@ export class CronjobsService implements OnApplicationBootstrap {
       if (!cronjob?.isActive) return;
       cronjobName = cronjob.name;
 
-      this.logger.log(`Executing cronjob "${cronjob.name}" → connection ${cronjob.connectionId}`);
+      this.logger.log(
+        `Executing cronjob "${cronjob.name}" → connection ${cronjob.connectionId}`,
+      );
 
       await this.repository.updateRunMetadata(cronjobId, {
         lastRunAt: startedAt,
         lastStatus: JobStatus.RUNNING,
       });
 
-      await this.backupService.createBackup(
-        { connectionId: cronjob.connectionId },
-        SYSTEM_USER,
-        FREQUENCY_TO_CATEGORY[cronjob.frequency],
-      );
+      try {
+        await this.backupService.createBackup(
+          { connectionId: cronjob.connectionId },
+          SYSTEM_USER,
+          FREQUENCY_TO_CATEGORY[cronjob.frequency],
+        );
 
-      await this.repository.updateRunMetadata(cronjobId, {
-        lastRunAt: startedAt,
-        lastStatus: JobStatus.COMPLETED,
-        nextRunAt: this.getNextRunDate(cronjobId),
-      });
-
-      this.logger.log(`Cronjob "${cronjob.name}" completed`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Error desconocido';
-      this.logger.error(`Cronjob "${cronjobName}" failed: ${message}`);
-
-      // Best-effort: si el update del FAILED también falla (DB caída),
-      // NO debe propagar — el catch externo del registerCronJob ya logueó.
-      await this.repository
-        .updateRunMetadata(cronjobId, {
+        await this.repository.updateRunMetadata(cronjobId, {
           lastRunAt: startedAt,
-          lastStatus: JobStatus.FAILED,
-        })
-        .catch((updateErr) => {
-          this.logger.error(
-            `Failed to record FAILED status for "${cronjobName}": ${
-              updateErr instanceof Error ? updateErr.message : String(updateErr)
-            }`,
-          );
+          lastStatus: JobStatus.COMPLETED,
+          nextRunAt: this.getNextRunDate(cronjobId),
         });
+
+        this.logger.log(`Cronjob "${cronjob.name}" completed`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Error desconocido';
+        this.logger.error(`Cronjob "${cronjob.name}" failed: ${message}`);
+
+        // The FAILED write itself can throw (DB still down) — swallow it so
+        // we don't escape the outer try.
+        await this.repository
+          .updateRunMetadata(cronjobId, {
+            lastRunAt: startedAt,
+            lastStatus: JobStatus.FAILED,
+          })
+          .catch((updateErr) => {
+            this.logger.error(
+              `Failed to persist FAILED status for "${cronjob.name}": ${
+                updateErr instanceof Error ? updateErr.message : String(updateErr)
+              }`,
+            );
+          });
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? `${error.message}\n${error.stack}` : String(error);
+      this.logger.error(
+        `executeCronjob("${cronjobName}") crashed before status tracking: ${message}`,
+      );
     }
   }
 
