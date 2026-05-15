@@ -44,8 +44,7 @@ export function BackupStatusChart({ summary }: BackupStatusChartProps) {
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={300} minWidth={0}>
             <PieChart>
               <Pie
                 data={data}
@@ -72,8 +71,7 @@ export function BackupStatusChart({ summary }: BackupStatusChartProps) {
               />
               <Legend />
             </PieChart>
-            </ResponsiveContainer>
-          </div>
+          </ResponsiveContainer>
         ) : (
           <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
             No hay datos de backups disponibles
