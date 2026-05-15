@@ -72,10 +72,6 @@ COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 # Copy nginx configuration
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy entrypoint (injects runtime config from container env vars)
-COPY apps/web/entrypoint.sh /docker-entrypoint.d/99-config.sh
-RUN chmod +x /docker-entrypoint.d/99-config.sh
-
 EXPOSE 80
 
 # Healthcheck básico sirviendo el index.html → confirma que nginx
