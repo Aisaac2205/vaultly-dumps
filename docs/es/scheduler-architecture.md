@@ -1,5 +1,7 @@
 # Scheduler Architecture
 
+> 🇬🇧 English version: [../en/scheduler-architecture.md](../en/scheduler-architecture.md)
+
 ## Decisión actual: `@nestjs/schedule` (single-replica)
 
 ### ¿Qué hace el scheduler?

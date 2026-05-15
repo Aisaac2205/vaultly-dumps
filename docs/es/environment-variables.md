@@ -1,5 +1,7 @@
 # Variables de entorno — Vaultly Control
 
+> 🇬🇧 English version: [../en/environment-variables.md](../en/environment-variables.md)
+
 Ver los `.env.example` de cada app como fuente de verdad de qué variables existen. **Nunca commitear archivos `.env` con valores reales** — están en `.gitignore`.
 
 ---

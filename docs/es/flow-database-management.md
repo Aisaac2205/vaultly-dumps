@@ -1,5 +1,7 @@
 # Flujo de Gestión de Bases de Datos
 
+> 🇬🇧 English version: [../en/flow-database-management.md](../en/flow-database-management.md)
+
 ## ¿Qué es una "conexión"?
 
 Una conexión (`ConnectionEntity`) representa una base de datos registrada en el sistema. Es la unidad sobre la que operan **backup**, **restore** y **cronjobs**.

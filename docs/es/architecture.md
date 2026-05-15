@@ -1,5 +1,7 @@
 # Arquitectura — Vaultly Control
 
+> 🇬🇧 English version: [../en/architecture.md](../en/architecture.md)
+
 ## API — NestJS Monolito Modular
 
 **Ruta:** `apps/api` | **Puerto:** `3000`

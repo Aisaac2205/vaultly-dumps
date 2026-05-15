@@ -1,5 +1,7 @@
 # Modelo de Seguridad
 
+> 🇬🇧 English version: [../en/security-model.md](../en/security-model.md)
+
 Este documento captura los **invariantes de seguridad** del sistema. No son sugerencias — son reglas que el código aplica activamente. Romperlos requiere modificar código y dejará rastro en review.
 
 ---

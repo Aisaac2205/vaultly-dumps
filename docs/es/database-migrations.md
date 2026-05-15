@@ -1,5 +1,7 @@
 # Database Migrations — Guía Operativa
 
+> 🇬🇧 English version: [../en/database-migrations.md](../en/database-migrations.md)
+
 > **Audiencia**: cualquier dev que necesite levantar la API contra una DB nueva, o sumar/correr migrations.
 
 ---

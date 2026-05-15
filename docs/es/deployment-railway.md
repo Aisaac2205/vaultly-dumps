@@ -1,8 +1,12 @@
 # Deployment — Railway
 
-Vaultly Control se deploya en [Railway](https://railway.com) con dos projects separados: el stack de la app (web + api + db) y la infraestructura de auth (Keycloak + su db).
+> 🇬🇧 English version: [../en/deployment-railway.md](../en/deployment-railway.md)
 
-![Arquitectura en Railway](./assets/railway-architecture.png)
+> **Esta guía es un template de deploy, no el único camino.** Vaultly corre en cualquier plataforma de contenedores con una instancia de PostgreSQL 16+. Railway está documentado acá porque te da un stack funcional (app + Keycloak) en menos de una hora, lo cual es útil como punto de partida o para evaluar. Para Kubernetes, Fly.io, AWS ECS, o Docker self-hosted, aplican las mismas variables y servicios — solo cambia la capa de orquestación.
+
+Esta guía muestra cómo deployar Vaultly Control en [Railway](https://railway.com) con dos projects separados: el stack de la app (web + api + db) y la infraestructura de auth (Keycloak + su db).
+
+![Referencia visual de la topología de deploy](../assets/architecture-preview.png)
 
 ## Por qué dos projects separados
 

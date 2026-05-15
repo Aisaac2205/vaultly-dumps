@@ -1,5 +1,7 @@
 # Entorno Local — Vaultly Control
 
+> 🇬🇧 English version: [../en/local-development.md](../en/local-development.md)
+
 Guía para levantar y desarrollar el proyecto localmente con Node.js o Docker.
 
 Hay **dos archivos compose**:

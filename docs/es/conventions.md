@@ -1,5 +1,7 @@
 # Convenciones — Vaultly Control
 
+> 🇬🇧 English version: [../en/conventions.md](../en/conventions.md)
+
 ## Nombrado de archivos
 
 - Módulos del API: nombres planos dentro de su carpeta de dominio — `service.ts`, `controller.ts`, `module.ts`. El contexto lo da la carpeta (ej: `modules/backup/service.ts`).
