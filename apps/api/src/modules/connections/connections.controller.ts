@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -21,8 +22,8 @@ export class ConnectionsController {
   constructor(private readonly service: ConnectionsService) {}
 
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query('environment') environment?: string) {
+    return this.service.findAll(environment);
   }
 
   @Get(':id')

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Client } from 'pg';
 import { createConnection as createMysqlConnection } from 'mysql2/promise';
 import { CreateConnectionDto } from './dto/create-connection.dto';
@@ -7,6 +7,7 @@ import { TestRawConnectionDto } from './dto/test-raw-connection.dto';
 import { ConnectionsRepository } from './connections.repository';
 import { ConnectionTestResult } from './interfaces/connection-test-result.interface';
 import { DbTypeEnum } from '../../database/enums/db-type.enum';
+import { Environment } from '../../database/enums/environment.enum';
 import { resolveUniqueSlug, slugify } from '../../common/utils/slugify';
 
 const CONNECTION_TEST_TIMEOUT_MS = 5_000;
@@ -31,8 +32,16 @@ export class ConnectionsService {
     private readonly repository: ConnectionsRepository,
   ) {}
 
-  async findAll() {
-    return this.repository.findAll();
+  async findAll(environment?: string) {
+    if (environment === undefined || environment === '') {
+      return this.repository.findAll();
+    }
+    if (!Object.values(Environment).includes(environment as Environment)) {
+      throw new BadRequestException(
+        `Environment inválido: "${environment}". Valores válidos: ${Object.values(Environment).join(', ')}`,
+      );
+    }
+    return this.repository.findByEnvironment(environment as Environment);
   }
 
   async findByIds(ids: string[]): Promise<Map<string, string>> {
