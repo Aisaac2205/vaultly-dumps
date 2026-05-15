@@ -1,4 +1,5 @@
 import type { Cronjob } from "../types";
+import { formatDate } from "../lib/format";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
@@ -97,7 +98,7 @@ export default function CronjobsTable({
                 {cronjob.cronExpression}
               </TableCell>
               <TableCell className="font-mono text-xs">
-                {cronjob.nextRunAt ?? "—"}
+                {formatDate(cronjob.nextRunAt)}
               </TableCell>
               <TableCell>
                 {cronjob.lastStatus ? (

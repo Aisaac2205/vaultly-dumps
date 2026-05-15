@@ -1,6 +1,7 @@
 import { StatCard } from "@/shared/ui/stat-card";
 import { Clock, Play, CheckCircle2, Calendar } from "lucide-react";
 import type { Cronjob } from "../types";
+import { formatDate } from "../lib/format";
 
 interface CronjobsStatsProps {
   cronjobs: Cronjob[];
@@ -30,12 +31,7 @@ export function CronjobsStats({
     .sort((a, b) => a - b);
   const earliest =
     nextRunTimes.length > 0
-      ? new Date(nextRunTimes[0]).toLocaleString("es-AR", {
-          day: "2-digit",
-          month: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
+      ? formatDate(new Date(nextRunTimes[0]).toISOString())
       : null;
 
   const STATUS_LABELS: Record<string, string> = {
