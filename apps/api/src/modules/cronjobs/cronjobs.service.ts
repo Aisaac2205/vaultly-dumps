@@ -24,6 +24,15 @@ const FREQUENCY_TO_CATEGORY: Record<CronFrequency, BackupCategory> = {
   [CronFrequency.CUSTOM]: BackupCategory.CUSTOM,
 };
 
+// Período esperado entre ticks por frecuencia. Usado por el catch-up al boot
+// para detectar cuándo se perdió al menos un tick. CUSTOM se omite porque
+// la expresión es arbitraria — sin parser de cron no se puede inferir.
+const FREQUENCY_TO_PERIOD_MS: Partial<Record<CronFrequency, number>> = {
+  [CronFrequency.HOURLY]: 60 * 60 * 1000,
+  [CronFrequency.DAILY]: 24 * 60 * 60 * 1000,
+  [CronFrequency.WEEKLY]: 7 * 24 * 60 * 60 * 1000,
+};
+
 const SYSTEM_USER: KeycloakUser = {
   sub: 'system-cronjob',
   preferred_username: 'system',
@@ -171,34 +180,50 @@ export class CronjobsService implements OnApplicationBootstrap {
   // debía dispararse, al reiniciar se detecta el tick perdido y se ejecuta
   // inmediatamente. Cubre el caso "API se reinició entre las 01:00 y 02:30,
   // se perdió el backup horario" sin necesidad de Redis/BullMQ.
+  //
+  // Usa el enum `frequency` (no la cron expression) porque cron v4 no expone
+  // una API para "último tick esperado según la expresión": `lastDate()` solo
+  // devuelve la última vez que la INSTANCIA disparó, lo cual es null para un
+  // job recién creado al boot. El enum es la fuente de verdad del período
+  // y ya está validado por @IsEnum al crear/actualizar el cronjob.
+  //
+  // Tolerancia de 1.5x el período: evita falsos positivos por jitter de
+  // scheduler / clock drift sin permitir que un tick francamente perdido
+  // pase desapercibido.
   private catchUpIfMissed(cronjob: CronjobEntity): void {
     try {
-      const tempJob = new CronJob(cronjob.cronExpression, () => undefined);
-      const lastExpectedRaw = (
-        tempJob as unknown as { lastDate?: () => Date | null }
-      ).lastDate?.();
-      if (!lastExpectedRaw) return;
-
-      const lastExpected = lastExpectedRaw instanceof Date ? lastExpectedRaw : null;
-      if (!lastExpected) return;
+      const period = FREQUENCY_TO_PERIOD_MS[cronjob.frequency];
+      if (!period) return; // CUSTOM no participa del catch-up
 
       const lastRun = cronjob.lastRunAt;
-      const missed = !lastRun || lastRun.getTime() < lastExpected.getTime();
-      if (!missed) return;
+      if (!lastRun) {
+        this.logger.warn(
+          `Catch-up: cronjob "${cronjob.name}" never ran, executing now`,
+        );
+        this.fireCatchUp(cronjob);
+        return;
+      }
+
+      const elapsed = Date.now() - lastRun.getTime();
+      if (elapsed <= period * 1.5) return;
 
       this.logger.warn(
-        `Catch-up: cronjob "${cronjob.name}" missed tick at ${lastExpected.toISOString()}, executing now`,
+        `Catch-up: cronjob "${cronjob.name}" last ran ${Math.floor(elapsed / 60_000)}min ago (period ${Math.floor(period / 60_000)}min), executing now`,
       );
-      this.executeCronjob(cronjob.id).catch((err) => {
-        this.logger.error(
-          `Catch-up failed for "${cronjob.name}": ${err instanceof Error ? err.message : String(err)}`,
-        );
-      });
+      this.fireCatchUp(cronjob);
     } catch (error) {
       this.logger.error(
         `Catch-up check failed for "${cronjob.name}": ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  private fireCatchUp(cronjob: CronjobEntity): void {
+    this.executeCronjob(cronjob.id).catch((err) => {
+      this.logger.error(
+        `Catch-up failed for "${cronjob.name}": ${err instanceof Error ? err.message : String(err)}`,
+      );
+    });
   }
 
   private unregisterCronJob(id: string): void {
