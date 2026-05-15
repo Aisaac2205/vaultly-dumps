@@ -33,7 +33,6 @@ vaultly-control/
 │   └── web/                     # React + Vite — Vertical Slice  :5173 / :80
 │
 ├── docs/                        # Documentación técnica
-├── k8s/                         # Manifiestos Kubernetes
 │
 ├── docker-compose.yml      # Producción (api + web + db)
 ├── docker-compose.dev.yml  # Overrides dev (hot reload, perfil 'test' opcional)
