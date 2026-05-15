@@ -1,6 +1,7 @@
 import type { Cronjob } from "../types";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
+import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import {
   Table,
   TableHeader,
@@ -85,7 +86,13 @@ export default function CronjobsTable({
           return (
             <TableRow key={cronjob.id}>
               <TableCell className="font-medium">{cronjob.name}</TableCell>
-              <TableCell>{cronjob.connectionName ?? "—"}</TableCell>
+              <TableCell>
+                <ConnectionLabel
+                  id={cronjob.connectionId}
+                  name={cronjob.connectionName}
+                  showEnv
+                />
+              </TableCell>
               <TableCell className="font-mono text-xs">
                 {cronjob.cronExpression}
               </TableCell>

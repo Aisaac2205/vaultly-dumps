@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Activity, CheckCircle2, XCircle } from "lucide-react";
+import { Activity } from "lucide-react";
+import { ConnectionStateBadge } from "@/shared/components/ConnectionStateBadge";
 import type { ConnectionEntity } from "../types";
 
 interface ConnectionHealthCardProps {
@@ -24,24 +25,8 @@ export function ConnectionHealthCard({
               key={conn.id}
               className="flex items-center justify-between text-sm"
             >
-              <span>{conn.name}</span>
-              <span
-                className={`flex items-center gap-1 ${
-                  conn.isActive ? "text-success" : "text-error"
-                }`}
-              >
-                {conn.isActive ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Activa
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="h-3.5 w-3.5" />
-                    Inactiva
-                  </>
-                )}
-              </span>
+              <span className="truncate">{conn.name}</span>
+              <ConnectionStateBadge isActive={conn.isActive} />
             </div>
           ))}
           {connections.length === 0 && (

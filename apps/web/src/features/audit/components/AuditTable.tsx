@@ -1,6 +1,7 @@
 import { DataTable, type Column } from "@/shared/ui/data-table";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/cn";
+import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import {
   Database,
   Trash2,
@@ -81,6 +82,45 @@ function EnvironmentBadge({ env }: { env: string }) {
   );
 }
 
+function ResourceCell({ log }: { log: AuditLog }) {
+  const meta = log.metadata ?? {};
+  const metaName =
+    (typeof meta.name === "string" && meta.name) ||
+    (typeof meta.connectionName === "string" && meta.connectionName) ||
+    undefined;
+
+  if (log.resourceType === "connection") {
+    return (
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          conexión
+        </span>
+        <ConnectionLabel id={log.resourceId} name={metaName} className="text-sm" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        {log.resourceType}
+      </span>
+      {metaName ? (
+        <span className="text-sm truncate" title={`${metaName} (${log.resourceId})`}>
+          {metaName}
+        </span>
+      ) : (
+        <span
+          className="font-mono text-xs text-muted-foreground"
+          title={log.resourceId}
+        >
+          #{shortenId(log.resourceId)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function MetadataCell({ metadata }: { metadata?: Record<string, unknown> }) {
   if (!metadata || Object.keys(metadata).length === 0) {
     return <span className="text-muted-foreground">—</span>;
@@ -118,11 +158,7 @@ const columns: Column<AuditLog>[] = [
   },
   {
     header: "Recurso",
-    accessor: (log) => (
-      <span className="font-mono text-xs">
-        {log.resourceType}:<span className="text-muted-foreground">{shortenId(log.resourceId)}</span>
-      </span>
-    ),
+    accessor: (log) => <ResourceCell log={log} />,
   },
   {
     header: "Ambiente",

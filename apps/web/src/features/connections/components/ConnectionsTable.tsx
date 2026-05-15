@@ -1,5 +1,5 @@
 import type { Connection, ConnectionTestResult } from "../types";
-import { StatusBadge } from "@/shared/ui/status-badge";
+import { ConnectionStateBadge } from "@/shared/components/ConnectionStateBadge";
 import { Button } from "@/shared/ui/button";
 import TestConnectionBadge from "./TestConnectionBadge";
 import PostgresSQL from "@/shared/assets/PostgresSQL.svg";
@@ -122,9 +122,7 @@ export default function ConnectionsTable({
               </TableCell>
               <TableCell>{conn.database}</TableCell>
               <TableCell>
-                <StatusBadge
-                  status={conn.isActive ? "completed" : "failed"}
-                />
+                <ConnectionStateBadge isActive={conn.isActive} />
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap items-center gap-2">

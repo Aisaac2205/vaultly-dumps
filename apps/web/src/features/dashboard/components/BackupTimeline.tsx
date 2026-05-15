@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { DataTable } from "@/shared/ui/data-table";
+import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import { shortId, formatDate, formatSize } from "../lib/format";
 import type { BackupJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
@@ -31,9 +32,11 @@ export function BackupTimeline({ backups, maxItems = 10 }: BackupTimelineProps) 
     {
       header: "Conexión",
       accessor: (job) => (
-        <span className="truncate block" title={job.connectionName || job.connectionId}>
-          {job.connectionName || shortId(job.connectionId)}
-        </span>
+        <ConnectionLabel
+          id={job.connectionId}
+          name={job.connectionName}
+          showEnv
+        />
       ),
     },
     {
