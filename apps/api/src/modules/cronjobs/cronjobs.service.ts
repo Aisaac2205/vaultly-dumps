@@ -195,20 +195,21 @@ export class CronjobsService implements OnApplicationBootstrap {
       const period = FREQUENCY_TO_PERIOD_MS[cronjob.frequency];
       if (!period) return; // CUSTOM no participa del catch-up
 
-      const lastRun = cronjob.lastRunAt;
-      if (!lastRun) {
-        this.logger.warn(
-          `Catch-up: cronjob "${cronjob.name}" never ran, executing now`,
-        );
-        this.fireCatchUp(cronjob);
-        return;
-      }
-
-      const elapsed = Date.now() - lastRun.getTime();
+      // Referencia: la última corrida si existe; si no, la creación. Esto
+      // evita disparar un cron recién creado al próximo deploy (lastRunAt
+      // null no implica "perdió ticks", solo "nunca corrió todavía"), pero
+      // sí cubre cronjobs viejos que nunca llegaron a correr por algún
+      // bootstrap fallido.
+      const reference = cronjob.lastRunAt ?? cronjob.createdAt;
+      const elapsed = Date.now() - reference.getTime();
       if (elapsed <= period * 1.5) return;
 
+      const elapsedMin = Math.floor(elapsed / 60_000);
+      const periodMin = Math.floor(period / 60_000);
+      const sourceLabel = cronjob.lastRunAt ? 'last ran' : 'created';
+
       this.logger.warn(
-        `Catch-up: cronjob "${cronjob.name}" last ran ${Math.floor(elapsed / 60_000)}min ago (period ${Math.floor(period / 60_000)}min), executing now`,
+        `Catch-up: cronjob "${cronjob.name}" ${sourceLabel} ${elapsedMin}min ago (period ${periodMin}min), executing now`,
       );
       this.fireCatchUp(cronjob);
     } catch (error) {
