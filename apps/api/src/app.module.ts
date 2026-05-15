@@ -1,8 +1,9 @@
 import { Module, ClassSerializerInterceptor } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import databaseConfig from './config/database.config';
 import keycloakConfig from './config/keycloak.config';
 import r2Config from './config/r2.config';
@@ -28,6 +29,18 @@ import { HealthModule } from './health/health.module';
       validationSchema: envValidationSchema,
     }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            name: 'default',
+            ttl: config.getOrThrow<number>('THROTTLE_TTL_MS'),
+            limit: config.getOrThrow<number>('THROTTLE_LIMIT'),
+          },
+        ],
+      }),
+    }),
     DatabaseModule,
     AuthModule,
     ConnectionsModule,
@@ -39,6 +52,12 @@ import { HealthModule } from './health/health.module';
     HealthModule,
   ],
   providers: [
+    // Global rate limit. Per-IP by default; @SkipThrottle() opts out
+    // (used on /health so Kubernetes probes don't get 429s).
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_PIPE,
       useValue: new ValidationPipe({

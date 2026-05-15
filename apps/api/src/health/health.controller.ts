@@ -5,7 +5,9 @@ import {
   TypeOrmHealthIndicator,
   HealthCheckResult,
 } from '@nestjs/terminus';
+import { SkipThrottle } from '@nestjs/throttler';
 
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(

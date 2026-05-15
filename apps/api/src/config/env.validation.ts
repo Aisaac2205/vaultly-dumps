@@ -19,4 +19,7 @@ export const envValidationSchema = Joi.object({
   // forget to set it in production you open the API to any browser. Force
   // an explicit value (e.g. "http://localhost:5173,https://app.vaultly.io").
   CORS_ORIGIN: Joi.string().required(),
+  // Rate limiting (requests per minute, per IP). Health endpoint is excluded.
+  THROTTLE_TTL_MS: Joi.number().integer().min(1000).default(60_000),
+  THROTTLE_LIMIT: Joi.number().integer().min(1).default(100),
 });
