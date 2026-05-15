@@ -4,6 +4,19 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+// Safety net global: cualquier promise no atrapada (cronjobs, R2, pg_dump,
+// etc.) se loguea pero NO mata el proceso. Sin esto, Node 22 trata
+// unhandledRejection como fatal por default → restart loop, ticks de cron
+// perdidos, y "el cronjob no corre cuando no estoy en la web".
+const processLogger = new Logger('Process');
+process.on('unhandledRejection', (reason) => {
+  const message = reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
+  processLogger.error(`Unhandled Rejection: ${message}`);
+});
+process.on('uncaughtException', (err) => {
+  processLogger.error(`Uncaught Exception: ${err.message}\n${err.stack}`);
+});
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);

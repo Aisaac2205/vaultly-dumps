@@ -41,11 +41,17 @@ export class CronjobsService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    const active = await this.repository.findAllActive();
-    for (const cronjob of active) {
-      this.registerCronJob(cronjob);
+    try {
+      const active = await this.repository.findAllActive();
+      for (const cronjob of active) {
+        this.registerCronJob(cronjob);
+        this.catchUpIfMissed(cronjob);
+      }
+      this.logger.log(`Registered ${active.length} active cronjobs`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Bootstrap failed: ${message}. Cronjobs NOT registered.`);
     }
-    this.logger.log(`Registered ${active.length} active cronjobs`);
   }
 
   findAll() {
@@ -140,7 +146,16 @@ export class CronjobsService implements OnApplicationBootstrap {
   private registerCronJob(cronjob: CronjobEntity): void {
     try {
       const job = new CronJob(cronjob.cronExpression, () => {
-        void this.executeCronjob(cronjob.id);
+        // .catch() en vez de void: red de seguridad para que NUNCA un
+        // unhandledRejection escape al process. Sin esto, en Node 22 un
+        // error de DB / R2 / pg_dump tira el contenedor abajo.
+        this.executeCronjob(cronjob.id).catch((err) => {
+          this.logger.error(
+            `Unhandled error in cronjob "${cronjob.name}": ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          );
+        });
       });
       this.schedulerRegistry.addCronJob(cronjob.id, job);
       job.start();
@@ -148,6 +163,40 @@ export class CronjobsService implements OnApplicationBootstrap {
     } catch (error) {
       this.logger.error(
         `Failed to register cronjob "${cronjob.name}": ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  // Capa 4 — Catch-up al boot. Si el proceso estuvo caído cuando un tick
+  // debía dispararse, al reiniciar se detecta el tick perdido y se ejecuta
+  // inmediatamente. Cubre el caso "API se reinició entre las 01:00 y 02:30,
+  // se perdió el backup horario" sin necesidad de Redis/BullMQ.
+  private catchUpIfMissed(cronjob: CronjobEntity): void {
+    try {
+      const tempJob = new CronJob(cronjob.cronExpression, () => undefined);
+      const lastExpectedRaw = (
+        tempJob as unknown as { lastDate?: () => Date | null }
+      ).lastDate?.();
+      if (!lastExpectedRaw) return;
+
+      const lastExpected = lastExpectedRaw instanceof Date ? lastExpectedRaw : null;
+      if (!lastExpected) return;
+
+      const lastRun = cronjob.lastRunAt;
+      const missed = !lastRun || lastRun.getTime() < lastExpected.getTime();
+      if (!missed) return;
+
+      this.logger.warn(
+        `Catch-up: cronjob "${cronjob.name}" missed tick at ${lastExpected.toISOString()}, executing now`,
+      );
+      this.executeCronjob(cronjob.id).catch((err) => {
+        this.logger.error(
+          `Catch-up failed for "${cronjob.name}": ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
+    } catch (error) {
+      this.logger.error(
+        `Catch-up check failed for "${cronjob.name}": ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
@@ -161,18 +210,21 @@ export class CronjobsService implements OnApplicationBootstrap {
   }
 
   private async executeCronjob(cronjobId: string): Promise<void> {
-    const cronjob = await this.repository.findById(cronjobId);
-    if (!cronjob?.isActive) return;
-
-    this.logger.log(`Executing cronjob "${cronjob.name}" → connection ${cronjob.connectionId}`);
     const startedAt = new Date();
-
-    await this.repository.updateRunMetadata(cronjobId, {
-      lastRunAt: startedAt,
-      lastStatus: JobStatus.RUNNING,
-    });
+    let cronjobName = cronjobId;
 
     try {
+      const cronjob = await this.repository.findById(cronjobId);
+      if (!cronjob?.isActive) return;
+      cronjobName = cronjob.name;
+
+      this.logger.log(`Executing cronjob "${cronjob.name}" → connection ${cronjob.connectionId}`);
+
+      await this.repository.updateRunMetadata(cronjobId, {
+        lastRunAt: startedAt,
+        lastStatus: JobStatus.RUNNING,
+      });
+
       await this.backupService.createBackup(
         { connectionId: cronjob.connectionId },
         SYSTEM_USER,
@@ -188,12 +240,22 @@ export class CronjobsService implements OnApplicationBootstrap {
       this.logger.log(`Cronjob "${cronjob.name}" completed`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error desconocido';
-      this.logger.error(`Cronjob "${cronjob.name}" failed: ${message}`);
+      this.logger.error(`Cronjob "${cronjobName}" failed: ${message}`);
 
-      await this.repository.updateRunMetadata(cronjobId, {
-        lastRunAt: startedAt,
-        lastStatus: JobStatus.FAILED,
-      });
+      // Best-effort: si el update del FAILED también falla (DB caída),
+      // NO debe propagar — el catch externo del registerCronJob ya logueó.
+      await this.repository
+        .updateRunMetadata(cronjobId, {
+          lastRunAt: startedAt,
+          lastStatus: JobStatus.FAILED,
+        })
+        .catch((updateErr) => {
+          this.logger.error(
+            `Failed to record FAILED status for "${cronjobName}": ${
+              updateErr instanceof Error ? updateErr.message : String(updateErr)
+            }`,
+          );
+        });
     }
   }
 
