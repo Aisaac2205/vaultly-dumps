@@ -6,6 +6,9 @@ export interface Connection {
   id: string;
   name: string;
   environment: string;
+  dbType?: "postgres" | "mysql";
+  host?: string;
+  database?: string;
 }
 
 export interface Cronjob {

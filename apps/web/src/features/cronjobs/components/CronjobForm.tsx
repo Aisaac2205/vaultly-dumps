@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 import type {
   Cronjob,
   Connection,
@@ -16,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
+import { validateCronExpression } from "../lib/cron-validator";
 
 interface CronPreset {
   label: string;
@@ -83,6 +86,13 @@ export default function CronjobForm({
 
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  const nameCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const c of connections) counts[c.name] = (counts[c.name] ?? 0) + 1;
+    return counts;
+  }, [connections]);
+  const hasDuplicateNames = Object.values(nameCounts).some((n) => n > 1);
+
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
@@ -131,8 +141,9 @@ export default function CronjobForm({
       setValidationError("La conexión es obligatoria");
       return;
     }
-    if (!formData.cronExpression.trim()) {
-      setValidationError("La expresión cron es obligatoria");
+    const cronCheck = validateCronExpression(formData.cronExpression);
+    if (!cronCheck.valid) {
+      setValidationError(cronCheck.error ?? "Expresión cron inválida");
       return;
     }
 
@@ -191,25 +202,73 @@ export default function CronjobForm({
               >
                 Conexión (producción)
               </label>
-              <select
-                id="cronjob-connection"
-                className={inputClass}
-                name="connectionId"
-                value={formData.connectionId}
-                onChange={handleChange}
-                disabled={isLoading || connectionsLoading}
-              >
-                <option value="">
-                  {connectionsLoading
-                    ? "Cargando conexiones..."
-                    : "Seleccionar conexión"}
-                </option>
-                {connections.map((conn) => (
-                  <option key={conn.id} value={conn.id}>
-                    {conn.name}
-                  </option>
-                ))}
-              </select>
+              {connectionsLoading ? (
+                <div
+                  className={`${inputClass} animate-pulse text-muted-foreground`}
+                  aria-busy="true"
+                >
+                  Cargando conexiones…
+                </div>
+              ) : connections.length === 0 ? (
+                <div className="flex items-center justify-between gap-3 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-sm">
+                  <span className="text-muted-foreground">
+                    No hay conexiones de producción
+                  </span>
+                  <Link
+                    to="/connections"
+                    className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    Crear conexión
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <select
+                    id="cronjob-connection"
+                    className={inputClass}
+                    name="connectionId"
+                    value={formData.connectionId}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                  >
+                    <option value="">Seleccionar conexión</option>
+                    {connections.map((conn) => {
+                      const isDuplicate = (nameCounts[conn.name] ?? 0) > 1;
+                      const envSuffix = conn.environment
+                        ? ` · ${conn.environment}`
+                        : "";
+                      let disambiguator = "";
+                      if (isDuplicate) {
+                        if (conn.host && conn.database) {
+                          disambiguator = ` — ${conn.host}/${conn.database}`;
+                        } else if (conn.database) {
+                          disambiguator = ` — ${conn.database}`;
+                        } else {
+                          disambiguator = ` (#${conn.id.slice(0, 6)})`;
+                        }
+                      }
+                      return (
+                        <option key={conn.id} value={conn.id}>
+                          {conn.name}
+                          {envSuffix}
+                          {disambiguator}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {hasDuplicateNames && (
+                    <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                      Hay conexiones con nombres repetidos — se muestra un ID
+                      corto para diferenciarlas. Considerá renombrarlas en{" "}
+                      <Link to="/connections" className="underline">
+                        Conexiones
+                      </Link>
+                      .
+                    </p>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Frecuencia */}
