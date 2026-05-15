@@ -56,10 +56,9 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 
-# BuildKit cache mount: el store de pnpm se persiste entre builds
-# en el daemon de Docker, así cambios en deps no re-descargan todo.
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+# Layer cache de Docker se reusa si package.json y pnpm-lock.yaml
+# no cambiaron — suficiente para builds remotos (Railway) y locales.
+RUN pnpm install --frozen-lockfile
 
 # ── Stage 3: Build ─────────────────────────────────────────────
 # Install + compile + pnpm deploy. NO copia node_modules de otro
@@ -70,8 +69,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 COPY tsconfig.base.json ./
 COPY apps/api/tsconfig.json ./apps/api/
@@ -89,8 +87,7 @@ RUN pnpm --filter @vaultly-control/api build
 # de pnpm v10+). Ese flag debe estar grabado en el lockfile también
 # — si cambia, hay que correr `pnpm install` localmente y commitear
 # el nuevo pnpm-lock.yaml (sino falla con ERR_PNPM_LOCKFILE_CONFIG_MISMATCH).
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm --filter @vaultly-control/api --prod deploy /prod/api
+RUN pnpm --filter @vaultly-control/api --prod deploy /prod/api
 
 # ── Stage 4: Production ────────────────────────────────────────
 FROM base AS production

@@ -17,10 +17,9 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/web/package.json ./apps/web/
 
-# BuildKit cache mount: el store de pnpm se persiste entre builds
-# en el daemon de Docker, así cambios en deps no re-descargan todo.
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+# Layer cache de Docker se reusa si package.json y pnpm-lock.yaml
+# no cambiaron — suficiente para builds remotos (Railway) y locales.
+RUN pnpm install --frozen-lockfile
 
 # ── Stage 3: Build ─────────────────────────────────────────────
 # Install + vite build → bundle estático en apps/web/dist.
@@ -32,8 +31,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/web/package.json ./apps/web/
 
-RUN --mount=type=cache,target=/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 COPY tsconfig.base.json ./
 COPY apps/web/tsconfig.json ./apps/web/
