@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+**/dist
+
+# Environment files (keep .env.example)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Version control
+.git
+
+# Coverage
+coverage
+**/coverage
+
+# Editor
+.vscode
+.idea
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Agent registry
+.atl
+
+# Misc
+*.pem

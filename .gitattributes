@@ -1,0 +1,10 @@
+# Forzar LF en archivos que viven dentro de containers Linux,
+# independiente del SO del dev. Sin esto, devs en Windows hacen
+# checkout con CRLF y los scripts fallan con exit 127 ("not found")
+# porque Linux interpreta el `\r` final de la shebang como parte
+# del path al intérprete.
+*.sh           text eol=lf
+Dockerfile     text eol=lf
+*.Dockerfile   text eol=lf
+docker-compose*.yml text eol=lf
+nginx.conf     text eol=lf

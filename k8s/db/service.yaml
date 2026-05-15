@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-service
+  namespace: vaultly-control
+  labels:
+    app: vaultly-control-db
+spec:
+  type: ClusterIP
+  selector:
+    app: vaultly-control-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP

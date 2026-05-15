@@ -1,0 +1,158 @@
+import { useState } from "react";
+import { Check, ChevronsUpDown, Wifi } from "lucide-react";
+import type { Connection } from "../types";
+import { cn } from "@/shared/lib/cn";
+import { Button } from "@/shared/ui/button";
+import { Badge } from "@/shared/ui/badge";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/shared/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/ui/popover";
+import postgresSvg from "@/shared/assets/PostgresSQL.svg";
+import mysqlSvg from "@/shared/assets/MySQL.svg";
+
+interface ConnectionSelectorProps {
+  connections: Connection[];
+  value: string;
+  onChange: (id: string) => void;
+  disabled?: boolean;
+  loading?: boolean;
+}
+
+const DB_LOGOS: Record<string, string> = {
+  postgres: postgresSvg as string,
+  mysql: mysqlSvg as string,
+};
+
+function DbTypeLogo({ dbType }: { dbType: string }) {
+  const logo = DB_LOGOS[dbType];
+  if (!logo) return null;
+  return (
+    <img
+      src={logo}
+      alt={dbType}
+      className="size-5 shrink-0"
+    />
+  );
+}
+
+function ConnectionItem({
+  conn,
+  isSelected,
+  onSelect,
+}: {
+  conn: Connection;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <CommandItem
+      value={`${conn.name} ${conn.host} ${conn.database} ${conn.dbType}`}
+      onSelect={onSelect}
+      aria-selected={isSelected}
+    >
+      <Check
+        className={cn(
+          "size-4 shrink-0",
+          isSelected ? "opacity-100" : "opacity-0",
+        )}
+      />
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <DbTypeLogo dbType={conn.dbType} />
+        <span className="truncate font-medium">{conn.name}</span>
+        {conn.environment && (
+          <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {conn.environment}
+          </span>
+        )}
+      </div>
+      <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
+        {conn.host}/{conn.database}
+      </span>
+    </CommandItem>
+  );
+}
+
+export function ConnectionSelector({
+  connections,
+  value,
+  onChange,
+  disabled = false,
+  loading = false,
+}: ConnectionSelectorProps) {
+  const [open, setOpen] = useState(false);
+
+  const selected = connections.find((c) => c.id === value);
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-border/50 bg-bg px-3 py-2 text-sm text-muted-foreground">
+        Cargando conexiones...
+      </div>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          aria-label="Seleccionar conexión destino"
+          className="w-full justify-between rounded-xl font-normal"
+          disabled={disabled}
+        >
+          {selected ? (
+            <div className="flex min-w-0 items-center gap-2">
+              <DbTypeLogo dbType={selected.dbType} />
+              <span className="truncate font-medium">{selected.name}</span>
+              {selected.environment && (
+                <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {selected.environment}
+                </span>
+              )}
+              <span className="ml-auto flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+                <Wifi className="h-3 w-3" />
+                Conectado
+              </span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">Buscar conexión...</span>
+          )}
+          <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput placeholder="Buscar por nombre, host o base de datos..." />
+          <CommandList>
+            <CommandEmpty>No se encontraron conexiones</CommandEmpty>
+            <CommandGroup>
+              {connections.map((conn) => (
+                <ConnectionItem
+                  key={conn.id}
+                  conn={conn}
+                  isSelected={value === conn.id}
+                  onSelect={() => {
+                    onChange(conn.id);
+                    setOpen(false);
+                  }}
+                />
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}

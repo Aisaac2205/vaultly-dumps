@@ -1,0 +1,118 @@
+# ── Override para desarrollo local ─────────────────────────────
+# Uso por defecto (api + web + db con hot reload):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Con las DBs de testing (PostgreSQL :5434 + MySQL :3306):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile test up
+#
+# Solo la DB principal (para correr api/web nativas con pnpm dev):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up db
+#
+# NO se carga automáticamente — el nombre `docker-compose.override.yml`
+# (default de Compose) se evitó a propósito para que `docker compose up`
+# sin flags NO arranque dev en un servidor de prod.
+
+services:
+  api:
+    build:
+      target: dev
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./apps/api/tsconfig.json:/app/apps/api/tsconfig.json
+      - ./tsconfig.base.json:/app/tsconfig.base.json
+    command: pnpm --filter @vaultly-control/api dev
+    environment:
+      - NODE_ENV=development
+    # NestJS en watch mode recompila a cada cambio y puede tardar
+    # más que el start_period del healthcheck de prod, marcando el
+    # container como unhealthy aunque esté funcionando bien.
+    healthcheck:
+      disable: true
+
+  web:
+    build:
+      target: dev
+    env_file: .env
+    environment:
+      - NODE_ENV=development
+      - API_PROXY_TARGET=http://api:3000
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/tsconfig.json:/app/apps/web/tsconfig.json
+      # tsconfig.json del web hace `extends: "../../tsconfig.base.json"`
+      # — si no montamos este archivo, vite/tsconfck fallan a resolver
+      # el extends y revientan el dep scan.
+      - ./tsconfig.base.json:/app/tsconfig.base.json
+      - ./apps/web/vite.config.ts:/app/apps/web/vite.config.ts
+      - ./apps/web/components.json:/app/apps/web/components.json
+      - ./apps/web/index.html:/app/apps/web/index.html
+      - ./apps/web/public:/app/apps/web/public
+    command: pnpm --filter @vaultly-control/web dev --host
+    # `!override` reemplaza la lista de ports del compose principal en
+    # lugar de concatenarla. Sin esto, el merge daría
+    # ["5173:80", "5173:5173"] y los dos bindings pelean por el host
+    # port 5173 — exactamente el "port is already allocated" que
+    # tirabas. En prod nginx escucha en 80; en dev vite escucha en
+    # 5173 directo.
+    ports: !override
+      - "5173:5173"
+    # Con el healthcheck del api deshabilitado en dev, relajamos
+    # el depends_on a esperar solo el arranque del container.
+    depends_on:
+      api:
+        condition: service_started
+
+  db:
+    # Re-exponer el puerto en dev para clientes locales (psql,
+    # DBeaver, TablePlus). En prod queda cerrado por el compose
+    # principal.
+    ports:
+      - "5432:5432"
+
+  # ── DBs de testing (opt-in con --profile test) ───────────────
+  # Sirven para validar el flow de connections.test-raw contra
+  # motores reales antes de tocar bases productivas. Antes vivían
+  # en docker-compose.infra.yml; ahora se levantan con:
+  #   docker compose ... --profile test up
+  db-test-pg:
+    profiles: ["test"]
+    image: postgres:16-alpine
+    container_name: vaultly-control-test-pg
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_pass123
+    ports:
+      - "5434:5432"
+    volumes:
+      - db_test_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d testdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  db-test-mysql:
+    profiles: ["test"]
+    image: mysql:8.0
+    container_name: vaultly-control-test-mysql
+    environment:
+      MYSQL_DATABASE: testdb
+      MYSQL_USER: test_user
+      MYSQL_PASSWORD: test_pass123
+      MYSQL_ROOT_PASSWORD: root_pass123
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_test_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_pass123"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  db_test_pg_data:
+  db_test_mysql_data:

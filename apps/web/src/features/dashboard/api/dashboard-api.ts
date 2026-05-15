@@ -1,0 +1,43 @@
+import apiClient from "@/shared/lib/api-client";
+import type {
+  JobSummary,
+  BackupJob,
+  RestoreJob,
+  ConnectionEntity,
+  CronjobEntity,
+  HealthStatus,
+  AuditLog,
+  R2Object,
+} from "../types";
+
+export const dashboardApi = {
+  getSummary: () =>
+    apiClient.get<JobSummary>("/jobs/summary").then((r) => r.data),
+
+  getRecentBackups: (limit = 5) =>
+    apiClient
+      .get<BackupJob[]>("/jobs/backups", { params: { limit } })
+      .then((r) => r.data),
+
+  getRecentRestores: (limit = 5) =>
+    apiClient
+      .get<RestoreJob[]>("/jobs/restores", { params: { limit } })
+      .then((r) => r.data),
+
+  getConnections: () =>
+    apiClient.get<ConnectionEntity[]>("/connections").then((r) => r.data),
+
+  getCronjobs: () =>
+    apiClient.get<CronjobEntity[]>("/cronjobs").then((r) => r.data),
+
+  getHealth: () =>
+    apiClient.get<HealthStatus>("/health").then((r) => r.data),
+
+  getRecentAudit: (limit = 10) =>
+    apiClient
+      .get<AuditLog[]>("/audit", { params: { limit } })
+      .then((r) => r.data),
+
+  getDumpsFromR2: () =>
+    apiClient.get<R2Object[]>("/backups/r2").then((r) => r.data),
+};

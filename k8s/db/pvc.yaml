@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vaultly-control-db-pvc
+  namespace: vaultly-control
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  # Adjust storageClassName to match your Kubernetes provider:
+  #   - minikube: standard
+  #   - GKE: standard-rwo
+  #   - EKS: gp2 or gp3
+  #   - AKS: default
+  #   - local-path-provisioner: local-path
+  storageClassName: standard

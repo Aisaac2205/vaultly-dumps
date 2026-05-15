@@ -1,0 +1,54 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { ConnectionEntity } from '../../database/entities/connection.entity';
+import { Environment } from '../../database/enums/environment.enum';
+
+@Injectable()
+export class ConnectionsRepository {
+  constructor(
+    @InjectRepository(ConnectionEntity)
+    private readonly repository: Repository<ConnectionEntity>,
+  ) {}
+
+  findAll(): Promise<ConnectionEntity[]> {
+    return this.repository.find({ where: { isActive: true } });
+  }
+
+  findById(id: string): Promise<ConnectionEntity | null> {
+    return this.repository.findOne({ where: { id, isActive: true } });
+  }
+
+  findBySlug(slug: string): Promise<ConnectionEntity | null> {
+    return this.repository.findOne({ where: { slug, isActive: true } });
+  }
+
+  findByEnvironment(environment: Environment): Promise<ConnectionEntity[]> {
+    return this.repository.find({ where: { environment, isActive: true } });
+  }
+
+  findByIds(ids: string[]): Promise<ConnectionEntity[]> {
+    if (ids.length === 0) return Promise.resolve([]);
+    return this.repository.find({ where: { id: In(ids), isActive: true } });
+  }
+
+  // Returns slugs from ALL rows (including inactive/soft-deleted) so newly
+  // generated slugs do not collide with retired connections.
+  async findAllSlugs(): Promise<string[]> {
+    const rows = await this.repository.find({ select: { slug: true } });
+    return rows.map((r) => r.slug);
+  }
+
+  create(data: Partial<ConnectionEntity>): Promise<ConnectionEntity> {
+    const entity = this.repository.create(data);
+    return this.repository.save(entity);
+  }
+
+  update(id: string, data: Partial<ConnectionEntity>): Promise<ConnectionEntity> {
+    return this.repository.save({ id, ...data });
+  }
+
+  async softDelete(id: string): Promise<void> {
+    await this.repository.update(id, { isActive: false });
+  }
+}

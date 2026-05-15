@@ -1,0 +1,68 @@
+services:
+  api:
+    image: jefedesarrollocoide/vaultly-api:0.1.1
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+      args:
+        # Versión major del cliente postgresql instalado en la imagen.
+        # Debe ser >= al server PostgreSQL más nuevo que vayas a dumpear.
+        POSTGRES_CLIENT_VERSION: "18"
+    env_file: .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      # /health pinging la DB vía TerminusModule + TypeORM.
+      # Usa el módulo http nativo de Node para evitar depender
+      # de curl/wget (purgados en la imagen final).
+      test:
+        - "CMD-SHELL"
+        - "node -e \"require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    image: jefedesarrollocoide/vaultly-web:0.1.1
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: production
+    env_file: .env
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      # Fail-loud: si una de estas falta en .env, `docker compose
+      # up` aborta antes de arrancar Postgres en lugar de caer a
+      # un default inseguro (antes había :-changeme).
+      POSTGRES_DB: ${DB_NAME:?DB_NAME es obligatorio (ver env.example)}
+      POSTGRES_USER: ${DB_USER:?DB_USER es obligatorio (ver env.example)}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatorio (ver env.example)}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # NO exponer puerto al host en prod: la API se conecta vía la
+    # red interna de Docker (host `db`). Para conectarte con un
+    # cliente desde tu máquina usá docker-compose.dev.yml o un
+    # `docker compose exec db psql`.
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  db_data:

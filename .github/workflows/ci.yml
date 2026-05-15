@@ -1,0 +1,86 @@
+name: Release Vaultly Control
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+
+jobs:
+  release-and-publish:
+    name: "Semantic Release & Docker Push"
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.get_tag.outputs.version }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Run Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: pnpm exec semantic-release --ci
+
+      - name: Get Latest Tag
+        id: get_tag
+        run: |
+          git fetch --tags
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          echo "version=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+
+  update-manifests:
+    name: "Update Kustomization"
+    needs: release-and-publish
+    runs-on: ubuntu-latest
+    if: always() && needs.release-and-publish.result == 'success'
+    steps:
+      - name: Setup Kustomize
+        uses: imranismail/setup-kustomize@v2
+        with:
+          kustomize-version: "5.4.3"
+
+      - name: Update Kubernetes Manifest
+        env:
+          RAW_VERSION: ${{ needs.release-and-publish.outputs.new_version }}
+        run: |
+          VERSION=$(echo "$RAW_VERSION" | sed 's/^v//')
+          git clone https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/COIDEGT/platform-manifests.git temp-manifests
+
+          cd temp-manifests/k8s-manifests/database-tools/vaultly
+
+          kustomize edit set image coidegt/vaultly-api=coidegt/vaultly-api:${VERSION}
+          kustomize edit set image coidegt/vaultly-web=coidegt/vaultly-web:${VERSION}
+
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add kustomization.yaml
+          git commit -m "chore(deploy): update vaultly images to ${VERSION} [skip ci]" || echo "Sin cambios"
+          git push origin main

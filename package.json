@@ -1,0 +1,38 @@
+{
+  "name": "vaultly-control",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.30.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "build": "pnpm --parallel -r run build",
+    "lint": "pnpm --parallel -r run lint",
+    "test": "pnpm --parallel -r run test",
+    "typecheck": "pnpm --parallel -r run typecheck",
+    "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up",
+    "docker:dev:test": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile test up",
+    "docker:db": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up db",
+    "docker:db:test": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile test up db db-test-pg db-test-mysql",
+    "docker:prod": "docker compose -f docker-compose.yml up --build"
+  },
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/github": "^12.0.8",
+    "@semantic-release/release-notes-generator": "^14.1.1",
+    "semantic-release": "^25.0.3",
+    "typescript": "^5.8.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core"
+    ],
+    "ignoredBuiltDependencies": [
+      "@scarf/scarf"
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "branches": ["master"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "docker build --no-cache -f apps/api/Dockerfile -t coidegt/vaultly-api:${nextRelease.version} . && docker build --no-cache -f apps/web/Dockerfile -t coidegt/vaultly-web:${nextRelease.version} .",
+        "publishCmd": "docker push coidegt/vaultly-api:${nextRelease.version} && docker push coidegt/vaultly-web:${nextRelease.version}"
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}

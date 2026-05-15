@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sidebar: #2B2B2B;
+  --color-sidebar-text: #FFFFFF;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.08);
+  --color-sidebar-active: rgba(255, 255, 255, 0.15);
+  --color-bg: #FFFFFF;
+  --color-bg-subtle: #F7F7F7;
+  --color-background: #FFFFFF;
+  --color-text-primary: #2B2B2B;
+  --color-text-secondary: #6B6B6B;
+  --color-border: #E5E5E5;
+  --color-success: #22C55E;
+  --color-success-bg: #F0FDF4;
+  --color-info: #3B82F6;
+  --color-info-bg: #EFF6FF;
+  --color-warning: #EAB308;
+  --color-warning-bg: #FEFCE8;
+  --color-error: #EF4444;
+  --color-error-bg: #FEF2F2;
+  /* shadcn/ui popover & dialog colors */
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #2B2B2B;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #2B2B2B;
+  --color-accent: #F5F5F5;
+  --color-accent-foreground: #2B2B2B;
+  --color-muted: #F5F5F5;
+  --color-muted-foreground: #737373;
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-ring: #2B2B2B;
+  --color-input: #E5E5E5;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 10%;
+    --radius: 0.5rem;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    color: var(--color-text-primary);
+    background-color: var(--color-bg);
+    line-height: 1.5;
+  }
+
+  code,
+  pre,
+  kbd {
+    font-family: var(--font-mono);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+
+  ul,
+  ol {
+    list-style: none;
+  }
+
+  img,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+}

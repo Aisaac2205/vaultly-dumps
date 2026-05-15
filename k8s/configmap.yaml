@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vaultly-control-config
+  namespace: vaultly-control
+data:
+  # ── API ──────────────────────────────────────────────────────
+  NODE_ENV: "production"
+  PORT: "3000"
+  # SQL identifiers no aceptan guiones unquoted — uso underscore.
+  DB_NAME: "vaultly_control"
+  DATABASE_URL: "postgresql://vaultly_control:changeme@db-service:5432/vaultly_control"
+  CORS_ORIGIN: "http://localhost"
+
+  # ── Keycloak ─────────────────────────────────────────────────
+  KEYCLOAK_URL: "http://keycloak:8080"
+  KEYCLOAK_REALM: "vaultly-control"
+  KEYCLOAK_CLIENT_ID: "vaultly-control-api"
+
+  # ── Cloudflare R2 ────────────────────────────────────────────
+  # Endpoint is derived from R2_ACCOUNT_ID at runtime.
+  R2_ACCOUNT_ID: "<your-cloudflare-account-id>"
+  R2_BUCKET_NAME: "vaultly-control-dumps"
+  R2_PUBLIC_BASE_URL: ""
+
+  # ── Web (runtime — injected by entrypoint.sh into config.js) ─
+  VITE_API_URL: "http://localhost:3000"
+  VITE_KEYCLOAK_URL: "http://keycloak:8080"
+  VITE_KEYCLOAK_REALM: "vaultly-control"
+  VITE_KEYCLOAK_CLIENT_ID: "vaultly-control-web"
+  VITE_APP_BASE_URL: "http://localhost"
+
