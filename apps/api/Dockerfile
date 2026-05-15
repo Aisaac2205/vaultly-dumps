@@ -58,7 +58,7 @@ COPY apps/api/package.json ./apps/api/
 
 # BuildKit cache mount: el store de pnpm se persiste entre builds
 # en el daemon de Docker, así cambios en deps no re-descargan todo.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+RUN --mount=type=cache,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 # ── Stage 3: Build ─────────────────────────────────────────────
@@ -70,7 +70,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+RUN --mount=type=cache,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 COPY tsconfig.base.json ./
@@ -89,7 +89,7 @@ RUN pnpm --filter @vaultly-control/api build
 # de pnpm v10+). Ese flag debe estar grabado en el lockfile también
 # — si cambia, hay que correr `pnpm install` localmente y commitear
 # el nuevo pnpm-lock.yaml (sino falla con ERR_PNPM_LOCKFILE_CONFIG_MISMATCH).
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+RUN --mount=type=cache,target=/pnpm/store \
     pnpm --filter @vaultly-control/api --prod deploy /prod/api
 
 # ── Stage 4: Production ────────────────────────────────────────
@@ -108,7 +108,7 @@ USER node
 EXPOSE 3000
 
 # HEALTHCHECK definido en la imagen → válido también fuera de compose
-# (k8s, ECS, runners CI). El módulo http de Node evita depender de
+# (Railway, ECS, runners CI). El módulo http de Node evita depender de
 # curl/wget (purgados en base).
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
     CMD node -e "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"

@@ -19,7 +19,7 @@ COPY apps/web/package.json ./apps/web/
 
 # BuildKit cache mount: el store de pnpm se persiste entre builds
 # en el daemon de Docker, así cambios en deps no re-descargan todo.
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+RUN --mount=type=cache,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 # ── Stage 3: Build ─────────────────────────────────────────────
@@ -32,7 +32,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/web/package.json ./apps/web/
 
-RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
+RUN --mount=type=cache,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
 COPY tsconfig.base.json ./
