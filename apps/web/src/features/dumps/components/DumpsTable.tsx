@@ -15,55 +15,59 @@ const columns: Column<BackupJob>[] = [
   {
     header: "Conexión",
     accessor: (job) => (
-      <div className="min-w-[240px]">
-        <p className="truncate font-medium text-sm">
-          {job.connectionName}
-        </p>
-      </div>
+      <p className="truncate font-medium text-sm" title={job.connectionName}>
+        {job.connectionName}
+      </p>
     ),
+    className: "w-[24%] align-middle",
+    headerClassName: "w-[24%] text-left",
   },
 
   {
     header: "Fecha",
     accessor: (job) => (
-      <div className="min-w-[150px]">
-        <span className="font-mono text-xs text-muted-foreground">
-          {formatDate(job.createdAt)}
-        </span>
-      </div>
+      <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+        {formatDate(job.createdAt)}
+      </span>
     ),
+    className: "w-[14%] text-center align-middle",
+    headerClassName: "w-[14%] text-center",
   },
 
   {
     header: "Origen",
     accessor: (job) => (
-      <div className="w-[80px]">
-        <span className="text-xs text-muted-foreground">
-          {job.triggeredBy === "system-cronjob" ? "Cronjob" : "Manual"}
-        </span>
-      </div>
+      <span className="text-xs text-muted-foreground">
+        {job.triggeredBy === "system-cronjob" ? "Cronjob" : "Manual"}
+      </span>
     ),
+    className: "w-[11%] text-center align-middle",
+    headerClassName: "w-[11%] text-center",
   },
 
   {
     header: "Estado",
     accessor: (job) => (
-      <div className="flex items-center min-w-[160px]">
+      <div className="flex flex-col items-center gap-1">
         <StatusBadge status={job.status} />
-
         {job.status === "failed" && job.errorMessage && (
-          <p className="ml-2 truncate text-xs font-mono text-error">
+          <p
+            className="max-w-full truncate text-[10px] font-mono text-error"
+            title={job.errorMessage}
+          >
             {job.errorMessage}
           </p>
         )}
       </div>
     ),
+    className: "w-[20%] text-center align-middle",
+    headerClassName: "w-[20%] text-center",
   },
 
   {
     header: "Storage",
     accessor: () => (
-      <div className="flex items-center justify-center w-[80px]">
+      <div className="flex items-center justify-center">
         <img
           src={cloudflareSvg}
           alt="Cloudflare R2"
@@ -71,28 +75,32 @@ const columns: Column<BackupJob>[] = [
         />
       </div>
     ),
+    className: "w-[8%] text-center align-middle",
+    headerClassName: "w-[8%] text-center",
   },
 
   {
     header: "Tamaño",
     accessor: (job) => (
-      <div className="w-[90px]">
-        <span className="font-mono text-xs text-muted-foreground">
-          {job.fileSizeMb != null
-            ? formatSize(job.fileSizeMb * 1024 * 1024)
-            : "—"}
-        </span>
-      </div>
+      <span className="font-mono text-xs text-muted-foreground">
+        {job.fileSizeMb != null
+          ? formatSize(job.fileSizeMb * 1024 * 1024)
+          : "—"}
+      </span>
     ),
+    className: "w-[10%] text-center align-middle",
+    headerClassName: "w-[10%] text-center",
   },
 
   {
     header: "Acciones",
     accessor: (job) => (
-      <div className="flex justify-end w-[140px]">
+      <div className="flex items-center justify-center">
         <DumpActions job={job} />
       </div>
     ),
+    className: "w-[13%] text-center align-middle",
+    headerClassName: "w-[13%] text-center",
   },
 ];
 
