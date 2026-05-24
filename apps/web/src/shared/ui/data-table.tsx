@@ -35,14 +35,14 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const headPadding = compact ? "px-3 py-2" : "px-6 py-4";
   const cellPadding = compact ? "px-3 py-2" : "px-6 py-5";
-  const wrapperClass = className ?? "rounded-xl border";
+  const wrapperClass = className ?? "rounded-xl bg-card shadow-sm overflow-hidden";
 
   if (loading) {
     return (
       <div className={wrapperClass}>
         <Table className={compact ? "" : "table-fixed"}>
           <TableHeader>
-            <TableRow className="border-b">
+            <TableRow>
               {columns.map((col, i) => (
                 <TableHead
                   key={i}
@@ -101,7 +101,7 @@ export function DataTable<T>({
           {data.map((item, rowIdx) => (
             <TableRow
               key={rowIdx}
-              className="border-b transition-colors hover:bg-muted/30"
+              className="transition-colors hover:bg-muted/30"
             >
               {columns.map((col, colIdx) => (
                 <TableCell
