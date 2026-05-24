@@ -5,6 +5,8 @@ import {
   NotFoundException,
   OnApplicationBootstrap,
 } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { CronjobsRepository } from './cronjobs.repository';
@@ -52,6 +54,8 @@ export class CronjobsService implements OnApplicationBootstrap {
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly backupService: BackupService,
     private readonly connectionsService: ConnectionsService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   private async enrichWithConnectionName(
@@ -76,6 +80,9 @@ export class CronjobsService implements OnApplicationBootstrap {
 
   async onApplicationBootstrap(): Promise<void> {
     try {
+      // CJ-2: Reset stale RUNNING jobs from previous crashes
+      await this.repository.resetStaleRunning();
+
       const active = await this.repository.findAllActive();
       for (const cronjob of active) {
         this.registerCronJob(cronjob);
@@ -231,6 +238,9 @@ export class CronjobsService implements OnApplicationBootstrap {
     const period = FREQUENCY_TO_PERIOD_MS[cronjob.frequency];
     if (!period) return;
 
+    // CJ-3: Skip catch-up if the job is already running
+    if (cronjob.lastStatus === JobStatus.RUNNING) return;
+
     const reference = cronjob.lastRunAt ?? cronjob.createdAt;
     const elapsed = Date.now() - reference.getTime();
 
@@ -265,51 +275,71 @@ export class CronjobsService implements OnApplicationBootstrap {
     let cronjobName = cronjobId;
 
     try {
-      const cronjob = await this.repository.findById(cronjobId);
-      if (!cronjob?.isActive) return;
-      cronjobName = cronjob.name;
-
-      this.logger.log(
-        `Executing cronjob "${cronjob.name}" → connection ${cronjob.connectionId}`,
+      // CJ-1: Acquire advisory lock to prevent duplicate execution across replicas.
+      // pg_try_advisory_lock returns immediately (false if another replica holds it).
+      const lockId = this.stableHash(cronjobId);
+      const lockResult = await this.dataSource.query(
+        'SELECT pg_try_advisory_lock($1) AS acquired',
+        [lockId],
       );
-
-      await this.repository.updateRunMetadata(cronjobId, {
-        lastRunAt: startedAt,
-        lastStatus: JobStatus.RUNNING,
-      });
+      if (!lockResult[0]?.acquired) {
+        this.logger.debug(`Cronjob "${cronjobId}" skipped — lock held by another replica`);
+        return;
+      }
 
       try {
-        await this.backupService.createBackup(
-          { connectionId: cronjob.connectionId },
-          SYSTEM_USER,
-          FREQUENCY_TO_CATEGORY[cronjob.frequency],
+        const cronjob = await this.repository.findById(cronjobId);
+        if (!cronjob?.isActive) return;
+        cronjobName = cronjob.name;
+
+        // Skip if already running (guards against catch-up + tick overlap)
+        if (cronjob.lastStatus === JobStatus.RUNNING) {
+          this.logger.debug(`Cronjob "${cronjob.name}" skipped — already RUNNING`);
+          return;
+        }
+
+        this.logger.log(
+          `Executing cronjob "${cronjob.name}" → connection ${cronjob.connectionId}`,
         );
 
         await this.repository.updateRunMetadata(cronjobId, {
           lastRunAt: startedAt,
-          lastStatus: JobStatus.COMPLETED,
-          nextRunAt: this.getNextRunDate(cronjobId),
+          lastStatus: JobStatus.RUNNING,
         });
 
-        this.logger.log(`Cronjob "${cronjob.name}" completed`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Error desconocido';
-        this.logger.error(`Cronjob "${cronjob.name}" failed: ${message}`);
+        try {
+          await this.backupService.createBackup(
+            { connectionId: cronjob.connectionId },
+            SYSTEM_USER,
+            FREQUENCY_TO_CATEGORY[cronjob.frequency],
+          );
 
-        // The FAILED write itself can throw (DB still down) — swallow it so
-        // we don't escape the outer try.
-        await this.repository
-          .updateRunMetadata(cronjobId, {
+          await this.repository.updateRunMetadata(cronjobId, {
             lastRunAt: startedAt,
-            lastStatus: JobStatus.FAILED,
-          })
-          .catch((updateErr) => {
-            this.logger.error(
-              `Failed to persist FAILED status for "${cronjob.name}": ${
-                updateErr instanceof Error ? updateErr.message : String(updateErr)
-              }`,
-            );
+            lastStatus: JobStatus.COMPLETED,
+            nextRunAt: this.getNextRunDate(cronjobId),
           });
+
+          this.logger.log(`Cronjob "${cronjob.name}" completed`);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Error desconocido';
+          this.logger.error(`Cronjob "${cronjob.name}" failed: ${message}`);
+
+          await this.repository
+            .updateRunMetadata(cronjobId, {
+              lastRunAt: startedAt,
+              lastStatus: JobStatus.FAILED,
+            })
+            .catch((updateErr) => {
+              this.logger.error(
+                `Failed to persist FAILED status for "${cronjob.name}": ${
+                  updateErr instanceof Error ? updateErr.message : String(updateErr)
+                }`,
+              );
+            });
+        }
+      } finally {
+        await this.dataSource.query('SELECT pg_advisory_unlock($1)', [lockId]);
       }
     } catch (error) {
       const message =
@@ -318,6 +348,15 @@ export class CronjobsService implements OnApplicationBootstrap {
         `executeCronjob("${cronjobName}") crashed before status tracking: ${message}`,
       );
     }
+  }
+
+  private stableHash(uuid: string): number {
+    // Convert UUID to a stable 32-bit integer for pg_advisory_lock
+    let hash = 0;
+    for (let i = 0; i < uuid.length; i++) {
+      hash = ((hash << 5) - hash + uuid.charCodeAt(i)) | 0;
+    }
+    return hash;
   }
 
   private getNextRunDate(cronjobId: string): Date | null {

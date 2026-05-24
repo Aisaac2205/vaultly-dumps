@@ -42,6 +42,14 @@ export class CronjobsRepository {
     await this.repository.update(id, data);
   }
 
+  async resetStaleRunning(): Promise<number> {
+    const result = await this.repository.update(
+      { lastStatus: JobStatus.RUNNING },
+      { lastStatus: JobStatus.FAILED },
+    );
+    return result.affected ?? 0;
+  }
+
   async delete(id: string): Promise<void> {
     await this.repository.delete(id);
   }
