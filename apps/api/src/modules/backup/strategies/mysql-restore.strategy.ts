@@ -1,8 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { spawn } from 'child_process';
-import { writeFileSync, unlinkSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
 import { RestoreStrategy } from '../interfaces/restore-strategy.interface';
 import { ConnectionEntity } from '../../../database/entities/connection.entity';
 
@@ -34,7 +31,7 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
 
     const truncateSql = [
       'SET FOREIGN_KEY_CHECKS = 0;',
-      ...tables.map((t) => `TRUNCATE TABLE \`${t}\`;`),
+      ...tables.map((t) => `TRUNCATE TABLE \`${t.replace(/`/g, '``')}\`;`),
       'SET FOREIGN_KEY_CHECKS = 1;',
     ].join('\n');
 
@@ -44,6 +41,14 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
 
   private getTableNames(connection: ConnectionEntity): Promise<string[]> {
     return new Promise((resolve, reject) => {
+      let settled = false;
+      const settle = (fn: typeof resolve | typeof reject, value: unknown) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        (fn as (v: unknown) => void)(value);
+      };
+
       const args = [
         '-h',
         connection.host,
@@ -62,6 +67,12 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
       const child = spawn('mysql', args, {
         env: { ...process.env, MYSQL_PWD: connection.password },
       });
+
+      const timeout = setTimeout(() => {
+        child.kill();
+        settle(reject, new Error(`mysql SHOW TABLES exceeded ${RESTORE_TIMEOUT_MS}ms timeout`));
+      }, RESTORE_TIMEOUT_MS);
+
       let stdout = '';
 
       child.stdout.on('data', (chunk: Buffer) => {
@@ -73,16 +84,12 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
       });
 
       child.on('error', (error: Error) => {
-        reject(new Error(`mysql SHOW TABLES failed to start: ${error.message}`));
+        settle(reject, new Error(`mysql SHOW TABLES failed to start: ${error.message}`));
       });
 
       child.on('close', (code: number | null) => {
         if (code !== 0) {
-          reject(
-            new Error(
-              `mysql SHOW TABLES exited with code ${code ?? 'unknown'}`,
-            ),
-          );
+          settle(reject, new Error(`mysql SHOW TABLES exited with code ${code ?? 'unknown'}`));
           return;
         }
 
@@ -91,7 +98,7 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
           .map((line) => line.trim())
           .filter((line) => line.length > 0);
 
-        resolve(tables);
+        settle(resolve, tables);
       });
     });
   }
@@ -101,6 +108,14 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
     sql: string,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
+      let settled = false;
+      const settle = (fn: typeof resolve | typeof reject, value?: unknown) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        (fn as (v?: unknown) => void)(value);
+      };
+
       const args = [
         '-h',
         connection.host,
@@ -118,6 +133,11 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         env: { ...process.env, MYSQL_PWD: connection.password },
       });
 
+      const timeout = setTimeout(() => {
+        child.kill();
+        settle(reject, new Error(`mysql execute exceeded ${RESTORE_TIMEOUT_MS}ms timeout`));
+      }, RESTORE_TIMEOUT_MS);
+
       let stderr = '';
 
       child.stderr.on('data', (chunk: Buffer) => {
@@ -125,19 +145,18 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
       });
 
       child.on('error', (error: Error) => {
-        reject(new Error(`mysql execute failed to start: ${error.message}`));
+        settle(reject, new Error(`mysql execute failed to start: ${error.message}`));
       });
 
       child.on('close', (code: number | null) => {
         if (code !== 0) {
-          reject(
-            new Error(
-              `mysql execute exited with code ${code ?? 'unknown'}: ${stderr.trim()}`,
-            ),
+          settle(
+            reject,
+            new Error(`mysql execute exited with code ${code ?? 'unknown'}: ${stderr.trim()}`),
           );
           return;
         }
-        resolve();
+        settle(resolve);
       });
     });
   }
@@ -148,10 +167,13 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
     onLog: (message: string) => void,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        mysqlChild.kill();
-        reject(new Error(`mysql restore exceeded ${RESTORE_TIMEOUT_MS}ms timeout`));
-      }, RESTORE_TIMEOUT_MS);
+      let settled = false;
+      const settle = (fn: typeof resolve | typeof reject, value?: unknown) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        (fn as (v?: unknown) => void)(value);
+      };
 
       const args = [
         '-h',
@@ -170,6 +192,11 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         env: { ...process.env, MYSQL_PWD: connection.password },
       });
 
+      const timeout = setTimeout(() => {
+        mysqlChild.kill();
+        settle(reject, new Error(`mysql restore exceeded ${RESTORE_TIMEOUT_MS}ms timeout`));
+      }, RESTORE_TIMEOUT_MS);
+
       mysqlChild.stderr.on('data', (chunk: Buffer) => {
         const lines = chunk
           .toString()
@@ -182,20 +209,14 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
       });
 
       mysqlChild.on('error', (error: Error) => {
-        clearTimeout(timeout);
-        reject(new Error(`mysql restore failed to start: ${error.message}`));
+        settle(reject, new Error(`mysql restore failed to start: ${error.message}`));
       });
 
       mysqlChild.on('close', (code: number | null) => {
-        clearTimeout(timeout);
         if (code === 0) {
-          resolve();
+          settle(resolve);
         } else {
-          reject(
-            new Error(
-              `mysql restore exited with code ${code ?? 'unknown'}`,
-            ),
-          );
+          settle(reject, new Error(`mysql restore exited with code ${code ?? 'unknown'}`));
         }
       });
     });
