@@ -20,14 +20,15 @@ import { Environment } from '../../database/enums/environment.enum';
 import { DbTypeEnum } from '../../database/enums/db-type.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { BackupCategory } from '../../database/enums/backup-category.enum';
-import { DryRunResult } from './interfaces/dry-run-result.interface';
+import { DryRunResult, DryRunSnapshot, DryRunDiff } from './interfaces/dry-run-result.interface';
+import { DumpManifest } from '../backup/interfaces/dump-manifest.interface';
 import { ConnectionEntity } from '../../database/entities/connection.entity';
 import { SseService } from '../../shared/sse/sse.service';
 import { RestoreStrategy } from '../backup/interfaces/restore-strategy.interface';
 import { Client } from 'pg';
 import { createConnection as createMysqlConnection, RowDataPacket } from 'mysql2/promise';
 
-const TRUNCATE_TIMEOUT_MS = 30_000;
+const SNAPSHOT_TIMEOUT_MS = 10_000;
 
 @Injectable()
 export class RestoreService implements OnApplicationBootstrap {
@@ -100,11 +101,7 @@ export class RestoreService implements OnApplicationBootstrap {
     }
 
     if (dto.isDryRun) {
-      // Dry runs work the same regardless of source — analyze target DB
-      const result = await this.dryRun(
-        dto.sourceBackupId ?? dto.r2Key!,
-        dto.targetConnectionId,
-      );
+      const result = await this.dryRun(fileKey, targetConnection);
 
       const dryJob = await this.restoreRepository.create({
         sourceBackupId: isR2Restore ? null : dto.sourceBackupId!,
@@ -253,27 +250,41 @@ export class RestoreService implements OnApplicationBootstrap {
     }
   }
 
-  async dryRun(
-    _backupId: string,
-    targetConnectionId: string,
+  private async dryRun(
+    fileKey: string,
+    targetConnection: ConnectionEntity,
   ): Promise<DryRunResult> {
-    const targetConnection =
-      await this.connectionsService.findById(targetConnectionId);
-
-    if (targetConnection.dbType === DbTypeEnum.MYSQL) {
-      return this.dryRunMySQL(targetConnection);
+    // 1. Try to load manifest from R2
+    const manifestKey = fileKey.replace(/\.dump$/, '.manifest.json');
+    let source: DryRunSnapshot | null = null;
+    try {
+      const manifest = await this.r2Service.downloadJson<DumpManifest>(manifestKey);
+      source = manifest.source;
+    } catch {
+      this.logger.warn(`No manifest found for ${manifestKey} — dry run will be target-only`);
     }
-    return this.dryRunPostgres(targetConnection);
+
+    // 2. Capture target snapshot
+    const target = targetConnection.dbType === DbTypeEnum.MYSQL
+      ? await this.captureTargetMySQL(targetConnection)
+      : await this.captureTargetPostgres(targetConnection);
+
+    // 3. Compute diff if source is available
+    const diff = source ? this.computeDiff(source, target) : null;
+
+    return { source, target, diff, manifestAvailable: source !== null };
   }
 
-  private async dryRunPostgres(connection: ConnectionEntity): Promise<DryRunResult> {
+  private async captureTargetPostgres(
+    connection: ConnectionEntity,
+  ): Promise<DryRunSnapshot> {
     const client = new Client({
       host: connection.host,
       port: connection.port,
       database: connection.database,
       user: connection.username,
       password: connection.password,
-      connectionTimeoutMillis: TRUNCATE_TIMEOUT_MS,
+      connectionTimeoutMillis: SNAPSHOT_TIMEOUT_MS,
     });
 
     try {
@@ -284,20 +295,22 @@ export class RestoreService implements OnApplicationBootstrap {
         WHERE schemaname = 'public'
         ORDER BY n_live_tup DESC
       `);
-      return this.mapDryRunRows(result.rows);
+      return this.toSnapshot(result.rows);
     } finally {
       await client.end().catch(() => undefined);
     }
   }
 
-  private async dryRunMySQL(connection: ConnectionEntity): Promise<DryRunResult> {
+  private async captureTargetMySQL(
+    connection: ConnectionEntity,
+  ): Promise<DryRunSnapshot> {
     const conn = await createMysqlConnection({
       host: connection.host,
       port: connection.port,
       database: connection.database,
       user: connection.username,
       password: connection.password,
-      connectTimeout: TRUNCATE_TIMEOUT_MS,
+      connectTimeout: SNAPSHOT_TIMEOUT_MS,
     });
 
     try {
@@ -307,15 +320,15 @@ export class RestoreService implements OnApplicationBootstrap {
         WHERE TABLE_SCHEMA = DATABASE()
         ORDER BY TABLE_ROWS DESC
       `);
-      return this.mapDryRunRows(rows);
+      return this.toSnapshot(rows);
     } finally {
       await conn.end();
     }
   }
 
-  private mapDryRunRows(
+  private toSnapshot(
     rows: Array<{ name: string; estimated_rows: string }>,
-  ): DryRunResult {
+  ): DryRunSnapshot {
     const tables = rows.map((row) => ({
       name: row.name,
       estimatedRows: Number(row.estimated_rows),
@@ -325,6 +338,32 @@ export class RestoreService implements OnApplicationBootstrap {
       estimatedRows: tables.reduce((sum, t) => sum + t.estimatedRows, 0),
       tables,
     };
+  }
+
+  private computeDiff(
+    source: DryRunSnapshot,
+    target: DryRunSnapshot,
+  ): DryRunDiff {
+    const sourceMap = new Map(source.tables.map((t) => [t.name, t.estimatedRows]));
+    const targetMap = new Map(target.tables.map((t) => [t.name, t.estimatedRows]));
+
+    const added = source.tables
+      .filter((t) => !targetMap.has(t.name))
+      .map((t) => t.name);
+
+    const removed = target.tables
+      .filter((t) => !sourceMap.has(t.name))
+      .map((t) => t.name);
+
+    const common = source.tables
+      .filter((t) => targetMap.has(t.name))
+      .map((t) => ({
+        name: t.name,
+        sourceRows: t.estimatedRows,
+        targetRows: targetMap.get(t.name)!,
+      }));
+
+    return { added, removed, common };
   }
 
   /**
