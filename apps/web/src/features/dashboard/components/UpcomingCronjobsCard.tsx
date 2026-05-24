@@ -29,7 +29,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
             {upcoming.map((cj) => (
               <div
                 key={cj.id}
-                className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
+                className="flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-sm"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{cj.name}</p>
