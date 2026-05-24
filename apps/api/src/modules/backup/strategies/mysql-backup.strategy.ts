@@ -5,6 +5,8 @@ import { BackupStrategy } from '../interfaces/backup-strategy.interface';
 import { R2Service } from '../r2.service';
 import { ConnectionEntity } from '../../../database/entities/connection.entity';
 
+const BACKUP_TIMEOUT_MS = 600_000;
+
 @Injectable()
 export class MySQLBackupStrategy implements BackupStrategy {
   constructor(private readonly r2Service: R2Service) {}
@@ -21,6 +23,7 @@ export class MySQLBackupStrategy implements BackupStrategy {
       const settle = (fn: typeof resolve | typeof reject, value: unknown) => {
         if (settled) return;
         settled = true;
+        clearTimeout(timeout);
         (fn as (v: unknown) => void)(value);
       };
 
@@ -33,6 +36,8 @@ export class MySQLBackupStrategy implements BackupStrategy {
         '--events',
         '--single-transaction',
         '--no-tablespaces',
+        '--set-gtid-purged=OFF',
+        '--default-character-set=utf8mb4',
         connection.database,
       ];
 
@@ -40,6 +45,11 @@ export class MySQLBackupStrategy implements BackupStrategy {
       const mySqlDump = spawn('mysqldump', args, {
         env: { ...process.env, MYSQL_PWD: connection.password },
       });
+
+      const timeout = setTimeout(() => {
+        mySqlDump.kill();
+        settle(reject, new Error(`mysqldump exceeded ${BACKUP_TIMEOUT_MS}ms timeout`));
+      }, BACKUP_TIMEOUT_MS);
 
       let totalBytes = 0;
       const counter = new Transform({
@@ -59,15 +69,16 @@ export class MySQLBackupStrategy implements BackupStrategy {
         settle(reject, error);
       });
 
-      const uploadPromise = this.r2Service.upload(fileKey, counter, { metadata });
-
       mySqlDump.stdout.pipe(counter);
+
+      const uploadPromise = this.r2Service.upload(fileKey, counter, { metadata });
 
       mySqlDump.on('close', (code: number | null) => {
         if (code !== 0) {
           const detail = stderrBuffer.trim() || `exit code ${code ?? 'unknown'}`;
           const error = new Error(`mysqldump failed: ${detail}`);
           counter.destroy(error);
+          uploadPromise.catch(() => {});
           settle(reject, error);
           return;
         }
