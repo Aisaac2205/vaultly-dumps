@@ -93,17 +93,33 @@ export class R2Service {
   }
 
   async list(prefix?: string): Promise<R2Object[]> {
-    const command = new ListObjectsV2Command({
-      Bucket: this.bucket,
-      Prefix: prefix,
-    });
-    const response = await this.client.send(command);
-    return (response.Contents ?? []).map((obj: _Object) => ({
-      key: obj.Key ?? '',
-      size: obj.Size ?? 0,
-      lastModified: obj.LastModified ?? new Date(),
-      etag: obj.ETag ?? '',
-    }));
+    const results: R2Object[] = [];
+    let continuationToken: string | undefined;
+
+    do {
+      const response = await this.client.send(
+        new ListObjectsV2Command({
+          Bucket: this.bucket,
+          Prefix: prefix,
+          ContinuationToken: continuationToken,
+        }),
+      );
+
+      for (const obj of response.Contents ?? []) {
+        results.push({
+          key: obj.Key ?? '',
+          size: obj.Size ?? 0,
+          lastModified: obj.LastModified ?? new Date(),
+          etag: obj.ETag ?? '',
+        });
+      }
+
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
+
+    return results;
   }
 
   async delete(key: string): Promise<void> {
