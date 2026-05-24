@@ -68,88 +68,90 @@ export default function CronjobsTable({
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Nombre</TableHead>
-          <TableHead>Conexión</TableHead>
-          <TableHead>Expresión Cron</TableHead>
-          <TableHead>Próxima Ejecución</TableHead>
-          <TableHead>Último Estado</TableHead>
-          <TableHead>Activo</TableHead>
-          <TableHead>Acciones</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {cronjobs.map((cronjob) => {
-          const isToggling = toggleLoading[cronjob.id] ?? false;
+    <div className="overflow-x-auto rounded-xl bg-card shadow-sm">
+      <Table className="min-w-[760px]">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nombre</TableHead>
+            <TableHead>Conexión</TableHead>
+            <TableHead>Expresión Cron</TableHead>
+            <TableHead>Próxima Ejecución</TableHead>
+            <TableHead>Último Estado</TableHead>
+            <TableHead>Activo</TableHead>
+            <TableHead>Acciones</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {cronjobs.map((cronjob) => {
+            const isToggling = toggleLoading[cronjob.id] ?? false;
 
-          return (
-            <TableRow key={cronjob.id}>
-              <TableCell className="font-medium">{cronjob.name}</TableCell>
-              <TableCell>
-                <ConnectionLabel
-                  id={cronjob.connectionId}
-                  name={cronjob.connectionName}
-                  showEnv
-                />
-              </TableCell>
-              <TableCell className="font-mono text-xs">
-                {cronjob.cronExpression}
-              </TableCell>
-              <TableCell className="font-mono text-xs">
-                {formatDate(cronjob.nextRunAt)}
-              </TableCell>
-              <TableCell>
-                {cronjob.lastStatus ? (
-                  <StatusBadge status={cronjob.lastStatus} />
-                ) : (
-                  <span className="font-mono text-xs text-muted-foreground">
-                    —
-                  </span>
-                )}
-              </TableCell>
-              <TableCell>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={cronjob.isActive}
-                  aria-label={
-                    cronjob.isActive ? "Desactivar cronjob" : "Activar cronjob"
-                  }
-                  disabled={isToggling}
-                  onClick={() => onToggle(cronjob.id)}
-                  className="rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {cronjob.isActive ? (
-                    <ToggleRight className="h-5 w-5 text-primary" />
+            return (
+              <TableRow key={cronjob.id}>
+                <TableCell className="font-medium">{cronjob.name}</TableCell>
+                <TableCell>
+                  <ConnectionLabel
+                    id={cronjob.connectionId}
+                    name={cronjob.connectionName}
+                    showEnv
+                  />
+                </TableCell>
+                <TableCell className="whitespace-nowrap font-mono text-xs">
+                  {cronjob.cronExpression}
+                </TableCell>
+                <TableCell className="whitespace-nowrap font-mono text-xs">
+                  {formatDate(cronjob.nextRunAt)}
+                </TableCell>
+                <TableCell>
+                  {cronjob.lastStatus ? (
+                    <StatusBadge status={cronjob.lastStatus} />
                   ) : (
-                    <ToggleLeft className="h-5 w-5" />
+                    <span className="font-mono text-xs text-muted-foreground">
+                      —
+                    </span>
                   )}
-                </button>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEdit(cronjob)}
+                </TableCell>
+                <TableCell>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={cronjob.isActive}
+                    aria-label={
+                      cronjob.isActive ? "Desactivar cronjob" : "Activar cronjob"
+                    }
+                    disabled={isToggling}
+                    onClick={() => onToggle(cronjob.id)}
+                    className="rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Editar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onDelete(cronjob.id)}
-                  >
-                    Eliminar
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+                    {cronjob.isActive ? (
+                      <ToggleRight className="h-5 w-5 text-primary" />
+                    ) : (
+                      <ToggleLeft className="h-5 w-5" />
+                    )}
+                  </button>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(cronjob)}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onDelete(cronjob.id)}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
