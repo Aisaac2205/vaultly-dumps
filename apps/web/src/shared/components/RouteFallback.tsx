@@ -6,7 +6,7 @@ export function RouteFallback() {
       role="status"
       aria-label="Cargando página"
       aria-live="polite"
-      className="mx-auto max-w-7xl space-y-5 p-6 lg:p-8"
+      className="mx-auto max-w-7xl space-y-5 p-4 sm:p-6 lg:p-8"
     >
       <div className="space-y-2">
         <Skeleton className="h-7 w-48" />
