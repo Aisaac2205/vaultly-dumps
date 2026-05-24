@@ -30,8 +30,8 @@ const columns: Column<BackupJob>[] = [
         {formatDate(job.createdAt)}
       </span>
     ),
-    className: "w-[14%]",
-    headerClassName: "w-[14%]",
+    className: "w-[14%] hidden sm:table-cell",
+    headerClassName: "w-[14%] hidden sm:table-cell",
   },
 
   {
@@ -41,8 +41,8 @@ const columns: Column<BackupJob>[] = [
         {job.triggeredBy === "system-cronjob" ? "Cronjob" : "Manual"}
       </span>
     ),
-    className: "w-[11%]",
-    headerClassName: "w-[11%]",
+    className: "w-[11%] hidden sm:table-cell",
+    headerClassName: "w-[11%] hidden sm:table-cell",
   },
 
   {
@@ -75,8 +75,8 @@ const columns: Column<BackupJob>[] = [
         />
       </div>
     ),
-    className: "w-[8%]",
-    headerClassName: "w-[8%]",
+    className: "w-[8%] hidden sm:table-cell",
+    headerClassName: "w-[8%] hidden sm:table-cell",
   },
 
   {
@@ -88,8 +88,8 @@ const columns: Column<BackupJob>[] = [
           : "—"}
       </span>
     ),
-    className: "w-[10%]",
-    headerClassName: "w-[10%]",
+    className: "w-[10%] hidden sm:table-cell",
+    headerClassName: "w-[10%] hidden sm:table-cell",
   },
 
   {

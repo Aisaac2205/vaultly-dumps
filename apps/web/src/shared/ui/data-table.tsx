@@ -36,7 +36,7 @@ export function DataTable<T>({
   const headPadding = compact ? "px-3 py-2" : "px-6 py-4";
   const cellPadding = compact ? "px-3 py-2" : "px-6 py-5";
   const wrapperClass = className ?? "rounded-xl bg-card shadow-sm overflow-hidden";
-  const minWidth = compact ? "" : "min-w-[640px]";
+  const minWidth = compact ? "" : "min-w-[360px]";
 
   if (loading) {
     return (

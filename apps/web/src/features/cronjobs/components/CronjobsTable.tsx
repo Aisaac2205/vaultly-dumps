@@ -12,6 +12,8 @@ import {
   TableCell,
 } from "@/shared/ui/table";
 import { ToggleLeft, ToggleRight } from "lucide-react";
+import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
+import { Ellipsis } from "lucide-react";
 
 interface CronjobsTableProps {
   cronjobs: Cronjob[];
@@ -37,8 +39,8 @@ export default function CronjobsTable({
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>Conexión</TableHead>
-            <TableHead>Expresión Cron</TableHead>
-            <TableHead>Próxima Ejecución</TableHead>
+            <TableHead className="hidden sm:table-cell">Expresión Cron</TableHead>
+            <TableHead className="hidden sm:table-cell">Próxima Ejecución</TableHead>
             <TableHead>Último Estado</TableHead>
             <TableHead>Activo</TableHead>
             <TableHead>Acciones</TableHead>
@@ -47,11 +49,27 @@ export default function CronjobsTable({
         <TableBody>
           {Array.from({ length: 5 }).map((_, rowIdx) => (
             <TableRow key={rowIdx}>
-              {Array.from({ length: 7 }).map((_, colIdx) => (
-                <TableCell key={colIdx}>
-                  <div className="h-4 animate-pulse rounded bg-muted" />
-                </TableCell>
-              ))}
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -69,13 +87,13 @@ export default function CronjobsTable({
 
   return (
     <div className="overflow-x-auto rounded-xl bg-card shadow-sm">
-      <Table className="min-w-[760px]">
+      <Table className="min-w-[360px]">
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>Conexión</TableHead>
-            <TableHead>Expresión Cron</TableHead>
-            <TableHead>Próxima Ejecución</TableHead>
+            <TableHead className="hidden sm:table-cell">Expresión Cron</TableHead>
+            <TableHead className="hidden sm:table-cell">Próxima Ejecución</TableHead>
             <TableHead>Último Estado</TableHead>
             <TableHead>Activo</TableHead>
             <TableHead>Acciones</TableHead>
@@ -95,10 +113,10 @@ export default function CronjobsTable({
                     showEnv
                   />
                 </TableCell>
-                <TableCell className="whitespace-nowrap font-mono text-xs">
+                <TableCell className="hidden sm:table-cell whitespace-nowrap font-mono text-xs">
                   {cronjob.cronExpression}
                 </TableCell>
-                <TableCell className="whitespace-nowrap font-mono text-xs">
+                <TableCell className="hidden sm:table-cell whitespace-nowrap font-mono text-xs">
                   {formatDate(cronjob.nextRunAt)}
                 </TableCell>
                 <TableCell>
@@ -130,7 +148,8 @@ export default function CronjobsTable({
                   </button>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                  {/* Desktop: full button row */}
+                  <div className="hidden sm:flex items-center justify-center gap-2 whitespace-nowrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -145,6 +164,40 @@ export default function CronjobsTable({
                     >
                       Eliminar
                     </Button>
+                  </div>
+
+                  {/* Mobile: dropdown menu */}
+                  <div className="sm:hidden flex items-center justify-center">
+                    <DropdownMenuPrimitive.Root>
+                      <DropdownMenuPrimitive.Trigger asChild>
+                        <button
+                          type="button"
+                          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          aria-label="Acciones"
+                        >
+                          <Ellipsis className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuPrimitive.Trigger>
+                      <DropdownMenuPrimitive.Portal>
+                        <DropdownMenuPrimitive.Content
+                          className="z-50 min-w-[8rem] rounded-md border bg-background p-1 shadow-md"
+                          align="end"
+                        >
+                          <DropdownMenuPrimitive.Item
+                            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                            onSelect={() => onEdit(cronjob)}
+                          >
+                            Editar
+                          </DropdownMenuPrimitive.Item>
+                          <DropdownMenuPrimitive.Item
+                            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                            onSelect={() => onDelete(cronjob.id)}
+                          >
+                            Eliminar
+                          </DropdownMenuPrimitive.Item>
+                        </DropdownMenuPrimitive.Content>
+                      </DropdownMenuPrimitive.Portal>
+                    </DropdownMenuPrimitive.Root>
                   </div>
                 </TableCell>
               </TableRow>

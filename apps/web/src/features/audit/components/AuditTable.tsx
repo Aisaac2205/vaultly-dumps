@@ -1,6 +1,7 @@
 import { DataTable, type Column } from "@/shared/ui/data-table";
 import { Badge } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/cn";
+
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import {
   Database,
@@ -145,6 +146,8 @@ const columns: Column<AuditLog>[] = [
     accessor: (log) => (
       <span className="font-mono text-xs whitespace-nowrap">{formatDate(log.createdAt)}</span>
     ),
+    className: "hidden sm:table-cell",
+    headerClassName: "hidden sm:table-cell",
   },
   {
     header: "Usuario",
@@ -163,10 +166,14 @@ const columns: Column<AuditLog>[] = [
   {
     header: "Ambiente",
     accessor: (log) => <EnvironmentBadge env={log.environment} />,
+    className: "hidden sm:table-cell",
+    headerClassName: "hidden sm:table-cell",
   },
   {
     header: "Metadata",
     accessor: (log) => <MetadataCell metadata={log.metadata} />,
+    className: "hidden sm:table-cell",
+    headerClassName: "hidden sm:table-cell",
   },
 ];
 

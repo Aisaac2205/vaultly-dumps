@@ -12,6 +12,8 @@ import {
   TableRow,
   TableCell,
 } from "@/shared/ui/table";
+import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
+import { Ellipsis } from "lucide-react";
 
 interface ConnectionsTableProps {
   connections: Connection[];
@@ -44,10 +46,10 @@ export default function ConnectionsTable({
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>Ambiente</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Host</TableHead>
-            <TableHead>Puerto</TableHead>
-            <TableHead>BD</TableHead>
+            <TableHead className="hidden sm:table-cell">Tipo</TableHead>
+            <TableHead className="hidden sm:table-cell">Host</TableHead>
+            <TableHead className="hidden sm:table-cell">Puerto</TableHead>
+            <TableHead className="hidden sm:table-cell">BD</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Acciones</TableHead>
           </TableRow>
@@ -55,11 +57,30 @@ export default function ConnectionsTable({
         <TableBody>
           {Array.from({ length: 5 }).map((_, rowIdx) => (
             <TableRow key={rowIdx}>
-              {Array.from({ length: 8 }).map((_, colIdx) => (
-                <TableCell key={colIdx}>
-                  <div className="h-4 animate-pulse rounded bg-muted" />
-                </TableCell>
-              ))}
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -77,15 +98,15 @@ export default function ConnectionsTable({
 
   return (
     <div className="overflow-x-auto rounded-xl bg-card shadow-sm">
-      <Table className="min-w-[800px]">
+      <Table className="min-w-[360px]">
         <TableHeader>
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>Ambiente</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Host</TableHead>
-            <TableHead>Puerto</TableHead>
-            <TableHead>BD</TableHead>
+            <TableHead className="hidden sm:table-cell">Tipo</TableHead>
+            <TableHead className="hidden sm:table-cell">Host</TableHead>
+            <TableHead className="hidden sm:table-cell">Puerto</TableHead>
+            <TableHead className="hidden sm:table-cell">BD</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Acciones</TableHead>
           </TableRow>
@@ -103,7 +124,7 @@ export default function ConnectionsTable({
                     {conn.environment}
                   </span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <div className="flex items-center justify-center gap-1.5">
                     <img
                       src={DB_ICONS[conn.dbType]}
@@ -115,18 +136,19 @@ export default function ConnectionsTable({
                     </span>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <span className="truncate font-mono text-xs">{conn.host}</span>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <span className="font-mono text-xs">{conn.port}</span>
                 </TableCell>
-                <TableCell className="truncate">{conn.database}</TableCell>
+                <TableCell className="hidden sm:table-cell truncate">{conn.database}</TableCell>
                 <TableCell>
                   <ConnectionStateBadge isActive={conn.isActive} />
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+                  {/* Desktop: full button row */}
+                  <div className="hidden sm:flex items-center justify-center gap-2 whitespace-nowrap">
                     <Button
                       variant="outline"
                       size="sm"
@@ -153,6 +175,47 @@ export default function ConnectionsTable({
                       result={testResult}
                       isLoading={isTesting}
                     />
+                  </div>
+
+                  {/* Mobile: dropdown menu */}
+                  <div className="sm:hidden flex items-center justify-center">
+                    <DropdownMenuPrimitive.Root>
+                      <DropdownMenuPrimitive.Trigger asChild>
+                        <button
+                          type="button"
+                          className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          aria-label="Acciones"
+                        >
+                          <Ellipsis className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuPrimitive.Trigger>
+                      <DropdownMenuPrimitive.Portal>
+                        <DropdownMenuPrimitive.Content
+                          className="z-50 min-w-[8rem] rounded-md border bg-background p-1 shadow-md"
+                          align="end"
+                        >
+                          <DropdownMenuPrimitive.Item
+                            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                            onSelect={() => onEdit(conn)}
+                          >
+                            Editar
+                          </DropdownMenuPrimitive.Item>
+                          <DropdownMenuPrimitive.Item
+                            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                            onSelect={() => onDelete(conn.id)}
+                          >
+                            Eliminar
+                          </DropdownMenuPrimitive.Item>
+                          <DropdownMenuPrimitive.Item
+                            className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
+                            onSelect={() => onTest(conn.id)}
+                            disabled={isTesting}
+                          >
+                            {isTesting ? "Testeando..." : "Test"}
+                          </DropdownMenuPrimitive.Item>
+                        </DropdownMenuPrimitive.Content>
+                      </DropdownMenuPrimitive.Portal>
+                    </DropdownMenuPrimitive.Root>
                   </div>
                 </TableCell>
               </TableRow>
