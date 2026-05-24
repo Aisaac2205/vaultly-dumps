@@ -82,7 +82,6 @@ export default function Dumps() {
     <div className="space-y-6 p-8">
       <PageHeader
         title="Dumps"
-        subtitle="Historial de backups y dumps de bases de datos"
         actions={
           <div className="flex items-center gap-3">
             <select

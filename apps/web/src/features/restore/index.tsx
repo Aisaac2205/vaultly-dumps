@@ -17,7 +17,7 @@ import { RestoreProgress } from "./components/RestoreProgress";
 import { RestoreHistory } from "./components/RestoreHistory";
 import { ConfirmRestoreDialog } from "./components/ConfirmRestoreDialog";
 import { formatDate } from "@/features/dumps/lib/format";
-import { ChevronRight, Database } from "lucide-react";
+import { PageHeader } from "@/shared/ui/page-header";
 import type { RestoreDto } from "./types";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 
@@ -150,40 +150,7 @@ export default function Restore() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-6 lg:p-8">
-      {/* Breadcrumb */}
-      <nav
-        aria-label="Breadcrumb"
-        className="flex items-center gap-1.5 text-xs text-muted-foreground"
-      >
-        <span>Restaurar</span>
-        {(backupInfo?.connectionName || dbTypeFromNav) && (
-          <>
-            <ChevronRight className="h-3 w-3" />
-            <span className="inline-flex items-center gap-1 text-foreground font-medium">
-              <Database className="h-3 w-3" />
-              {backupInfo?.connectionName ??
-                (dbTypeFromNav
-                  ? (DB_LABELS[dbTypeFromNav] ?? dbTypeFromNav)
-                  : "")}
-            </span>
-            {backupInfo?.connectionName && dbTypeFromNav && (
-              <span className="text-muted-foreground/70">
-                · {DB_LABELS[dbTypeFromNav] ?? dbTypeFromNav}
-              </span>
-            )}
-          </>
-        )}
-      </nav>
-
-      {/* Title + Description */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Restaurar backup
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Restaura dumps desde Cloudflare R2 hacia una conexión destino en segundos.
-        </p>
-      </div>
+      <PageHeader title="Restore" />
 
       {displayError && (
         <Alert variant="destructive" className="rounded-xl">

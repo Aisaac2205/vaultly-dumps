@@ -159,7 +159,6 @@ export default function Cronjobs() {
       <div className="mx-auto max-w-7xl space-y-8 p-8">
         <PageHeader
           title="Cronjobs"
-          subtitle="Configurá ejecuciones programadas de respaldos"
         />
         <EmptyState
           icon={<Clock className="h-12 w-12" />}
@@ -188,7 +187,6 @@ export default function Cronjobs() {
     <div className="mx-auto max-w-7xl space-y-8 p-8">
       <PageHeader
         title="Cronjobs"
-        subtitle="Gestioná la ejecución programada de respaldos"
         actions={
           !showForm ? (
             <Button onClick={handleNewClick}>

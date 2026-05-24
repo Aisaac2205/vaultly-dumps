@@ -190,7 +190,6 @@ export default function Connections() {
       <div className="mx-auto max-w-7xl space-y-8 p-8">
         <PageHeader
           title="Conexiones"
-          subtitle="Configurá tus conexiones a bases de datos"
         />
         <EmptyState
           icon={<Database className="h-12 w-12" />}
@@ -213,7 +212,6 @@ export default function Connections() {
     <div className="mx-auto max-w-7xl space-y-8 p-8">
       <PageHeader
         title="Conexiones"
-        subtitle="Gestioná las conexiones a bases de datos"
         actions={
           !showForm ? (
             <Button onClick={handleNewClick}>Nueva conexión</Button>

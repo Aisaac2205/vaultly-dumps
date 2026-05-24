@@ -110,7 +110,6 @@ export function RestoreForm({
           <RestoreFormSection
             number={1}
             title="Dump de R2"
-            description="Filtrá por base de datos y frecuencia para encontrar el volcado"
             icon={<img src={cloudflareSvg} alt="Cloudflare R2" className="h-4 w-4" />}
           >
             <R2DumpPicker
@@ -125,7 +124,6 @@ export function RestoreForm({
           <RestoreFormSection
             number={1}
             title="Dump seleccionado"
-            description="Backup que vas a restaurar"
             icon={
               effectiveDbType && DB_LOGOS[effectiveDbType] ? (
                 <img
@@ -183,7 +181,6 @@ export function RestoreForm({
         <RestoreFormSection
           number={showR2Selector ? 2 : 1}
           title="Conexión destino"
-          description="Selecciona la conexión donde se restaurará el backup"
         >
           <div className="space-y-2.5">
             {!hasConnections && !connectionsLoading ? (
