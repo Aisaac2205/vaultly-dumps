@@ -44,6 +44,7 @@ export class PostgresRestoreStrategy implements RestoreStrategy {
         '--no-privileges',
         '--clean',
         '--if-exists',
+        '--single-transaction',
         filePath,
       ];
 
