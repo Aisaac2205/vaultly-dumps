@@ -51,7 +51,7 @@ export function SourceConnectionCombobox({
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border/50 bg-bg px-3 py-2 text-sm text-muted-foreground">
+      <div className="flex h-10 items-center rounded-xl bg-muted/40 px-3 text-sm text-muted-foreground">
         Cargando bases de datos...
       </div>
     );
@@ -61,11 +61,11 @@ export function SourceConnectionCombobox({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           role="combobox"
           aria-expanded={open}
           aria-label="Seleccionar base de datos"
-          className="w-full justify-between rounded-xl font-normal"
+          className="h-10 w-full justify-between rounded-xl bg-muted/40 font-normal hover:bg-muted/60"
           disabled={disabled}
         >
           {selected ? (

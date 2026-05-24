@@ -61,7 +61,7 @@ export function ConfirmRestoreDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          <div className="rounded-md border border-border/60 bg-muted/40 p-3 text-sm">
+          <div className="rounded-md bg-muted/40 p-3 text-sm">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">

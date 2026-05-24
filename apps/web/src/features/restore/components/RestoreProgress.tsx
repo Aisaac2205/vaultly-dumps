@@ -19,7 +19,7 @@ export function RestoreProgress({ jobId, status }: RestoreProgressProps) {
       </div>
 
       {status === "running" && (
-        <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
+        <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-4">
           <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
           <div className="space-y-1">
             <p className="text-sm font-medium">Restaurando base de datos...</p>

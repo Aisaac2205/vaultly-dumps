@@ -197,7 +197,7 @@ export function RestoreHistory({
           No hay restores registrados aún.
         </p>
       ) : (
-        <div className="flex-1 max-h-[720px] overflow-auto rounded-xl border border-border/50">
+        <div className="flex-1 max-h-[720px] overflow-auto rounded-xl bg-card shadow-sm">
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
               <TableRow className="border-border/30 hover:bg-transparent">

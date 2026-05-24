@@ -31,7 +31,7 @@ export function DryRunResult({
         estimadas
       </p>
 
-      <div className="overflow-hidden rounded-xl border border-border/50">
+      <div className="overflow-hidden rounded-xl bg-card shadow-sm">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-muted/50">

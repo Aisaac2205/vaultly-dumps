@@ -35,7 +35,7 @@ export function DumpsList({
 }: DumpsListProps) {
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-bg px-3 py-2 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
         Cargando volcados...
       </div>
@@ -46,7 +46,7 @@ export function DumpsList({
     return (
       <div
         role="status"
-        className="rounded-xl border border-border/50 bg-muted/30 px-3 py-3 text-sm text-muted-foreground"
+        className="rounded-xl bg-muted/30 px-3 py-3 text-sm text-muted-foreground"
       >
         No hay volcados para esta combinación.
       </div>
@@ -56,7 +56,7 @@ export function DumpsList({
   return (
     <ul
       aria-label={label}
-      className="flex max-h-72 flex-col gap-1 overflow-auto rounded-xl border border-border/50 bg-bg p-1"
+      className="flex max-h-72 flex-col gap-1 overflow-auto rounded-xl bg-muted/20 p-1"
     >
       {dumps.map((dump) => {
         const isSelected = value?.key === dump.key;

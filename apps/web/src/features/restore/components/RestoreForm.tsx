@@ -138,7 +138,7 @@ export function RestoreForm({
               )
             }
           >
-            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 p-3">
+            <div className="flex items-center gap-3 rounded-xl bg-muted/30 p-3">
               {effectiveDbType && DB_LOGOS[effectiveDbType] ? (
                 <img
                   src={DB_LOGOS[effectiveDbType]}
@@ -187,7 +187,7 @@ export function RestoreForm({
         >
           <div className="space-y-2.5">
             {!hasConnections && !connectionsLoading ? (
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 px-3 py-2.5 text-sm">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 px-3 py-2.5 text-sm">
                 <span className="text-muted-foreground">
                   {effectiveDbType
                     ? `No hay conexiones ${DB_LABELS[effectiveDbType] ?? effectiveDbType} disponibles`

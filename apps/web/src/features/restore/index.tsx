@@ -194,7 +194,7 @@ export default function Restore() {
       {state === "idle" && (
         <div className="grid gap-5 lg:grid-cols-5 lg:items-stretch">
           <div className="lg:col-span-2">
-            <Card className="h-full rounded-3xl border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <Card className="h-full rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
               <CardContent className="flex h-full flex-col p-5">
                 <RestoreForm
                   sourceBackupId={sourceBackupIdFromNav}
@@ -215,7 +215,7 @@ export default function Restore() {
           </div>
 
           <div className="lg:col-span-3">
-            <Card className="flex h-full flex-col rounded-3xl border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <Card className="flex h-full flex-col rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
               <CardContent className="flex flex-1 flex-col p-5">
                 <RestoreHistory jobs={restoreHistory} isLoading={historyLoading} />
               </CardContent>
@@ -226,7 +226,7 @@ export default function Restore() {
 
       {state === "dry-run" && dryRunResult && (
         <div ref={dryRunResultRef} className="mx-auto max-w-3xl scroll-mt-6">
-          <Card className="rounded-3xl border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)] animate-in fade-in-0 slide-in-from-top-2 duration-300">
+          <Card className="rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] animate-in fade-in-0 slide-in-from-top-2 duration-300">
             <CardContent className="p-5">
               <DryRunResult
                 result={dryRunResult}
@@ -241,7 +241,7 @@ export default function Restore() {
 
       {state === "running" && restoreJob && (
         <div className="mx-auto max-w-lg">
-          <Card className="rounded-3xl border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <Card className="rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             <CardContent className="p-5">
               <RestoreProgress
                 jobId={restoreJob.id}
@@ -268,7 +268,7 @@ export default function Restore() {
 
       {state === "done" && (
         <div className="mx-auto max-w-lg">
-          <Card className="rounded-3xl border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <Card className="rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             <CardContent className="p-5">
               <div className="space-y-4">
                 {finalStatus === "completed" ? (

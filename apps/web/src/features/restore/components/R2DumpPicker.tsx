@@ -91,7 +91,7 @@ export function R2DumpPicker({
             id="dumps-list-label"
             className="mb-1.5 block text-xs font-medium text-muted-foreground"
           >
-            Volcados disponibles
+            Dumps disponibles
           </span>
           <DumpsList
             dumps={dumps}
@@ -99,7 +99,7 @@ export function R2DumpPicker({
             onChange={onChange}
             loading={dumpsLoading}
             disabled={disabled}
-            label="Volcados disponibles"
+            label="Dumps disponibles"
           />
         </div>
       )}
