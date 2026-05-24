@@ -19,8 +19,8 @@ const columns: Column<BackupJob>[] = [
         {job.connectionName}
       </p>
     ),
-    className: "w-[24%] align-middle",
-    headerClassName: "w-[24%] text-left",
+    className: "w-[24%]",
+    headerClassName: "w-[24%]",
   },
 
   {
@@ -30,8 +30,8 @@ const columns: Column<BackupJob>[] = [
         {formatDate(job.createdAt)}
       </span>
     ),
-    className: "w-[14%] text-center align-middle",
-    headerClassName: "w-[14%] text-center",
+    className: "w-[14%]",
+    headerClassName: "w-[14%]",
   },
 
   {
@@ -41,8 +41,8 @@ const columns: Column<BackupJob>[] = [
         {job.triggeredBy === "system-cronjob" ? "Cronjob" : "Manual"}
       </span>
     ),
-    className: "w-[11%] text-center align-middle",
-    headerClassName: "w-[11%] text-center",
+    className: "w-[11%]",
+    headerClassName: "w-[11%]",
   },
 
   {
@@ -60,8 +60,8 @@ const columns: Column<BackupJob>[] = [
         )}
       </div>
     ),
-    className: "w-[20%] text-center align-middle",
-    headerClassName: "w-[20%] text-center",
+    className: "w-[20%]",
+    headerClassName: "w-[20%]",
   },
 
   {
@@ -75,8 +75,8 @@ const columns: Column<BackupJob>[] = [
         />
       </div>
     ),
-    className: "w-[8%] text-center align-middle",
-    headerClassName: "w-[8%] text-center",
+    className: "w-[8%]",
+    headerClassName: "w-[8%]",
   },
 
   {
@@ -88,8 +88,8 @@ const columns: Column<BackupJob>[] = [
           : "—"}
       </span>
     ),
-    className: "w-[10%] text-center align-middle",
-    headerClassName: "w-[10%] text-center",
+    className: "w-[10%]",
+    headerClassName: "w-[10%]",
   },
 
   {
@@ -99,8 +99,8 @@ const columns: Column<BackupJob>[] = [
         <DumpActions job={job} />
       </div>
     ),
-    className: "w-[13%] text-center align-middle",
-    headerClassName: "w-[13%] text-center",
+    className: "w-[13%]",
+    headerClassName: "w-[13%]",
   },
 ];
 
