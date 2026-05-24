@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { spawn } from 'child_process';
+import { createReadStream } from 'fs';
 import { RestoreStrategy } from '../interfaces/restore-strategy.interface';
 import { ConnectionEntity } from '../../../database/entities/connection.entity';
 
@@ -172,6 +173,7 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
+        fileStream.destroy();
         (fn as (v?: unknown) => void)(value);
       };
 
@@ -183,14 +185,23 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         '-u',
         connection.username,
         connection.database,
-        '-e',
-        `source ${filePath}`,
       ];
+
+      // Pipe the dump through stdin — avoids the `source` command which is
+      // vulnerable to injection via filePath and forces the entire dump to
+      // be on disk before execution can begin.
+      const fileStream = createReadStream(filePath);
+      fileStream.on('error', (err: Error) => {
+        mysqlChild.kill();
+        settle(reject, new Error(`Failed to read dump file: ${err.message}`));
+      });
 
       // MYSQL_PWD keeps the password out of argv (not visible in ps aux / /proc).
       const mysqlChild = spawn('mysql', args, {
         env: { ...process.env, MYSQL_PWD: connection.password },
       });
+
+      fileStream.pipe(mysqlChild.stdin);
 
       const timeout = setTimeout(() => {
         mysqlChild.kill();
