@@ -36,11 +36,11 @@ export function ConnectionFilters({
     "rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       <input
         type="text"
         placeholder="Buscar por nombre, host o BD..."
-        className={`min-w-[220px] flex-1 ${inputClass}`}
+        className={`w-full sm:min-w-[220px] sm:w-auto sm:flex-1 ${inputClass}`}
         value={searchInput}
         onChange={(e) => setSearchInput(e.target.value)}
       />

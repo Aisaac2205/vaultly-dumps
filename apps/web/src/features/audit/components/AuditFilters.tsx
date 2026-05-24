@@ -46,7 +46,7 @@ export default function AuditFilters({ filters, onApply, onReset }: AuditFilters
   return (
     <Card>
       <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="audit-username" className="text-xs font-medium text-muted-foreground">
               Usuario
@@ -122,7 +122,7 @@ export default function AuditFilters({ filters, onApply, onReset }: AuditFilters
             />
           </div>
 
-          <div className="flex gap-2 ml-auto">
+          <div className="flex gap-2 sm:ml-auto">
             <Button type="submit" variant="default" size="sm">
               <Search className="h-4 w-4" />
               Aplicar

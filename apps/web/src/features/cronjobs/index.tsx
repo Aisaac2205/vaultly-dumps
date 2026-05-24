@@ -122,7 +122,7 @@ export default function Cronjobs() {
 
   if (isQueryLoading) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-8">
+      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
         <div className="h-8 w-24 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -138,7 +138,7 @@ export default function Cronjobs() {
 
   if (queryError) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-8">
+      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader title="Cronjobs" />
         <Alert variant="destructive">
           <AlertDescription>
@@ -156,7 +156,7 @@ export default function Cronjobs() {
 
   if (cronjobs.length === 0 && !showForm) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-8">
+      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader
           title="Cronjobs"
         />
