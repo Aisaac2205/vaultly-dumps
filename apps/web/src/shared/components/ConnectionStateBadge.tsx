@@ -13,10 +13,10 @@ export function ConnectionStateBadge({
   return (
     <Badge
       className={cn(
-        "inline-flex items-center gap-1.5 border",
+        "inline-flex items-center gap-1.5",
         isActive
-          ? "border-success/30 bg-success-bg text-success"
-          : "border-border bg-muted text-muted-foreground",
+          ? "bg-success-bg text-success"
+          : "bg-muted text-muted-foreground",
         className,
       )}
     >
