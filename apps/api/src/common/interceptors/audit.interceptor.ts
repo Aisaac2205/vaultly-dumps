@@ -101,9 +101,10 @@ export class AuditInterceptor implements NestInterceptor {
         username: user?.preferred_username ?? 'anonymous',
         resourceType: context.getClass().name,
         resourceId: params['id'] ?? 'unknown',
-        // Redactamos antes de persistir. Aunque el frontend renderice
-        // metadata sin sanitizar, el secret nunca llega a la DB.
-        metadata: redactSensitive(body) as Record<string, unknown>,
+        metadata: {
+          body: redactSensitive(body),
+          query: redactSensitive(request.query),
+        } as Record<string, unknown>,
         environment: env,
       });
     } catch (error) {
