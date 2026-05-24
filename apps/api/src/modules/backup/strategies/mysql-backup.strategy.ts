@@ -16,7 +16,13 @@ export class MySQLBackupStrategy implements BackupStrategy {
   ): Promise<number> {
     return new Promise((resolve, reject) => {
       let stderrBuffer = '';
-      let uploadError: Error | null = null;
+      let settled = false;
+
+      const settle = (fn: typeof resolve | typeof reject, value: unknown) => {
+        if (settled) return;
+        settled = true;
+        (fn as (v: unknown) => void)(value);
+      };
 
       const args = [
         '-h', connection.host,
@@ -49,34 +55,26 @@ export class MySQLBackupStrategy implements BackupStrategy {
 
       mySqlDump.on('error', (err: Error) => {
         const error = new Error(`mysqldump failed to start: ${err.message}`);
-        // Destroy the upload-bound stream so lib-storage aborts the multipart
-        // instead of completing it with whatever bytes already shipped.
         counter.destroy(error);
-        reject(error);
+        settle(reject, error);
       });
 
-      mySqlDump.on('close', (code: number | null) => {
-        if (uploadError) {
-          reject(new Error(`R2 upload failed: ${uploadError.message}`));
-          return;
-        }
-        if (code !== 0) {
-          const detail = stderrBuffer.trim() || `exit code ${code ?? 'unknown'}`;
-          const error = new Error(`mysqldump failed: ${detail}`);
-          // Force lib-storage to abort the multipart so a truncated dump is
-          // never committed to R2 as a "successful" object.
-          counter.destroy(error);
-          reject(error);
-          return;
-        }
-        resolve(totalBytes / (1024 * 1024));
-      });
+      const uploadPromise = this.r2Service.upload(fileKey, counter, { metadata });
 
       mySqlDump.stdout.pipe(counter);
 
-      this.r2Service.upload(fileKey, counter, { metadata }).catch((err: Error) => {
-        uploadError = err;
-        mySqlDump.kill('SIGTERM');
+      mySqlDump.on('close', (code: number | null) => {
+        if (code !== 0) {
+          const detail = stderrBuffer.trim() || `exit code ${code ?? 'unknown'}`;
+          const error = new Error(`mysqldump failed: ${detail}`);
+          counter.destroy(error);
+          settle(reject, error);
+          return;
+        }
+
+        uploadPromise
+          .then(() => settle(resolve, totalBytes / (1024 * 1024)))
+          .catch((err: Error) => settle(reject, new Error(`R2 upload failed: ${err.message}`)));
       });
     });
   }
