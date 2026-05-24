@@ -4,6 +4,8 @@ import * as React from "react"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
+import { VisuallyHidden } from "radix-ui"
+
 import { cn } from "@/shared/lib/cn"
 
 function Sheet({
@@ -74,7 +76,11 @@ function SheetContent({
           className
         )}
         {...props}
+        aria-describedby={undefined}
       >
+        <VisuallyHidden.Root>
+          <DialogPrimitive.Title>Navigation</DialogPrimitive.Title>
+        </VisuallyHidden.Root>
         {children}
         {showCloseButton && (
           <DialogPrimitive.Close
