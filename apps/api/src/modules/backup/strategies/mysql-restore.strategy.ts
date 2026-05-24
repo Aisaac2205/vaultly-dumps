@@ -15,32 +15,43 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
     filePath: string,
     onLog: (message: string) => void,
   ): Promise<void> {
-    await this.truncateAllTables(connection, onLog);
-    await this.runMysqlRestore(connection, filePath, onLog);
-  }
+    const ts = Date.now();
+    const shadowDb = `${connection.database}_shadow_${ts}`;
+    const backupDb = `${connection.database}_pre_restore_${ts}`;
 
-  private async truncateAllTables(
-    connection: ConnectionEntity,
-    onLog: (message: string) => void,
-  ): Promise<void> {
-    const tables = await this.getTableNames(connection);
-    onLog(`Found ${tables.length} tables to truncate`);
+    try {
+      // Phase 1 — restore into isolated shadow database
+      onLog('Creating shadow database for safe restore...');
+      await this.createDatabase(connection, shadowDb);
+      await this.runMysqlRestore(connection, filePath, onLog, shadowDb);
 
-    if (tables.length === 0) {
-      return;
+      // Phase 2 — validate shadow has tables
+      const shadowTables = await this.getTableNames(connection, shadowDb);
+      if (shadowTables.length === 0) {
+        throw new Error('Restore produced no tables — dump may be empty or corrupt');
+      }
+      onLog(`Shadow restore validated: ${shadowTables.length} tables`);
+
+      // Phase 3 — atomic swap: original→backup, shadow→original
+      const originalTables = await this.getTableNames(connection);
+      await this.createDatabase(connection, backupDb);
+      await this.atomicTableSwap(
+        connection, shadowDb, backupDb, originalTables, shadowTables, onLog,
+      );
+
+      // Phase 4 — cleanup
+      await this.safeDropDatabase(connection, backupDb);
+      await this.safeDropDatabase(connection, shadowDb);
+      onLog('Restore completed successfully');
+    } catch (error) {
+      // Original database is untouched — clean up temp databases
+      await this.safeDropDatabase(connection, shadowDb);
+      await this.safeDropDatabase(connection, backupDb);
+      throw error;
     }
-
-    const truncateSql = [
-      'SET FOREIGN_KEY_CHECKS = 0;',
-      ...tables.map((t) => `TRUNCATE TABLE \`${t.replace(/`/g, '``')}\`;`),
-      'SET FOREIGN_KEY_CHECKS = 1;',
-    ].join('\n');
-
-    await this.executeSql(connection, truncateSql);
-    onLog('All tables truncated successfully');
   }
 
-  private getTableNames(connection: ConnectionEntity): Promise<string[]> {
+  private getTableNames(connection: ConnectionEntity, database?: string): Promise<string[]> {
     return new Promise((resolve, reject) => {
       let settled = false;
       const settle = (fn: typeof resolve | typeof reject, value: unknown) => {
@@ -61,7 +72,7 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         '-B',
         '-e',
         'SHOW TABLES',
-        connection.database,
+        database ?? connection.database,
       ];
 
       // MYSQL_PWD keeps the password out of argv (not visible in ps aux / /proc).
@@ -107,6 +118,7 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
   private executeSql(
     connection: ConnectionEntity,
     sql: string,
+    database?: string,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -124,7 +136,7 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         String(connection.port),
         '-u',
         connection.username,
-        connection.database,
+        database ?? connection.database,
         '-e',
         sql,
       ];
@@ -166,6 +178,7 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
     connection: ConnectionEntity,
     filePath: string,
     onLog: (message: string) => void,
+    database?: string,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       let settled = false;
@@ -184,7 +197,7 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         String(connection.port),
         '-u',
         connection.username,
-        connection.database,
+        database ?? connection.database,
       ];
 
       // Pipe the dump through stdin — avoids the `source` command which is
@@ -231,5 +244,81 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         }
       });
     });
+  }
+
+  private async createDatabase(
+    connection: ConnectionEntity,
+    dbName: string,
+  ): Promise<void> {
+    const escaped = this.escapeId(dbName);
+    await this.executeSql(
+      connection,
+      `DROP DATABASE IF EXISTS \`${escaped}\`; CREATE DATABASE \`${escaped}\``,
+    );
+  }
+
+  private async safeDropDatabase(
+    connection: ConnectionEntity,
+    dbName: string,
+  ): Promise<void> {
+    try {
+      await this.executeSql(
+        connection,
+        `DROP DATABASE IF EXISTS \`${this.escapeId(dbName)}\``,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Failed to drop database ${dbName}: ${(err as Error).message}`,
+      );
+    }
+  }
+
+  private async atomicTableSwap(
+    connection: ConnectionEntity,
+    shadowDb: string,
+    backupDb: string,
+    originalTables: string[],
+    shadowTables: string[],
+    onLog: (message: string) => void,
+  ): Promise<void> {
+    const esc = (id: string) => this.escapeId(id);
+    const origDb = connection.database;
+    const renames: string[] = [];
+
+    // Move original tables → backup (preserves data for rollback)
+    for (const t of originalTables) {
+      renames.push(
+        `\`${esc(origDb)}\`.\`${esc(t)}\` TO \`${esc(backupDb)}\`.\`${esc(t)}\``,
+      );
+    }
+
+    // Move shadow tables → original (the new data)
+    for (const t of shadowTables) {
+      renames.push(
+        `\`${esc(shadowDb)}\`.\`${esc(t)}\` TO \`${esc(origDb)}\`.\`${esc(t)}\``,
+      );
+    }
+
+    if (renames.length === 0) {
+      onLog('No tables to swap');
+      return;
+    }
+
+    // RENAME TABLE is atomic — all renames succeed or none do.
+    // Triggers are moved with their tables automatically.
+    const sql = [
+      'SET FOREIGN_KEY_CHECKS = 0;',
+      `RENAME TABLE ${renames.join(', ')};`,
+      'SET FOREIGN_KEY_CHECKS = 1;',
+    ].join('\n');
+
+    await this.executeSql(connection, sql);
+    onLog(
+      `Swapped ${originalTables.length} original → backup, ${shadowTables.length} shadow → original`,
+    );
+  }
+
+  private escapeId(identifier: string): string {
+    return identifier.replace(/`/g, '``');
   }
 }
