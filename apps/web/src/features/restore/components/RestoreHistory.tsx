@@ -55,13 +55,7 @@ const statusConfig: Record<
 };
 
 const ENV_FILTERS = ["Todos", "dev", "sqa", "prod"] as const;
-const STATUS_FILTERS = [
-  "Todos",
-  "completed",
-  "failed",
-  "running",
-  "pending",
-] as const;
+const STATUS_FILTERS = ["Todos", "completed", "failed"] as const;
 
 function formatDuration(
   startedAt: string,
@@ -124,12 +118,7 @@ export function RestoreHistory({
     <div className="flex h-full flex-col">
       {/* Header with filters */}
       <div className="mb-3 flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-semibold">Historial de restores</h3>
-          <p className="text-xs text-muted-foreground">
-            Revisa los restores anteriores y su estado.
-          </p>
-        </div>
+        <h3 className="text-sm font-semibold">Historial</h3>
         <div className="flex gap-2">
           <Popover open={envOpen} onOpenChange={setEnvOpen}>
             <PopoverTrigger asChild>
@@ -224,7 +213,7 @@ export function RestoreHistory({
                     data-state={job.status === "running" ? "active" : undefined}
                     className="border-border/20 hover:bg-muted/40 data-[state=active]:bg-blue-500/5 data-[state=active]:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)]"
                   >
-                    <TableCell className="py-3 font-mono text-xs text-muted-foreground">
+                    <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
                       {job.startedAt ? formatDate(job.startedAt) : "—"}
                     </TableCell>
                     <TableCell className="py-3">
@@ -236,7 +225,7 @@ export function RestoreHistory({
                       </Badge>
                     </TableCell>
                     <TableCell className="py-3">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <span
                           className={cn(
                             "h-2 w-2 rounded-full",
@@ -250,7 +239,7 @@ export function RestoreHistory({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-3 font-mono text-xs text-muted-foreground">
+                    <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
                       {job.startedAt
                         ? formatDuration(
                             job.startedAt,
