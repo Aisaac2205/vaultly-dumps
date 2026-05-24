@@ -104,31 +104,30 @@ Any HTTP request with method `POST`, `PUT`, `PATCH` or `DELETE` that passes thro
 
 2. **Cronjobs are not audited in `audit_logs`.** They run in-process, not over HTTP, so the interceptor doesn't see them. Their traceability lives in `backup_jobs.triggeredBy = 'system-cronjob'`. If you need unified auditing, you must invoke the log manually from `CronjobsService.executeCronjob`.
 
-3. **Logs are not cryptographically immutable** — they are a SQL table editable by anyone with access to the control DB. If you need non-repudiation, you have to sign records or ship them to a WORM system.
+3. **Logs are append-only at the DB level.** A trigger (`audit_logs_immutable`) raises an exception on any `UPDATE` or `DELETE` attempt on the `audit_logs` table. This prevents tampering even by users with direct DB access. For cryptographic non-repudiation, records should additionally be signed or shipped to a WORM system.
 
 ---
 
 ## 4. Connection credentials
 
-Passwords of registered DBs are stored **in plaintext** in the `connections.password` column.
+Passwords of registered DBs are **encrypted at rest** using AES-256-GCM in the `connections.password` column.
 
-### What's fine
+### How it works
 
-- The column uses `@Exclude()` from `class-transformer`. Combined with the global `ClassSerializerInterceptor`, **the password never leaves the API** in a response.
-- Access to the control DB is restricted to the app (not exposed to the public network in prod).
+- A TypeORM column transformer (`apps/api/src/common/utils/encryption.ts`) encrypts on write and decrypts on read using the `ENCRYPTION_KEY` environment variable.
+- The stored value format is `iv:authTag:ciphertext` (all hex-encoded). Each write uses a random IV, so the same password produces a different ciphertext every time.
+- The `@Exclude()` decorator from `class-transformer` ensures the decrypted password **never leaves the API** in HTTP responses.
+- Repository list/detail queries use an explicit `select` that excludes the password column entirely. Only `findById` (used internally by backup/restore) returns it.
+- Legacy plaintext values (from before encryption was added) are detected by the `decrypt` function (they lack the `iv:tag:ciphertext` format) and returned as-is, allowing a seamless migration.
 
-### What's NOT fine (explicit debt)
+### Requirements
 
-- If the control DB is compromised, **every password of every registered host is exposed in clear text**.
-- There is no automatic credential rotation.
-
-### When to migrate to encryption
-
-Migrate to symmetric encryption (AES-256-GCM with a key derived from an environment secret) when:
-
-- Connections are added to hosts managed by third parties
-- Compliance requirements come into play (PCI, SOC 2, etc.)
-- The team grows and keeping access to the control DB restricted is no longer viable
+- `ENCRYPTION_KEY` must be set as a 64-character hex string (256-bit key). Generate with:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+- If the key is lost, **all stored passwords become unrecoverable**. Back up the key securely.
+- There is no automatic credential rotation yet.
 
 ---
 
@@ -177,8 +176,8 @@ Combined with `class-validator` on each DTO (`@IsString`, `@IsUUID`, `@IsEnum`, 
 | User maliciously restores an old dump on top of PROD | Blocked: `restore` throws 403 if target environment=PROD |
 | Dump exfiltrated via R2 URL | Mitigated: private bucket, access via R2 credentials (not public) |
 | JWT token stolen via XSS | Partially mitigated: strict CORS in prod limits the origin |
-| Control DB compromised → leak of PROD credentials | **Not mitigated**: plaintext passwords. See §4 |
-| Audit log tampered with by a DBA with access | **Not mitigated**: editable SQL table. See §3 limitation 3 |
+| Control DB compromised → leak of PROD credentials | Mitigated: passwords encrypted with AES-256-GCM. Requires `ENCRYPTION_KEY` to decrypt. See §4 |
+| Audit log tampered with by a DBA with access | Mitigated: append-only trigger prevents UPDATE/DELETE on `audit_logs`. See §3 |
 | Cronjob points at attacker host | Mitigated: cronjob requires a `connectionId` that can only be created via `POST /connections` (audited) |
 
-The "not mitigated" ones are **conscious decisions** for the current scope of the system (internal tool, small team, private cloud). When any of the §4 triggers fires, they must be revisited.
+Remaining unmitigated threats (SSRF on connection hosts, lack of credential rotation) are **conscious decisions** for the current scope of the system (internal tool, small team, private cloud).

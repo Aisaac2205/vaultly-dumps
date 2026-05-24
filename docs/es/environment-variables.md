@@ -24,6 +24,11 @@ KEYCLOAK_URL=https://<your-keycloak-url>/
 KEYCLOAK_REALM=vaultly-control
 KEYCLOAK_CLIENT_ID=vaultly-control-api
 
+# ── Cifrado (required) ─────────────────────────────────────────
+# Clave para cifrar passwords de conexiones en reposo (AES-256-GCM).
+# Generar con: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+ENCRYPTION_KEY=<string-hex-de-64-chars>
+
 # ── Cloudflare R2 (opcional en dev, required en producción) ────
 R2_ACCOUNT_ID=<your-cloudflare-account-id>
 R2_ACCESS_KEY_ID=<your-r2-access-key-id>

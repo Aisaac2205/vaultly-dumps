@@ -104,31 +104,30 @@ Cualquier request HTTP con método `POST`, `PUT`, `PATCH` o `DELETE` que pase po
 
 2. **Los cronjobs no se auditan en `audit_logs`.** Corren in-process, no por HTTP, así que el interceptor no los ve. Su trazabilidad vive en `backup_jobs.triggeredBy = 'system-cronjob'`. Si necesitás auditoría unificada, hay que invocar manualmente el log desde `CronjobsService.executeCronjob`.
 
-3. **Los logs no son inmutables** en el sentido criptográfico — son una tabla SQL editable por cualquiera con acceso a la DB de control. Si necesitás non-repudiation, hay que firmar los registros o exportarlos a un sistema WORM.
+3. **Los logs son append-only a nivel DB.** Un trigger (`audit_logs_immutable`) lanza una excepción ante cualquier `UPDATE` o `DELETE` en la tabla `audit_logs`. Esto previene adulteración incluso por usuarios con acceso directo a la DB. Para non-repudiation criptográfico, los registros deberían además firmarse o exportarse a un sistema WORM.
 
 ---
 
 ## 4. Credenciales de conexión
 
-Las contraseñas de las DBs registradas se almacenan **en plaintext** en la columna `connections.password`.
+Las contraseñas de las DBs registradas se **cifran en reposo** usando AES-256-GCM en la columna `connections.password`.
 
-### Lo que está bien
+### Cómo funciona
 
-- La columna usa `@Exclude()` de `class-transformer`. Combinado con `ClassSerializerInterceptor` global, **el password nunca sale por la API** en una response.
-- El acceso a la DB de control está restringido a la app (no expuesta a la red pública en prod).
+- Un column transformer de TypeORM (`apps/api/src/common/utils/encryption.ts`) cifra al escribir y descifra al leer usando la variable de entorno `ENCRYPTION_KEY`.
+- El formato almacenado es `iv:authTag:ciphertext` (todo en hex). Cada escritura usa un IV aleatorio, así que el mismo password produce un ciphertext diferente cada vez.
+- El decorador `@Exclude()` de `class-transformer` asegura que el password descifrado **nunca sale por la API** en responses HTTP.
+- Las queries de listado/detalle del repository usan un `select` explícito que excluye la columna password. Solo `findById` (usado internamente por backup/restore) la retorna.
+- Valores legacy en plaintext (de antes del cifrado) se detectan en la función `decrypt` (no tienen el formato `iv:tag:ciphertext`) y se retornan tal cual, permitiendo migración transparente.
 
-### Lo que NO está bien (deuda explícita)
+### Requisitos
 
-- Si la DB de control se compromete, **todos los passwords de los hosts registrados quedan expuestos en claro**.
-- No hay rotación automática de credenciales.
-
-### Cuándo migrar a cifrado
-
-Migrar a cifrado simétrico (AES-256-GCM con clave derivada de un secret de entorno) cuando:
-
-- Se sumen conexiones a hosts gestionados por terceros
-- Se contemplen requerimientos de compliance (PCI, SOC 2, etc.)
-- El equipo crezca y deje de ser viable mantener el acceso a la DB de control restringido
+- `ENCRYPTION_KEY` debe setearse como un string hex de 64 caracteres (clave de 256 bits). Generar con:
+  ```bash
+  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  ```
+- Si se pierde la clave, **todos los passwords almacenados quedan irrecuperables**. Respaldar la clave de forma segura.
+- No hay rotación automática de credenciales todavía.
 
 ---
 
@@ -177,8 +176,8 @@ Combinado con `class-validator` en cada DTO (`@IsString`, `@IsUUID`, `@IsEnum`, 
 | Usuario maliciosamente restaura un dump viejo sobre PROD | Bloqueado: `restore` lanza 403 si target environment=PROD |
 | Dump exfiltrado vía URL de R2 | Mitigado: bucket privado, acceso vía credenciales R2 (no público) |
 | Token JWT robado vía XSS | Mitigado parcialmente: CORS strict en prod limita origen |
-| DB de control comprometida → leak de credenciales de PROD | **No mitigado**: passwords en plaintext. Ver §4 |
-| Audit log adulterado por DBA con acceso | **No mitigado**: tabla SQL editable. Ver §3 limitación 3 |
+| DB de control comprometida → leak de credenciales de PROD | Mitigado: passwords cifrados con AES-256-GCM. Requiere `ENCRYPTION_KEY` para descifrar. Ver §4 |
+| Audit log adulterado por DBA con acceso | Mitigado: trigger append-only previene UPDATE/DELETE en `audit_logs`. Ver §3 |
 | Cronjob apunta a host atacante | Mitigado: cronjob requiere `connectionId` que solo puede crearse via `POST /connections` (auditado) |
 
-Las "no mitigadas" son **decisiones conscientes** para el alcance actual del sistema (tool interno, equipo pequeño, cloud privado). Cuando alguno de los triggers del §4 se cumpla, hay que revisarlas.
+Las amenazas no mitigadas restantes (SSRF en hosts de conexiones, falta de rotación de credenciales) son **decisiones conscientes** para el alcance actual del sistema (tool interno, equipo pequeño, cloud privado).
