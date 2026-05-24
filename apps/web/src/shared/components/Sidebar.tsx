@@ -17,6 +17,12 @@ interface SidebarProps {
   onLogout: () => Promise<void>;
 }
 
+export interface SidebarContentProps {
+  user: AuthUser | null;
+  onLogout: () => Promise<void>;
+  onNavigate?: () => void;
+}
+
 interface NavItemConfig {
   path: string;
   label: string;
@@ -33,7 +39,7 @@ const NAV_ITEMS: NavItemConfig[] = [
   { path: "/audit", label: "Audit", icon: FileText, routeKey: "audit" },
 ];
 
-function NavItem({ path, label, icon: Icon, routeKey }: NavItemConfig) {
+function NavItem({ path, label, icon: Icon, routeKey, onNavigate }: NavItemConfig & { onNavigate?: () => void }) {
   const prefetch = () => {
     void lazyRoutes[routeKey]();
   };
@@ -43,6 +49,7 @@ function NavItem({ path, label, icon: Icon, routeKey }: NavItemConfig) {
       end={path === "/"}
       onMouseEnter={prefetch}
       onFocus={prefetch}
+      onClick={onNavigate}
       className={({ isActive }) =>
         `flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors ${
           isActive
@@ -57,9 +64,9 @@ function NavItem({ path, label, icon: Icon, routeKey }: NavItemConfig) {
   );
 }
 
-export function Sidebar({ user, onLogout }: SidebarProps) {
+export function SidebarContent({ user, onLogout, onNavigate }: SidebarContentProps) {
   return (
-    <aside className="fixed left-0 top-0 flex h-screen w-[240px] flex-col bg-black font-medium">
+    <>
       {/* Logo */}
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-5">
         <img
@@ -75,7 +82,7 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3">
         {NAV_ITEMS.map((item) => (
-          <NavItem key={item.path} {...item} />
+          <NavItem key={item.path} {...item} onNavigate={onNavigate} />
         ))}
       </nav>
 
@@ -95,6 +102,14 @@ export function Sidebar({ user, onLogout }: SidebarProps) {
           Cerrar Sesión
         </button>
       </div>
+    </>
+  );
+}
+
+export function Sidebar({ user, onLogout }: SidebarProps) {
+  return (
+    <aside className="fixed left-0 top-0 hidden h-screen w-[240px] flex-col bg-black font-medium md:flex">
+      <SidebarContent user={user} onLogout={onLogout} />
     </aside>
   );
 }
