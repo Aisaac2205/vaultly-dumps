@@ -92,6 +92,15 @@ export class R2Service {
     return response.Body as Readable;
   }
 
+  async downloadJson<T>(key: string): Promise<T> {
+    const stream = await this.download(key);
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return JSON.parse(Buffer.concat(chunks).toString('utf-8'));
+  }
+
   async list(prefix?: string): Promise<R2Object[]> {
     const results: R2Object[] = [];
     let continuationToken: string | undefined;

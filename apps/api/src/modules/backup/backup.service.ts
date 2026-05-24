@@ -6,6 +6,9 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { Readable } from 'stream';
+import { Client } from 'pg';
+import { createConnection as createMysqlConnection, RowDataPacket } from 'mysql2/promise';
 import { CreateBackupDto } from './dto/create-backup.dto';
 import { BackupRepository } from './backup.repository';
 import { R2Service } from './r2.service';
@@ -14,8 +17,10 @@ import { BackupHistoryItem } from './interfaces/backup-history-item.interface';
 import { R2Object } from './interfaces/r2-object.interface';
 import { EnrichedR2Object } from './interfaces/enriched-r2-object.interface';
 import { BackupStrategy } from './interfaces/backup-strategy.interface';
+import { DumpManifest, DumpManifestSource } from './interfaces/dump-manifest.interface';
 import { ConnectionsService } from '../connections/connections.service';
 import { KeycloakUser } from '../../common/decorators/current-user.decorator';
+import { ConnectionEntity } from '../../database/entities/connection.entity';
 import { Environment } from '../../database/enums/environment.enum';
 import { DbTypeEnum } from '../../database/enums/db-type.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
@@ -87,7 +92,25 @@ export class BackupService {
     });
 
     try {
+      // Capture source snapshot BEFORE the dump starts
+      const sourceSnapshot = await this.captureSourceSnapshot(connection);
+
       const fileSizeMb = await strategy.execute(connection, fileKey, metadata);
+
+      // Upload manifest alongside the dump
+      const manifest: DumpManifest = {
+        version: 1,
+        createdAt: startedAt.toISOString(),
+        dbType: connection.dbType,
+        database: connection.database,
+        source: sourceSnapshot,
+      };
+      const manifestKey = fileKey.replace(/\.dump$/, '.manifest.json');
+      await this.r2Service.upload(
+        manifestKey,
+        Readable.from(JSON.stringify(manifest)),
+      );
+
       const completedAt = new Date();
 
       await this.backupRepository.updateStatus(job.id, JobStatus.COMPLETED, {
@@ -151,7 +174,7 @@ export class BackupService {
     const prefix = `${connection.slug}/${category}/`;
     const objects = await this.r2Service.list(prefix);
 
-    return objects.map((obj) => {
+    return objects.filter((obj) => obj.key.endsWith('.dump')).map((obj) => {
       const filename = obj.key.split('/').pop() ?? '';
       const timestamp = filename.replace(/\.dump$/, '');
 
@@ -171,7 +194,8 @@ export class BackupService {
   }
 
   async listDumpsFromR2(): Promise<R2Object[]> {
-    return this.r2Service.list();
+    const objects = await this.r2Service.list();
+    return objects.filter((obj) => obj.key.endsWith('.dump'));
   }
 
   async getBackupById(
@@ -194,6 +218,104 @@ export class BackupService {
       ...job,
       connectionName,
     };
+  }
+
+  private async captureSourceSnapshot(
+    connection: ConnectionEntity,
+  ): Promise<DumpManifestSource> {
+    if (connection.dbType === DbTypeEnum.MYSQL) {
+      return this.captureMySQLSnapshot(connection);
+    }
+    return this.capturePostgresSnapshot(connection);
+  }
+
+  private async capturePostgresSnapshot(
+    connection: ConnectionEntity,
+  ): Promise<DumpManifestSource> {
+    const client = new Client({
+      host: connection.host,
+      port: connection.port,
+      database: connection.database,
+      user: connection.username,
+      password: connection.password,
+      connectionTimeoutMillis: 10_000,
+    });
+
+    try {
+      await client.connect();
+
+      const versionResult = await client.query<{ version: string }>(
+        'SHOW server_version',
+      );
+      const serverVersion = versionResult.rows[0]?.version ?? 'unknown';
+
+      const tablesResult = await client.query<{
+        name: string;
+        estimated_rows: string;
+      }>(`
+        SELECT relname AS name, COALESCE(n_live_tup, 0) AS estimated_rows
+        FROM pg_stat_user_tables
+        WHERE schemaname = 'public'
+        ORDER BY n_live_tup DESC
+      `);
+
+      const tables = tablesResult.rows.map((r) => ({
+        name: r.name,
+        estimatedRows: Number(r.estimated_rows),
+      }));
+
+      return {
+        serverVersion,
+        tableCount: tables.length,
+        estimatedRows: tables.reduce((sum, t) => sum + t.estimatedRows, 0),
+        tables,
+      };
+    } finally {
+      await client.end().catch(() => undefined);
+    }
+  }
+
+  private async captureMySQLSnapshot(
+    connection: ConnectionEntity,
+  ): Promise<DumpManifestSource> {
+    const conn = await createMysqlConnection({
+      host: connection.host,
+      port: connection.port,
+      database: connection.database,
+      user: connection.username,
+      password: connection.password,
+      connectTimeout: 10_000,
+    });
+
+    try {
+      const [versionRows] = await conn.query<(RowDataPacket & { v: string })[]>(
+        'SELECT VERSION() AS v',
+      );
+      const serverVersion = versionRows[0]?.v ?? 'unknown';
+
+      const [tableRows] = await conn.query<
+        (RowDataPacket & { name: string; estimated_rows: string })[]
+      >(`
+        SELECT TABLE_NAME AS name, COALESCE(TABLE_ROWS, 0) AS estimated_rows
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+        ORDER BY TABLE_ROWS DESC
+      `);
+
+      const tables = tableRows.map((r) => ({
+        name: r.name,
+        estimatedRows: Number(r.estimated_rows),
+      }));
+
+      return {
+        serverVersion,
+        tableCount: tables.length,
+        estimatedRows: tables.reduce((sum, t) => sum + t.estimatedRows, 0),
+        tables,
+      };
+    } finally {
+      await conn.end();
+    }
   }
 
   private sanitizeErrorMessage(message: string): string {
