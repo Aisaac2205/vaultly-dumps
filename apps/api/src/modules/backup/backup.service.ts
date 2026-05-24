@@ -63,7 +63,8 @@ export class BackupService {
     }
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileKey = `${connection.slug}/${category}/${timestamp}.dump`;
+    const uniqueSuffix = Math.random().toString(36).slice(2, 8);
+    const fileKey = `${connection.slug}/${category}/${timestamp}-${uniqueSuffix}.dump`;
 
     const metadata: Record<string, string> = {
       connectionId: connection.id,
@@ -106,10 +107,16 @@ export class BackupService {
         source: sourceSnapshot,
       };
       const manifestKey = fileKey.replace(/\.dump$/, '.manifest.json');
-      await this.r2Service.upload(
-        manifestKey,
-        Readable.from(JSON.stringify(manifest)),
-      );
+      try {
+        await this.r2Service.upload(
+          manifestKey,
+          Readable.from(JSON.stringify(manifest)),
+        );
+      } catch (manifestError) {
+        // Dump is orphaned without its manifest — clean it up
+        await this.r2Service.delete(fileKey).catch(() => {});
+        throw manifestError;
+      }
 
       const completedAt = new Date();
 
@@ -253,9 +260,9 @@ export class BackupService {
         name: string;
         estimated_rows: string;
       }>(`
-        SELECT relname AS name, COALESCE(n_live_tup, 0) AS estimated_rows
+        SELECT schemaname || '.' || relname AS name,
+               COALESCE(n_live_tup, 0) AS estimated_rows
         FROM pg_stat_user_tables
-        WHERE schemaname = 'public'
         ORDER BY n_live_tup DESC
       `);
 

@@ -290,9 +290,9 @@ export class RestoreService implements OnApplicationBootstrap {
     try {
       await client.connect();
       const result = await client.query<{ name: string; estimated_rows: string }>(`
-        SELECT relname AS name, COALESCE(n_live_tup, 0) AS estimated_rows
+        SELECT schemaname || '.' || relname AS name,
+               COALESCE(n_live_tup, 0) AS estimated_rows
         FROM pg_stat_user_tables
-        WHERE schemaname = 'public'
         ORDER BY n_live_tup DESC
       `);
       return this.toSnapshot(result.rows);
