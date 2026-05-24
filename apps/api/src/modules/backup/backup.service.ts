@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -103,21 +104,20 @@ export class BackupService {
       };
     } catch (error) {
       const completedAt = new Date();
-      const errorMessage =
+      const rawMessage =
         error instanceof Error ? error.message : 'Error desconocido en backup';
+      const errorMessage = this.sanitizeErrorMessage(rawMessage);
+
+      this.logger.error(`Backup failed for connection ${connection.id}: ${rawMessage}`);
 
       await this.backupRepository.updateStatus(job.id, JobStatus.FAILED, {
         errorMessage,
         completedAt,
       });
 
-      return {
-        jobId: job.id,
-        fileKey,
-        fileSizeMb: 0,
-        startedAt,
-        completedAt,
-      };
+      throw new InternalServerErrorException(
+        `Backup failed for job ${job.id}: ${errorMessage}`,
+      );
     }
   }
 
@@ -186,13 +186,22 @@ export class BackupService {
     try {
       const connection = await this.connectionsService.findById(job.connectionId);
       connectionName = connection.name;
-    } catch {
-      // Connection may have been deleted — keep default name
+    } catch (err) {
+      if (!(err instanceof NotFoundException)) throw err;
     }
 
     return {
       ...job,
       connectionName,
     };
+  }
+
+  private sanitizeErrorMessage(message: string): string {
+    return message
+      .split('\n')[0]
+      .replace(/password\s*[:=]\s*\S+/gi, 'password=***')
+      .replace(/PGPASSWORD\s*[:=]\s*\S+/gi, 'PGPASSWORD=***')
+      .replace(/MYSQL_PWD\s*[:=]\s*\S+/gi, 'MYSQL_PWD=***')
+      .slice(0, 500);
   }
 }
