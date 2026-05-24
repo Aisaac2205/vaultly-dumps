@@ -138,7 +138,7 @@ export class BackupService {
         error instanceof Error ? error.message : 'Error desconocido en backup';
       const errorMessage = this.sanitizeErrorMessage(rawMessage);
 
-      this.logger.error(`Backup failed for connection ${connection.id}: ${rawMessage}`);
+      this.logger.error(`Backup failed for connection ${connection.id}: ${errorMessage}`);
 
       await this.backupRepository.updateStatus(job.id, JobStatus.FAILED, {
         errorMessage,

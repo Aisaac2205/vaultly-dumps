@@ -11,12 +11,28 @@ export class ConnectionsRepository {
     private readonly repository: Repository<ConnectionEntity>,
   ) {}
 
+  private static readonly WITHOUT_PASSWORD = {
+    id: true, name: true, slug: true, environment: true, dbType: true,
+    host: true, port: true, database: true, username: true,
+    isActive: true, createdAt: true, updatedAt: true,
+  } as const;
+
   findAll(): Promise<ConnectionEntity[]> {
-    return this.repository.find({ where: { isActive: true } });
+    return this.repository.find({
+      where: { isActive: true },
+      select: ConnectionsRepository.WITHOUT_PASSWORD,
+    });
   }
 
   findById(id: string): Promise<ConnectionEntity | null> {
     return this.repository.findOne({ where: { id, isActive: true } });
+  }
+
+  findByIdSafe(id: string): Promise<ConnectionEntity | null> {
+    return this.repository.findOne({
+      where: { id, isActive: true },
+      select: ConnectionsRepository.WITHOUT_PASSWORD,
+    });
   }
 
   findBySlug(slug: string): Promise<ConnectionEntity | null> {
@@ -24,12 +40,18 @@ export class ConnectionsRepository {
   }
 
   findByEnvironment(environment: Environment): Promise<ConnectionEntity[]> {
-    return this.repository.find({ where: { environment, isActive: true } });
+    return this.repository.find({
+      where: { environment, isActive: true },
+      select: ConnectionsRepository.WITHOUT_PASSWORD,
+    });
   }
 
   findByIds(ids: string[]): Promise<ConnectionEntity[]> {
     if (ids.length === 0) return Promise.resolve([]);
-    return this.repository.find({ where: { id: In(ids), isActive: true } });
+    return this.repository.find({
+      where: { id: In(ids), isActive: true },
+      select: ConnectionsRepository.WITHOUT_PASSWORD,
+    });
   }
 
   // Returns slugs from ALL rows (including inactive/soft-deleted) so newly

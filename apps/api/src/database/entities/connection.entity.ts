@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { encrypt, decrypt } from '../../common/utils/encryption';
 import { Environment } from '../enums/environment.enum';
 import { DbTypeEnum } from '../enums/db-type.enum';
 
@@ -40,7 +41,12 @@ export class ConnectionEntity {
   @Column()
   username!: string;
 
-  @Column()
+  @Column({
+    transformer: {
+      to: (value: string) => encrypt(value),
+      from: (value: string) => decrypt(value),
+    },
+  })
   @Exclude()
   password!: string;
 
