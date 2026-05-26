@@ -30,7 +30,7 @@ export function StorageCard({ dumps }: StorageCardProps) {
             <span className="font-mono font-semibold">{dumps.length}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Espacio total</span>
+            <span className="text-muted-foreground">Espacio ocupado</span>
             <span className="font-mono font-semibold">
               {totalSize > 0 ? formatSize(totalSize) : "0 MB"}
             </span>
