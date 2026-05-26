@@ -1,10 +1,9 @@
 import { DataTable } from "@/shared/ui/data-table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { shortId, formatDate } from "../lib/format";
 import type { RestoreJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
 
-const MAX_ITEMS = 6;
+const MAX_ITEMS = 7;
 
 const STATUS_COLORS: Record<RestoreJob["status"], string> = {
   completed: "bg-success",
@@ -61,23 +60,19 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Últimos Restores</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <DataTable
-          columns={columns}
-          data={visible}
-          emptyMessage="No hay restores recientes"
-          compact
-        />
-        {remaining > 0 && (
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            +{remaining} más
-          </p>
-        )}
-      </CardContent>
-    </Card>
+    <div>
+      <h3 className="mb-3 text-base font-semibold">Últimos Restores</h3>
+      <DataTable
+        columns={columns}
+        data={visible}
+        emptyMessage="No hay restores recientes"
+        compact
+      />
+      {remaining > 0 && (
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          +{remaining} más
+        </p>
+      )}
+    </div>
   );
 }

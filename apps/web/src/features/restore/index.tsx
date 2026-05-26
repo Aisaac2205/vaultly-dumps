@@ -185,11 +185,7 @@ export default function Restore() {
           </div>
 
           <div className="lg:col-span-3">
-            <Card className="flex h-full flex-col rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-              <CardContent className="flex flex-1 flex-col p-5">
-                <RestoreHistory jobs={restoreHistory} connections={connections} isLoading={historyLoading} />
-              </CardContent>
-            </Card>
+            <RestoreHistory jobs={restoreHistory} connections={connections} isLoading={historyLoading} />
           </div>
         </div>
       )}

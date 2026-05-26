@@ -6,7 +6,7 @@ export function useDashboard() {
     queries: [
       {
         queryKey: ["dashboard", "recent-backups"],
-        queryFn: () => dashboardApi.getRecentBackups(14),
+        queryFn: () => dashboardApi.getRecentBackups(15),
         refetchInterval: 15_000,
       },
       {

@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { DataTable } from "@/shared/ui/data-table";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import { shortId, formatDate, formatSize } from "../lib/format";
@@ -17,7 +16,7 @@ interface BackupTimelineProps {
   maxItems?: number;
 }
 
-export function BackupTimeline({ backups, maxItems = 14 }: BackupTimelineProps) {
+export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) {
   const visible = maxItems > 0 ? backups.slice(0, maxItems) : backups;
   const remaining = maxItems > 0 ? Math.max(0, backups.length - maxItems) : 0;
 
@@ -68,11 +67,9 @@ export function BackupTimeline({ backups, maxItems = 14 }: BackupTimelineProps) 
   ];
 
   return (
-    <Card className="flex h-full flex-col">
-      <CardHeader>
-        <CardTitle className="text-base">Últimos Backups</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1">
+    <div className="flex h-full flex-col">
+      <h3 className="mb-3 text-base font-semibold">Últimos Backups</h3>
+      <div className="flex-1 rounded-xl bg-card shadow-sm overflow-hidden">
         <DataTable
           columns={columns}
           data={visible}
@@ -80,11 +77,11 @@ export function BackupTimeline({ backups, maxItems = 14 }: BackupTimelineProps) 
           className=""
         />
         {remaining > 0 && (
-          <p className="mt-2 text-center text-xs text-muted-foreground">
+          <p className="py-2.5 text-center text-xs text-muted-foreground">
             +{remaining} más
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

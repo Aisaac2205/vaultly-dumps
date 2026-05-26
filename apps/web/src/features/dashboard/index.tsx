@@ -87,9 +87,9 @@ export default function Dashboard() {
           <BackupTimeline backups={recentBackups} />
         </div>
         <div className="flex flex-col gap-6 lg:col-span-2">
-          <ConnectionHealthCard connections={connections} />
-          <StorageCard dumps={dumps} />
           <RestoreTimeline restores={recentRestores} />
+          <StorageCard dumps={dumps} />
+          <ConnectionHealthCard connections={connections} />
           <UpcomingCronjobsCard cronjobs={cronjobs} />
         </div>
       </div>
