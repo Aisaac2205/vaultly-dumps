@@ -12,7 +12,10 @@ export class RestoreRepository {
   ) {}
 
   findAll(): Promise<RestoreJobEntity[]> {
-    return this.repository.find({ order: { createdAt: 'DESC' } });
+    return this.repository.find({
+      where: { isDryRun: false },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   findById(id: string): Promise<RestoreJobEntity | null> {
