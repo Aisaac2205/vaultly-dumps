@@ -13,8 +13,8 @@ export function FailureAlertBanner({ failedCount }: FailureAlertBannerProps) {
       <AlertTriangle className="h-4 w-4" />
       <AlertDescription>
         {failedCount} backup{failedCount > 1 ? "s" : ""} fallido
-        {failedCount > 1 ? "s" : ""} en el resumen. Revisá los logs para más
-        detalles.
+        {failedCount > 1 ? "s" : ""} en los últimos 7 días. Revisá los logs
+        para más detalles.
       </AlertDescription>
     </Alert>
   );

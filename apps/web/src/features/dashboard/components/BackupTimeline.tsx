@@ -17,7 +17,7 @@ interface BackupTimelineProps {
   maxItems?: number;
 }
 
-export function BackupTimeline({ backups, maxItems = 10 }: BackupTimelineProps) {
+export function BackupTimeline({ backups, maxItems = 14 }: BackupTimelineProps) {
   const visible = maxItems > 0 ? backups.slice(0, maxItems) : backups;
   const remaining = maxItems > 0 ? Math.max(0, backups.length - maxItems) : 0;
 

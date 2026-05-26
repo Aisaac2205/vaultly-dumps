@@ -8,6 +8,8 @@ import type {
   HealthStatus,
   AuditLog,
   R2Object,
+  DashboardStats,
+  DailyBackupCount,
 } from "../types";
 
 export const dashboardApi = {
@@ -40,4 +42,10 @@ export const dashboardApi = {
 
   getDumpsFromR2: () =>
     apiClient.get<R2Object[]>("/backups/r2").then((r) => r.data),
+
+  getStats: () =>
+    apiClient.get<DashboardStats>("/jobs/stats").then((r) => r.data),
+
+  getDailyCounts: () =>
+    apiClient.get<DailyBackupCount[]>("/jobs/daily-counts").then((r) => r.data),
 };

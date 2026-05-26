@@ -74,3 +74,16 @@ export interface R2Object {
   lastModified: string;
   etag: string;
 }
+
+export interface DashboardStats {
+  successRate30d: number;
+  backupsToday: number;
+  failed7d: number;
+  totalStorageMb: number;
+}
+
+export interface DailyBackupCount {
+  date: string;
+  scheduled: number;
+  manual: number;
+}
