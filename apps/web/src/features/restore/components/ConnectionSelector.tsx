@@ -132,7 +132,7 @@ export function ConnectionSelector({
           <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+      <PopoverContent className="p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
         <Command shouldFilter={false}>
           <CommandInput placeholder="Buscar por nombre, host o base de datos..." />
           <CommandList>
