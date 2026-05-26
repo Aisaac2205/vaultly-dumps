@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import { useDumps, useProdConnections } from "./hooks";
 import { dumpsApi } from "./api/dumps-api";
 import { PageHeader } from "@/shared/ui/page-header";
@@ -41,11 +42,13 @@ export default function Dumps() {
 
     try {
       await dumpsApi.triggerBackup(selectedConnectionId);
+      toast.success("Backup creado correctamente");
       await refetch();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Error al crear el backup";
       setBackupError(message);
+      toast.error("Error al crear el backup", { description: message });
     } finally {
       setIsCreatingBackup(false);
     }

@@ -149,7 +149,7 @@ export default function Restore() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-5 p-4 sm:p-6 lg:p-8">
+    <div className="space-y-5 p-4 sm:p-6 lg:p-8">
       <PageHeader title="Restore" />
 
       {displayError && (
@@ -184,7 +184,7 @@ export default function Restore() {
           <div className="lg:col-span-3">
             <Card className="flex h-full flex-col rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
               <CardContent className="flex flex-1 flex-col p-5">
-                <RestoreHistory jobs={restoreHistory} isLoading={historyLoading} />
+                <RestoreHistory jobs={restoreHistory} connections={connections} isLoading={historyLoading} />
               </CardContent>
             </Card>
           </div>

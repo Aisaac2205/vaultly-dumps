@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import type { RestoreDto, Connection } from "../types";
 import type { EnrichedR2Object } from "@/features/dumps/types";
@@ -72,7 +73,7 @@ export function RestoreForm({
     return connections.filter((c) => c.dbType === effectiveDbType);
   }, [connections, effectiveDbType]);
 
-  const canSimulate = targetConnectionId !== "";
+  const canSimulate = targetConnectionId !== "" && hasSource;
   const hasConnections = compatibleConnections.length > 0;
   const selectedConnection = useMemo(
     () => compatibleConnections.find((c) => c.id === targetConnectionId),
@@ -80,6 +81,10 @@ export function RestoreForm({
   );
 
   function handleSimulate() {
+    if (!hasSource) {
+      toast.warning("Seleccioná un dump antes de simular el restore");
+      return;
+    }
     if (!canSimulate) return;
     const dto: RestoreDto = {
       sourceBackupId: selectedR2Dump ? undefined : (sourceBackupId ?? ""),
@@ -91,6 +96,10 @@ export function RestoreForm({
   }
 
   function handleExecute() {
+    if (!hasSource) {
+      toast.warning("Seleccioná un dump antes de restaurar");
+      return;
+    }
     if (!targetConnectionId) return;
     const dto: RestoreDto = {
       sourceBackupId: selectedR2Dump ? undefined : (sourceBackupId ?? ""),

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { toast } from "sonner";
 import apiClient from "@/shared/lib/api-client";
 import type {
   RestoreState,
@@ -98,12 +99,16 @@ export function useRestore(): UseRestoreReturn {
           if (data.status === "completed") {
             setFinalStatus("completed");
             setState("done");
+            toast.success("Restore completado exitosamente");
             clearInterval(pollRef.current!);
             pollRef.current = null;
           } else if (data.status === "failed") {
             setFinalStatus("failed");
             setError(data.errorMessage ?? "Error desconocido");
             setState("done");
+            toast.error("El restore falló", {
+              description: data.errorMessage ?? "Error desconocido",
+            });
             clearInterval(pollRef.current!);
             pollRef.current = null;
           }

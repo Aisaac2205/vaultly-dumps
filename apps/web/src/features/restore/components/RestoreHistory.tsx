@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import {
@@ -20,11 +20,12 @@ import {
   ChevronDown,
   Check,
 } from "lucide-react";
-import type { RestoreJob } from "../types";
+import type { RestoreJob, Connection } from "../types";
 import { cn } from "@/shared/lib/cn";
 
 interface RestoreHistoryProps {
   jobs: RestoreJob[];
+  connections: Connection[];
   isLoading: boolean;
 }
 
@@ -85,8 +86,14 @@ function formatDate(date: string): string {
 
 export function RestoreHistory({
   jobs,
+  connections,
   isLoading,
 }: RestoreHistoryProps) {
+  const connectionMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of connections) map.set(c.id, c.name);
+    return map;
+  }, [connections]);
   const [envFilter, setEnvFilter] = useState<string>("Todos");
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [envOpen, setEnvOpen] = useState(false);
@@ -191,6 +198,9 @@ export function RestoreHistory({
             <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
               <TableRow className="border-border/30 hover:bg-transparent">
                 <TableHead className="py-2.5 text-xs uppercase font-medium tracking-wide text-muted-foreground">
+                  Conexión
+                </TableHead>
+                <TableHead className="py-2.5 text-xs uppercase font-medium tracking-wide text-muted-foreground">
                   Fecha y hora
                 </TableHead>
                 <TableHead className="py-2.5 text-xs uppercase font-medium tracking-wide text-muted-foreground">
@@ -213,6 +223,9 @@ export function RestoreHistory({
                     data-state={job.status === "running" ? "active" : undefined}
                     className="border-border/20 hover:bg-muted/40 data-[state=active]:bg-blue-500/5 data-[state=active]:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)]"
                   >
+                    <TableCell className="py-3 text-sm truncate max-w-[160px]" title={job.targetConnectionId ? (connectionMap.get(job.targetConnectionId) ?? "—") : "—"}>
+                      {job.targetConnectionId ? (connectionMap.get(job.targetConnectionId) ?? "—") : "—"}
+                    </TableCell>
                     <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
                       {job.startedAt ? formatDate(job.startedAt) : "—"}
                     </TableCell>

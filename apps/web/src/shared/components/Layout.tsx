@@ -3,6 +3,7 @@ import { Sidebar, SidebarContent } from "./Sidebar";
 import type { AuthUser } from "../hooks/useAuth";
 import { Sheet, SheetContent } from "../ui/sheet";
 import { Menu } from "lucide-react";
+import { Toaster } from "sonner";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
 
 interface LayoutProps {
@@ -53,6 +54,8 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
       <main className="min-h-screen flex-1 bg-bg pt-14 md:ml-[240px] md:pt-0">
         {children}
       </main>
+
+      <Toaster position="bottom-right" richColors closeButton />
     </div>
   );
 }

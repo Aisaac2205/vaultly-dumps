@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import {
   useCronjobs,
   useCronjobConnections,
@@ -69,8 +70,10 @@ export default function Cronjobs() {
             id: editingCronjob.id,
             dto: dto as UpdateCronjobDto,
           });
+          toast.success("Cronjob actualizado correctamente");
         } else {
           await createMutation.mutateAsync(dto as CreateCronjobDto);
+          toast.success("Cronjob creado correctamente");
         }
         setShowForm(false);
         setEditingCronjob(undefined);
@@ -97,6 +100,7 @@ export default function Cronjobs() {
 
       try {
         await deleteMutation.mutateAsync(id);
+        toast.success("Cronjob eliminado");
       } catch {
         // Error surfaced via mutation state
       }
@@ -106,23 +110,27 @@ export default function Cronjobs() {
 
   const handleToggle = useCallback(
     async (id: string) => {
+      const cronjob = cronjobs.find((c) => c.id === id);
       setToggleLoading((prev) => ({ ...prev, [id]: true }));
       try {
         await toggleMutation.mutateAsync(id);
+        toast.success(
+          cronjob?.isActive ? "Cronjob pausado" : "Cronjob activado",
+        );
       } catch {
         // Error surfaced via mutation state
       } finally {
         setToggleLoading((prev) => ({ ...prev, [id]: false }));
       }
     },
-    [toggleMutation],
+    [toggleMutation, cronjobs],
   );
 
   // ─── Loading state ──────────────────────────────────────
 
   if (isQueryLoading) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
         <div className="h-8 w-24 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -138,7 +146,7 @@ export default function Cronjobs() {
 
   if (queryError) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader title="Cronjobs" />
         <Alert variant="destructive">
           <AlertDescription>
@@ -156,7 +164,7 @@ export default function Cronjobs() {
 
   if (cronjobs.length === 0 && !showForm) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader
           title="Cronjobs"
         />
@@ -184,7 +192,7 @@ export default function Cronjobs() {
     toggleMutation.error;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-8">
+    <div className="space-y-8 p-8">
       <PageHeader
         title="Cronjobs"
         actions={

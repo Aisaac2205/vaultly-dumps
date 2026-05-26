@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { toast } from "sonner";
 import {
   useConnections,
   useCreateConnection,
@@ -69,8 +70,10 @@ export default function Connections() {
             id: editingConnection.id,
             dto: dto as UpdateConnectionDto,
           });
+          toast.success("Conexión actualizada correctamente");
         } else {
           await createMutation.mutateAsync(dto as CreateConnectionDto);
+          toast.success("Conexión creada correctamente");
         }
         setShowForm(false);
         setEditingConnection(undefined);
@@ -97,6 +100,7 @@ export default function Connections() {
 
       try {
         await deleteMutation.mutateAsync(id);
+        toast.success("Conexión eliminada");
         setTestResults((prev) => {
           const next = { ...prev };
           delete next[id];
@@ -126,6 +130,15 @@ export default function Connections() {
       try {
         const result = await testMutation.mutateAsync(id);
         setTestResults((prev) => ({ ...prev, [id]: result }));
+        if (result.success) {
+          toast.success("Conexión exitosa", {
+            description: `Latencia: ${result.latencyMs}ms`,
+          });
+        } else {
+          toast.error("Conexión fallida", {
+            description: result.error ?? "No se pudo conectar",
+          });
+        }
       } catch {
         setTestResults((prev) => ({
           ...prev,
@@ -135,6 +148,7 @@ export default function Connections() {
             error: "Error al ejecutar el test",
           },
         }));
+        toast.error("Error al ejecutar el test de conexión");
       } finally {
         setTestLoading((prev) => ({ ...prev, [id]: false }));
       }
@@ -153,7 +167,7 @@ export default function Connections() {
 
   if (isQueryLoading) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
         <div className="h-8 w-36 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -169,7 +183,7 @@ export default function Connections() {
 
   if (queryError) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader title="Conexiones" />
         <Alert variant="destructive">
           <AlertDescription>
@@ -187,7 +201,7 @@ export default function Connections() {
 
   if (connections.length === 0 && !showForm) {
     return (
-      <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader
           title="Conexiones"
         />
@@ -209,7 +223,7 @@ export default function Connections() {
     createMutation.error ?? updateMutation.error ?? deleteMutation.error;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-8 p-8">
+    <div className="space-y-8 p-8">
       <PageHeader
         title="Conexiones"
         actions={
