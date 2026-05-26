@@ -28,11 +28,11 @@ export function FrequencyTabs({
 }: FrequencyTabsProps) {
   return (
     <Tabs
-      value={value ?? undefined}
+      value={value ?? ""}
       onValueChange={(next) => onChange(next as BackupCategory)}
       aria-label="Frecuencia de backup"
     >
-      <TabsList className="grid h-8 w-full grid-cols-5 gap-0.5 p-0.5">
+      <TabsList className="grid h-9 w-full grid-cols-5 gap-1 rounded-md p-1">
         {TABS.map((tab) => (
           <TabsTrigger
             key={tab.value}
@@ -40,7 +40,7 @@ export function FrequencyTabs({
             disabled={disabled}
             aria-label={tab.label}
             title={tab.label}
-            className="px-1 py-0.5 text-[11px] leading-tight"
+            className="rounded-sm px-1.5 py-1 text-[11px] leading-tight"
           >
             {tab.shortLabel}
           </TabsTrigger>
