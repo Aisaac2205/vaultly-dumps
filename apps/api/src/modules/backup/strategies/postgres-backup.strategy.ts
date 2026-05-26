@@ -19,11 +19,13 @@ export class PostgresBackupStrategy implements BackupStrategy {
     return new Promise((resolve, reject) => {
       let stderrBuffer = '';
       let settled = false;
+      let uploadPromise: Promise<void> | null = null;
 
       const settle = (fn: typeof resolve | typeof reject, value: unknown) => {
         if (settled) return;
         settled = true;
         clearTimeout(timeout);
+        uploadPromise?.catch(() => {});
         (fn as (v: unknown) => void)(value);
       };
 
@@ -58,28 +60,25 @@ export class PostgresBackupStrategy implements BackupStrategy {
       });
 
       pgDump.on('error', (err: Error) => {
-        const error = new Error(`pg_dump failed to start: ${err.message}`);
-        counter.destroy(error);
-        settle(reject, error);
+        counter.destroy(err);
+        settle(reject, new Error(`pg_dump failed to start: ${err.message}`));
       });
 
       // Pipe BEFORE starting the upload to avoid the readable side
       // emitting an early EOF on some Node.js versions.
       pgDump.stdout.pipe(counter);
 
-      const uploadPromise = this.r2Service.upload(fileKey, counter, { metadata });
+      uploadPromise = this.r2Service.upload(fileKey, counter, { metadata });
 
       pgDump.on('close', (code: number | null) => {
         if (code !== 0) {
           const detail = stderrBuffer.trim() || `exit code ${code ?? 'unknown'}`;
-          const error = new Error(`pg_dump failed: ${detail}`);
-          counter.destroy(error);
-          uploadPromise.catch(() => {});
-          settle(reject, error);
+          counter.destroy(new Error(detail));
+          settle(reject, new Error(`pg_dump failed: ${detail}`));
           return;
         }
 
-        uploadPromise
+        uploadPromise!
           .then(() => settle(resolve, totalBytes / (1024 * 1024)))
           .catch((err: Error) => settle(reject, new Error(`R2 upload failed: ${err.message}`)));
       });
