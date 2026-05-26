@@ -10,6 +10,7 @@ import { Request } from 'express';
 import { Observable, tap } from 'rxjs';
 import { Repository } from 'typeorm';
 import { KeycloakUser } from '../decorators/current-user.decorator';
+import { getAuditContext } from '../audit/audit-context';
 import { AuditLogEntity } from '../../database/entities/audit-log.entity';
 import { Environment } from '../../database/enums/environment.enum';
 
@@ -86,25 +87,32 @@ export class AuditInterceptor implements NestInterceptor {
       const user = request.user;
       const params = request.params as Record<string, string>;
       const body = (request.body ?? {}) as Record<string, string>;
+      const ctx = getAuditContext(request);
 
-      // environment is required by the schema (NOT NULL enum).
-      // For actions that don't target a specific environment (e.g. managing
-      // connections or cronjobs), we fall back to DEV as a neutral marker.
-      // To remove this fallback, make AuditLogEntity.environment nullable.
-      const env = (body['environment'] ??
+      // Precedence: audit context (set by controller after service
+      // resolves the entity) > body > params > DEV fallback.
+      const env = (ctx?.environment ??
+        body['environment'] ??
         params['environment'] ??
         Environment.DEV) as Environment;
+
+      const resourceId =
+        ctx?.resourceId ?? params['id'] ?? 'unknown';
+
+      const baseMetadata: Record<string, unknown> = {
+        body: redactSensitive(body),
+        query: redactSensitive(request.query),
+      };
 
       await this.auditRepo.save({
         action: `${request.method} ${request.path}`,
         userId: user?.sub ?? 'anonymous',
         username: user?.preferred_username ?? 'anonymous',
         resourceType: context.getClass().name,
-        resourceId: params['id'] ?? 'unknown',
-        metadata: {
-          body: redactSensitive(body),
-          query: redactSensitive(request.query),
-        } as Record<string, unknown>,
+        resourceId,
+        metadata: ctx?.metadata
+          ? { ...baseMetadata, ...ctx.metadata }
+          : baseMetadata,
         environment: env,
       });
     } catch (error) {

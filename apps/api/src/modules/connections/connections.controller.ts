@@ -7,9 +7,12 @@ import {
   Param,
   Body,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { setAuditContext } from '../../common/audit/audit-context';
 import { ConnectionsService } from './connections.service';
 import { CreateConnectionDto } from './dto/create-connection.dto';
 import { UpdateConnectionDto } from './dto/update-connection.dto';
@@ -32,17 +35,30 @@ export class ConnectionsController {
   }
 
   @Post()
-  create(@Body() dto: CreateConnectionDto) {
-    return this.service.create(dto);
+  async create(@Body() dto: CreateConnectionDto, @Req() req: Request) {
+    const result = await this.service.create(dto);
+    setAuditContext(req, {
+      environment: result.environment,
+      resourceId: result.id,
+    });
+    return result;
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateConnectionDto) {
-    return this.service.update(id, dto);
+  async update(
+    @Param('id') id: string,
+    @Body() dto: UpdateConnectionDto,
+    @Req() req: Request,
+  ) {
+    const result = await this.service.update(id, dto);
+    setAuditContext(req, { environment: result.environment });
+    return result;
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Req() req: Request) {
+    const existing = await this.service.findById(id);
+    setAuditContext(req, { environment: existing.environment });
     return this.service.delete(id);
   }
 
@@ -57,7 +73,9 @@ export class ConnectionsController {
   }
 
   @Post(':id/test')
-  testById(@Param('id') id: string) {
+  async testById(@Param('id') id: string, @Req() req: Request) {
+    const connection = await this.service.findById(id);
+    setAuditContext(req, { environment: connection.environment });
     return this.service.testByConnectionId(id);
   }
 }

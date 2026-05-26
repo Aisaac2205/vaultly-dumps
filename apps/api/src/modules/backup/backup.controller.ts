@@ -5,13 +5,17 @@ import {
   Param,
   Body,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser, KeycloakUser } from '../../common/decorators/current-user.decorator';
+import { setAuditContext } from '../../common/audit/audit-context';
 import { BackupService } from './backup.service';
 import { CreateBackupDto } from './dto/create-backup.dto';
 import { ListEnrichedDumpsQueryDto } from './dto/list-enriched-dumps.query.dto';
+import { Environment } from '../../database/enums/environment.enum';
 
 @Controller('backups')
 @UseGuards(JwtAuthGuard)
@@ -19,11 +23,18 @@ export class BackupController {
   constructor(private readonly service: BackupService) {}
 
   @Post()
-  createBackup(
+  async createBackup(
     @Body() dto: CreateBackupDto,
     @CurrentUser() user: KeycloakUser,
+    @Req() req: Request,
   ) {
-    return this.service.createBackup(dto, user);
+    const result = await this.service.createBackup(dto, user);
+    setAuditContext(req, {
+      environment: Environment.PROD,
+      resourceId: result.jobId,
+      metadata: { fileKey: result.fileKey, connectionId: dto.connectionId },
+    });
+    return result;
   }
 
   // Literal routes must come before parameterized ones (:id)
@@ -43,11 +54,18 @@ export class BackupController {
   }
 
   @Post('trigger/:connectionId')
-  triggerManual(
+  async triggerManual(
     @Param('connectionId') connectionId: string,
     @CurrentUser() user: KeycloakUser,
+    @Req() req: Request,
   ) {
-    return this.service.triggerManual(connectionId, user);
+    const result = await this.service.triggerManual(connectionId, user);
+    setAuditContext(req, {
+      environment: Environment.PROD,
+      resourceId: result.jobId,
+      metadata: { fileKey: result.fileKey, connectionId },
+    });
+    return result;
   }
 
   @Get()
