@@ -55,13 +55,10 @@ function ChartContainer({
     <ChartContext.Provider value={{ config }}>
       <div
         style={cssVars}
-        className={cn(
-          "flex aspect-video justify-center text-xs",
-          className,
-        )}
+        className={cn("w-full text-xs", className)}
         {...props}
       >
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer>
           {children}
         </ResponsiveContainer>
       </div>

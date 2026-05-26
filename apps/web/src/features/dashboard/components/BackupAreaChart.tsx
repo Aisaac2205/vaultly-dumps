@@ -79,7 +79,7 @@ export function BackupAreaChart({ data }: BackupAreaChartProps) {
             No hay datos para este período
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+          <ChartContainer config={chartConfig} className="h-[250px] w-full">
             <AreaChart data={filteredData}>
               <defs>
                 <linearGradient id="fillScheduled" x1="0" y1="0" x2="0" y2="1">
