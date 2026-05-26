@@ -9,6 +9,7 @@ interface StatCardProps {
   trend?: { value: number; positive: boolean };
   statusColor?: string;
   loading?: boolean;
+  compact?: boolean;
 }
 
 export function StatCard({
@@ -18,6 +19,7 @@ export function StatCard({
   trend,
   statusColor,
   loading,
+  compact = false,
 }: StatCardProps) {
   if (loading) {
     return (
@@ -42,7 +44,7 @@ export function StatCard({
           )}
         </div>
         <p
-          className="mt-2 font-mono text-2xl font-semibold"
+          className={`mt-2 font-mono font-semibold ${compact ? "text-lg" : "text-2xl"}`}
           style={statusColor ? { color: statusColor } : undefined}
         >
           {value}

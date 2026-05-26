@@ -34,12 +34,14 @@ export function ConnectionsStats({
         value={total}
         icon={<Database className="h-4 w-4" />}
         loading={loading}
+        compact
       />
       <StatCard
         label="Activas"
         value={active}
         icon={<Activity className="h-4 w-4" />}
         loading={loading}
+        compact
       />
       <StatCard
         label="Por ambiente"
@@ -52,12 +54,14 @@ export function ConnectionsStats({
         }
         icon={<Layers className="h-4 w-4" />}
         loading={loading}
+        compact
       />
       <StatCard
         label="Por tipo de BD"
         value={`PG ${postgres} / MySQL ${mysql}`}
         icon={<Server className="h-4 w-4" />}
         loading={loading}
+        compact
       />
     </div>
   );

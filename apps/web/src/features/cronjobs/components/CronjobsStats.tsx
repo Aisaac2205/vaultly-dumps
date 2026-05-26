@@ -48,12 +48,14 @@ export function CronjobsStats({
         value={total}
         icon={<Clock className="h-4 w-4" />}
         loading={loading}
+        compact
       />
       <StatCard
         label="Activos"
         value={active}
         icon={<Play className="h-4 w-4" />}
         loading={loading}
+        compact
       />
       <StatCard
         label="Estado principal"
@@ -66,12 +68,14 @@ export function CronjobsStats({
         }
         icon={<CheckCircle2 className="h-4 w-4" />}
         loading={loading}
+        compact
       />
       <StatCard
         label="Próxima ejecución"
         value={earliest ?? "—"}
         icon={<Calendar className="h-4 w-4" />}
         loading={loading}
+        compact
       />
     </div>
   );
