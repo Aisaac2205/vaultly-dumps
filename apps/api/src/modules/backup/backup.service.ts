@@ -227,6 +227,20 @@ export class BackupService {
     };
   }
 
+  async getDownloadUrl(id: string): Promise<{ url: string; fileKey: string }> {
+    const job = await this.backupRepository.findById(id);
+    if (!job) {
+      throw new NotFoundException(`Backup job con ID "${id}" no encontrado`);
+    }
+    if (job.status !== JobStatus.COMPLETED || !job.fileKey) {
+      throw new BadRequestException(
+        `El backup "${id}" no tiene un archivo disponible para descarga`,
+      );
+    }
+    const url = await this.r2Service.getSignedUrl(job.fileKey, 900);
+    return { url, fileKey: job.fileKey };
+  }
+
   private async captureSourceSnapshot(
     connection: ConnectionEntity,
   ): Promise<DumpManifestSource> {

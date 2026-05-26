@@ -68,6 +68,19 @@ export class BackupController {
     return result;
   }
 
+  @Post(':id/download-url')
+  async getDownloadUrl(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
+    const result = await this.service.getDownloadUrl(id);
+    setAuditContext(req, {
+      environment: Environment.PROD,
+      metadata: { fileKey: result.fileKey },
+    });
+    return result;
+  }
+
   @Get()
   listBackups() {
     return this.service.listBackups();

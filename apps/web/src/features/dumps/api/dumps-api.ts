@@ -22,4 +22,9 @@ export const dumpsApi = {
 
   triggerBackup: (connectionId: string) =>
     apiClient.post(`/backups/trigger/${connectionId}`),
+
+  getDownloadUrl: (id: string) =>
+    apiClient
+      .post<{ url: string; fileKey: string }>(`/backups/${id}/download-url`)
+      .then((r) => r.data),
 };
