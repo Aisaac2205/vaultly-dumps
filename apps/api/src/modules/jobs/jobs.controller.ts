@@ -35,6 +35,16 @@ export class JobsController {
     return this.service.getSummary();
   }
 
+  @Get('stats')
+  getStats() {
+    return this.service.getStats();
+  }
+
+  @Get('daily-counts')
+  getDailyCounts() {
+    return this.service.getDailyCounts();
+  }
+
   private parseFilters(raw: JobFilters): JobFilters {
     const filters: JobFilters = {};
 

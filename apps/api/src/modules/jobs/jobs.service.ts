@@ -2,6 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { JobsRepository, JobFilters } from './jobs.repository';
 import { JobStatus } from '../../database/enums/job-status.enum';
 
+export interface DashboardStats {
+  successRate30d: number;
+  backupsToday: number;
+  failed7d: number;
+  totalStorageMb: number;
+}
+
+export interface DailyBackupCount {
+  date: string;
+  scheduled: number;
+  manual: number;
+}
+
 export interface JobSummary {
   total: number;
   completed: number;
@@ -59,5 +72,19 @@ export class JobsService {
       pending: counts[JobStatus.PENDING],
       running: counts[JobStatus.RUNNING],
     };
+  }
+
+  async getStats(): Promise<DashboardStats> {
+    const raw = await this.repository.getStats();
+    return {
+      successRate30d: raw.successRate30d,
+      backupsToday: raw.backupsToday,
+      failed7d: raw.failed7d,
+      totalStorageMb: raw.totalStorageR2Mb,
+    };
+  }
+
+  async getDailyCounts(): Promise<DailyBackupCount[]> {
+    return this.repository.getDailyCounts();
   }
 }
