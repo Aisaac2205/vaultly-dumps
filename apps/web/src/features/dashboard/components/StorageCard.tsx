@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import { Cloud } from "lucide-react";
 import type { R2Object } from "../types";
 import { formatSize, formatRelativeTime } from "../lib/format";
 import cloudflareSvg from "@/shared/assets/Cloudflare.svg";
@@ -20,10 +19,7 @@ export function StorageCard({ dumps }: StorageCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-base">
-          <span className="flex items-center gap-2">
-            <Cloud className="h-4 w-4" />
-            Almacenamiento R2
-          </span>
+          <span>Almacenamiento R2</span>
           <img src={cloudflareSvg} alt="Cloudflare R2" className="h-4 w-4" />
         </CardTitle>
       </CardHeader>
