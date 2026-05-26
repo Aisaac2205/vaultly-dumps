@@ -20,7 +20,7 @@ import { Environment } from '../../database/enums/environment.enum';
 import { DbTypeEnum } from '../../database/enums/db-type.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { BackupCategory } from '../../database/enums/backup-category.enum';
-import { DryRunResult, DryRunSnapshot, DryRunDiff } from './interfaces/dry-run-result.interface';
+import { DryRunResult, DryRunSnapshot, DryRunDiff, DryRunConnectionInfo } from './interfaces/dry-run-result.interface';
 import { DumpManifest } from '../backup/interfaces/dump-manifest.interface';
 import { ConnectionEntity } from '../../database/entities/connection.entity';
 import { SseService } from '../../shared/sse/sse.service';
@@ -272,7 +272,38 @@ export class RestoreService implements OnApplicationBootstrap {
     // 3. Compute diff if source is available
     const diff = source ? this.computeDiff(source, target) : null;
 
-    return { source, target, diff, manifestAvailable: source !== null };
+    // 4. Resolve source connection info from fileKey slug
+    let sourceConnection: DryRunConnectionInfo | undefined;
+    try {
+      const sourceSlug = fileKey.split('/')[0];
+      if (sourceSlug) {
+        const conn = await this.connectionsService.findBySlug(sourceSlug);
+        sourceConnection = {
+          name: conn.name,
+          database: conn.database,
+          environment: conn.environment,
+          dbType: conn.dbType,
+        };
+      }
+    } catch {
+      // Source connection may have been deleted — not critical
+    }
+
+    const targetConnectionInfo: DryRunConnectionInfo = {
+      name: targetConnection.name,
+      database: targetConnection.database,
+      environment: targetConnection.environment,
+      dbType: targetConnection.dbType,
+    };
+
+    return {
+      source,
+      target,
+      diff,
+      manifestAvailable: source !== null,
+      sourceConnection,
+      targetConnection: targetConnectionInfo,
+    };
   }
 
   private async captureTargetPostgres(

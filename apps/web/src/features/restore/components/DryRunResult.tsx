@@ -1,8 +1,41 @@
-import type { DryRunResult as DryRunResultType } from "../types";
+import type { DryRunResult as DryRunResultType, DryRunConnectionInfo } from "../types";
+import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { formatNumber } from "../lib/format";
+import postgresSvg from "@/shared/assets/PostgresSQL.svg";
+import mysqlSvg from "@/shared/assets/MySQL.svg";
 
-const MAX_VISIBLE_TABLES = 10;
+const DB_LOGOS: Record<string, string> = {
+  postgres: postgresSvg as string,
+  mysql: mysqlSvg as string,
+};
+
+const DB_LABELS: Record<string, string> = {
+  postgres: "PostgreSQL",
+  mysql: "MySQL",
+};
+
+function ConnectionCard({ conn, label }: { conn: DryRunConnectionInfo; label: string }) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl bg-muted/40 px-3 py-2">
+      {DB_LOGOS[conn.dbType] && (
+        <img
+          src={DB_LOGOS[conn.dbType]}
+          alt={DB_LABELS[conn.dbType] ?? conn.dbType}
+          className="h-5 w-5 shrink-0"
+        />
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="truncate text-sm font-semibold" title={conn.name}>{conn.name}</p>
+        <p className="truncate font-mono text-xs text-muted-foreground" title={conn.database}>{conn.database}</p>
+      </div>
+      <Badge variant="outline" className="shrink-0 rounded-full text-[10px] uppercase">
+        {conn.environment}
+      </Badge>
+    </div>
+  );
+}
 
 interface DryRunResultProps {
   result: DryRunResultType;
@@ -20,11 +53,19 @@ export function DryRunResult({
   const { source, target, diff } = result;
 
   if (!diff || !source) {
-    return <TargetOnlyView target={target} onConfirm={onConfirm} onCancel={onCancel} isLoading={isLoading} />;
+    return <TargetOnlyView target={target} targetConnection={result.targetConnection} onConfirm={onConfirm} onCancel={onCancel} isLoading={isLoading} />;
   }
 
   return (
     <div className="space-y-4">
+      {/* Connection info */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {result.sourceConnection && (
+          <ConnectionCard conn={result.sourceConnection} label="Source" />
+        )}
+        <ConnectionCard conn={result.targetConnection} label="Target" />
+      </div>
+
       <div className="flex gap-4 text-sm">
         <div className="flex-1 rounded-lg bg-muted/40 px-3 py-2">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dump (source)</p>
@@ -40,26 +81,26 @@ export function DryRunResult({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl bg-card shadow-sm">
+      <div className="max-h-[480px] lg:max-h-[640px] 2xl:max-h-[800px] overflow-auto rounded-xl bg-card shadow-sm">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50">
+          <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm">
+            <tr>
               <th className="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Tabla
               </th>
               <th className="px-3 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Source
+                {result.sourceConnection?.environment?.toUpperCase() ?? "Source"}
               </th>
               <th className="px-3 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Target
+                {result.targetConnection.environment.toUpperCase()}
               </th>
               <th className="px-3 py-2.5 text-right text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Delta
+                Diferencia
               </th>
             </tr>
           </thead>
           <tbody>
-            {diff.added.slice(0, MAX_VISIBLE_TABLES).map((name) => (
+            {diff.added.map((name) => (
               <tr key={name} className="border-t border-border/20 bg-emerald-500/5">
                 <td className="px-3 py-2.5">
                   <span className="mr-1.5 text-xs text-emerald-600">+</span>{name}
@@ -71,7 +112,7 @@ export function DryRunResult({
                 <td className="px-3 py-2.5 text-right text-xs text-emerald-600">new</td>
               </tr>
             ))}
-            {diff.common.slice(0, MAX_VISIBLE_TABLES).map((t) => {
+            {diff.common.map((t) => {
               const delta = t.sourceRows - t.targetRows;
               return (
                 <tr key={t.name} className="border-t border-border/20 hover:bg-muted/40">
@@ -88,7 +129,7 @@ export function DryRunResult({
                 </tr>
               );
             })}
-            {diff.removed.slice(0, MAX_VISIBLE_TABLES).map((name) => (
+            {diff.removed.map((name) => (
               <tr key={name} className="border-t border-border/20 bg-red-500/5">
                 <td className="px-3 py-2.5">
                   <span className="mr-1.5 text-xs text-red-500">−</span>{name}
@@ -100,23 +141,16 @@ export function DryRunResult({
                 <td className="px-3 py-2.5 text-right text-xs text-red-500">drop</td>
               </tr>
             ))}
-            {totalOverflow(diff) > 0 && (
-              <tr className="border-t border-border/20">
-                <td colSpan={4} className="px-3 py-2.5 text-xs text-muted-foreground">
-                  +{totalOverflow(diff)} more
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={onCancel} disabled={isLoading} variant="outline">
+        <Button onClick={onCancel} disabled={isLoading} variant="ghost">
           Cancelar
         </Button>
-        <Button onClick={onConfirm} disabled={isLoading} variant="destructive">
-          {isLoading ? "Procesando\u2026" : "Confirmar restore real"}
+        <Button onClick={onConfirm} disabled={isLoading} className="bg-black text-white hover:bg-black/90">
+          {isLoading ? "Procesando\u2026" : "Confirmar restore"}
         </Button>
       </div>
     </div>
@@ -125,20 +159,21 @@ export function DryRunResult({
 
 function TargetOnlyView({
   target,
+  targetConnection,
   onConfirm,
   onCancel,
   isLoading,
 }: {
   target: DryRunResultType["target"];
+  targetConnection: DryRunResultType["targetConnection"];
   onConfirm: () => void;
   onCancel: () => void;
   isLoading: boolean;
 }) {
-  const visibleTables = target.tables.slice(0, MAX_VISIBLE_TABLES);
-  const remaining = target.tables.length - MAX_VISIBLE_TABLES;
-
   return (
     <div className="space-y-4">
+      <ConnectionCard conn={targetConnection} label="Target" />
+
       <p className="text-sm">
         <span className="text-xs text-amber-600">(manifest no disponible)</span>{" "}
         Destino actual:{" "}
@@ -147,10 +182,10 @@ function TargetOnlyView({
         </span>
       </p>
 
-      <div className="overflow-hidden rounded-xl bg-card shadow-sm">
+      <div className="max-h-[480px] lg:max-h-[640px] 2xl:max-h-[800px] overflow-auto rounded-xl bg-card shadow-sm">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-muted/50">
+          <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm">
+            <tr>
               <th className="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Tabla
               </th>
@@ -160,7 +195,7 @@ function TargetOnlyView({
             </tr>
           </thead>
           <tbody>
-            {visibleTables.map((table) => (
+            {target.tables.map((table) => (
               <tr key={table.name} className="border-t border-border/20 hover:bg-muted/40">
                 <td className="px-3 py-2.5">{table.name}</td>
                 <td className="px-3 py-2.5 text-right font-mono text-xs">
@@ -168,30 +203,18 @@ function TargetOnlyView({
                 </td>
               </tr>
             ))}
-            {remaining > 0 && (
-              <tr className="border-t border-border/20">
-                <td colSpan={2} className="px-3 py-2.5 text-xs text-muted-foreground">
-                  +{remaining} more
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button onClick={onCancel} disabled={isLoading} variant="outline">
+        <Button onClick={onCancel} disabled={isLoading} variant="ghost">
           Cancelar
         </Button>
-        <Button onClick={onConfirm} disabled={isLoading} variant="destructive">
-          {isLoading ? "Procesando\u2026" : "Confirmar restore real"}
+        <Button onClick={onConfirm} disabled={isLoading} className="bg-black text-white hover:bg-black/90">
+          {isLoading ? "Procesando\u2026" : "Confirmar restore"}
         </Button>
       </div>
     </div>
   );
-}
-
-function totalOverflow(diff: NonNullable<DryRunResultType["diff"]>): number {
-  const total = diff.added.length + diff.common.length + diff.removed.length;
-  return Math.max(0, total - MAX_VISIBLE_TABLES * 3);
 }

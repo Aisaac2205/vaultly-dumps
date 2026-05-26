@@ -10,9 +10,18 @@ export interface DryRunDiff {
   common: Array<{ name: string; sourceRows: number; targetRows: number }>;
 }
 
+export interface DryRunConnectionInfo {
+  name: string;
+  database: string;
+  environment: string;
+  dbType: string;
+}
+
 export interface DryRunResult {
   source: DryRunSnapshot | null;
   target: DryRunSnapshot;
   diff: DryRunDiff | null;
   manifestAvailable: boolean;
+  sourceConnection?: DryRunConnectionInfo;
+  targetConnection: DryRunConnectionInfo;
 }

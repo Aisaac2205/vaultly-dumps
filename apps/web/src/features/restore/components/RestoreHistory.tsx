@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
+import postgresSvg from "@/shared/assets/PostgresSQL.svg";
+import mysqlSvg from "@/shared/assets/MySQL.svg";
 import {
   Table,
   TableBody,
@@ -90,10 +92,15 @@ export function RestoreHistory({
   isLoading,
 }: RestoreHistoryProps) {
   const connectionMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const c of connections) map.set(c.id, c.name);
+    const map = new Map<string, { name: string; database: string; dbType: string }>();
+    for (const c of connections) map.set(c.id, { name: c.name, database: c.database, dbType: c.dbType });
     return map;
   }, [connections]);
+
+  const DB_LOGOS: Record<string, string> = {
+    postgres: postgresSvg as string,
+    mysql: mysqlSvg as string,
+  };
   const [envFilter, setEnvFilter] = useState<string>("Todos");
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [envOpen, setEnvOpen] = useState(false);
@@ -223,8 +230,22 @@ export function RestoreHistory({
                     data-state={job.status === "running" ? "active" : undefined}
                     className="border-border/20 hover:bg-muted/40 data-[state=active]:bg-blue-500/5 data-[state=active]:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)]"
                   >
-                    <TableCell className="py-3 text-sm truncate max-w-[160px]" title={job.targetConnectionId ? (connectionMap.get(job.targetConnectionId) ?? "—") : "—"}>
-                      {job.targetConnectionId ? (connectionMap.get(job.targetConnectionId) ?? "—") : "—"}
+                    <TableCell className="py-3 max-w-[180px]">
+                      {(() => {
+                        const info = job.targetConnectionId ? connectionMap.get(job.targetConnectionId) : undefined;
+                        if (!info) return <span className="text-xs text-muted-foreground">—</span>;
+                        return (
+                          <div className="flex items-center gap-2">
+                            {DB_LOGOS[info.dbType] && (
+                              <img src={DB_LOGOS[info.dbType]} alt={info.dbType} className="h-4 w-4 shrink-0" />
+                            )}
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium" title={info.name}>{info.name}</p>
+                              <p className="truncate font-mono text-[11px] text-muted-foreground" title={info.database}>{info.database}</p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
                       {job.startedAt ? formatDate(job.startedAt) : "—"}

@@ -150,7 +150,10 @@ export default function Restore() {
 
   return (
     <div className="space-y-5 p-4 sm:p-6 lg:p-8">
-      <PageHeader title="Restore" />
+      <PageHeader
+        title="Restore"
+        subtitle={state === "dry-run" ? "Revisa los cambios y confirma para restaurar el dump en el destino." : undefined}
+      />
 
       {displayError && (
         <Alert variant="destructive" className="rounded-xl">
@@ -192,17 +195,19 @@ export default function Restore() {
       )}
 
       {state === "dry-run" && dryRunResult && (
-        <div ref={dryRunResultRef} className="mx-auto max-w-3xl scroll-mt-6">
-          <Card className="rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] animate-in fade-in-0 slide-in-from-top-2 duration-300">
-            <CardContent className="p-5">
-              <DryRunResult
-                result={dryRunResult}
-                onConfirm={handleConfirm}
-                onCancel={handleCancel}
-                isLoading={restoreLoading}
-              />
-            </CardContent>
-          </Card>
+        <div ref={dryRunResultRef} className="flex min-h-[calc(100vh-12rem)] flex-col items-center justify-center scroll-mt-6">
+          <div className="w-full max-w-6xl">
+            <Card className="rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] animate-in fade-in-0 slide-in-from-top-2 duration-300">
+              <CardContent className="p-5 sm:p-6">
+                <DryRunResult
+                  result={dryRunResult}
+                  onConfirm={handleConfirm}
+                  onCancel={handleCancel}
+                  isLoading={restoreLoading}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
