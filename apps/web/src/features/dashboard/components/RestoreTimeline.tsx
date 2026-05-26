@@ -1,4 +1,5 @@
 import { DataTable } from "@/shared/ui/data-table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { shortId, formatDate } from "../lib/format";
 import type { RestoreJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
@@ -60,19 +61,23 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
   ];
 
   return (
-    <div>
-      <h3 className="mb-3 text-base font-semibold">Últimos Restores</h3>
-      <DataTable
-        columns={columns}
-        data={visible}
-        emptyMessage="No hay restores recientes"
-        compact
-      />
-      {remaining > 0 && (
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          +{remaining} más
-        </p>
-      )}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Últimos Restores</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <DataTable
+          columns={columns}
+          data={visible}
+          emptyMessage="No hay restores recientes"
+          compact
+        />
+        {remaining > 0 && (
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            +{remaining} más
+          </p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
