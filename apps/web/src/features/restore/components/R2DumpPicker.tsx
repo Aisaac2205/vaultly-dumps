@@ -29,10 +29,13 @@ export function R2DumpPicker({
     value?.category ?? null,
   );
 
-  const { data: dumps = [], isLoading: dumpsLoading } = useR2Dumps({
+  const { data: allDumps = [], isLoading: dumpsLoading } = useR2Dumps({
     connectionSlug,
     category,
   });
+
+  // Show only the 12 most recent dumps per frequency
+  const dumps = allDumps.slice(0, 12);
 
   // Clear current selection if the user changes the source filter or category
   useEffect(() => {
