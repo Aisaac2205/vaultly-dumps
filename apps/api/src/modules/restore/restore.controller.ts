@@ -8,8 +8,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CurrentUser, KeycloakUser } from '../../common/decorators/current-user.decorator';
+import { BetterAuthGuard } from '../../auth/auth.guard';
+import { RolesGuard, Roles } from '../../auth/roles.guard';
+import { CurrentUser, AuthUser } from '../../auth/decorators/current-user.decorator';
 import { setAuditContext } from '../../common/audit/audit-context';
 import { ConnectionsService } from '../connections/connections.service';
 import { RestoreService } from './restore.service';
@@ -17,7 +18,8 @@ import { CreateRestoreDto } from './dto/create-restore.dto';
 import { DryRunResult } from './interfaces/dry-run-result.interface';
 
 @Controller('restores')
-@UseGuards(JwtAuthGuard)
+@UseGuards(BetterAuthGuard, RolesGuard)
+@Roles('admin')
 export class RestoreController {
   constructor(
     private readonly service: RestoreService,
@@ -27,7 +29,7 @@ export class RestoreController {
   @Post()
   async createRestore(
     @Body() dto: CreateRestoreDto,
-    @CurrentUser() user: KeycloakUser,
+    @CurrentUser() user: AuthUser,
     @Req() req: Request,
   ): Promise<{ jobId: string; dryRunResult?: DryRunResult }> {
     const result = await this.service.createRestore(dto, user);

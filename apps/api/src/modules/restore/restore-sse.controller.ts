@@ -7,7 +7,8 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { SseTokenGuard } from '../../common/guards/sse-token.guard';
+import { BetterAuthGuard } from '../../auth/auth.guard';
+import { RolesGuard, Roles } from '../../auth/roles.guard';
 import { SseService, SseEvent } from '../../shared/sse/sse.service';
 import { RestoreService } from './restore.service';
 
@@ -19,6 +20,8 @@ interface MessageEvent {
 }
 
 @Controller('restores')
+@UseGuards(BetterAuthGuard, RolesGuard)
+@Roles('admin')
 export class RestoreSseController {
   constructor(
     private readonly sseService: SseService,
@@ -26,7 +29,6 @@ export class RestoreSseController {
   ) {}
 
   @Sse(':id/stream')
-  @UseGuards(SseTokenGuard)
   async streamRestore(@Param('id') id: string): Promise<Observable<MessageEvent>> {
     const job = await this.restoreService.getRestoreById(id);
     if (!job) {

@@ -3,6 +3,7 @@ import {
   Catch,
   ExceptionFilter,
   HttpException,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
@@ -16,33 +17,56 @@ interface ErrorBody {
   path: string;
 }
 
-@Catch(HttpException)
+@Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  catch(exception: HttpException, host: ArgumentsHost): void {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
+  catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const statusCode = exception.getStatus();
-    const exceptionResponse = exception.getResponse();
 
-    const message =
-      typeof exceptionResponse === 'string'
-        ? exceptionResponse
-        : String(
-            (exceptionResponse as Record<string, unknown>)['message'] ??
-              exception.message,
-          );
+    if (exception instanceof HttpException) {
+      const statusCode = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
+
+      const message =
+        typeof exceptionResponse === 'string'
+          ? exceptionResponse
+          : String(
+              (exceptionResponse as Record<string, unknown>)['message'] ??
+                exception.message,
+            );
+
+      const body: ErrorBody = {
+        error: {
+          code: exception.name,
+          message,
+          statusCode,
+        },
+        timestamp: new Date().toISOString(),
+        path: request.url,
+      };
+
+      response.status(statusCode).json(body);
+      return;
+    }
+
+    this.logger.error(
+      `Unhandled exception on ${request.method} ${request.url}`,
+      exception instanceof Error ? exception.stack : String(exception),
+    );
 
     const body: ErrorBody = {
       error: {
-        code: exception.name,
-        message,
-        statusCode,
+        code: 'InternalServerError',
+        message: 'Internal server error',
+        statusCode: 500,
       },
       timestamp: new Date().toISOString(),
       path: request.url,
     };
 
-    response.status(statusCode).json(body);
+    response.status(500).json(body);
   }
 }

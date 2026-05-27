@@ -1,12 +1,14 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { BetterAuthGuard } from '../../auth/auth.guard';
+import { RolesGuard, Roles } from '../../auth/roles.guard';
 import { JobsService } from './jobs.service';
 import { JobFilters } from './jobs.repository';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { Environment } from '../../database/enums/environment.enum';
 
 @Controller('jobs')
-@UseGuards(JwtAuthGuard)
+@UseGuards(BetterAuthGuard, RolesGuard)
+@Roles('admin')
 export class JobsController {
   constructor(private readonly service: JobsService) {}
 
