@@ -78,9 +78,9 @@ function ShowcasePanel() {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04]">
             <Lock className="h-5 w-5 text-white/50" />
           </div>
-          <p className="text-sm font-semibold text-white">Seguridad empresarial</p>
+          <p className="text-sm font-semibold text-white">Conexiones cifradas</p>
           <p className="mt-1 max-w-[280px] text-xs text-white/45">
-            Tus datos están protegidos con cifrado de nivel industrial y buenas prácticas.
+            Credenciales cifradas con AES-256, sesiones seguras y control de acceso por roles.
           </p>
         </div>
       </div>
@@ -159,8 +159,8 @@ export default function LoginPage() {
           </span>
         </div>
 
-        {/* Form — centered */}
-        <div className="mx-auto w-full max-w-[460px]">
+        {/* Form — nudged up to align with showcase card */}
+        <div className="mx-auto flex w-full max-w-[460px] flex-1 flex-col justify-center pb-32">
           <h1 className="mb-3 text-4xl font-bold tracking-tight text-[#111]">
             Bienvenido de nuevo
           </h1>
