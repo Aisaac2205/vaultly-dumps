@@ -1,4 +1,4 @@
-import { Suspense, type ReactNode } from "react";
+import { Suspense, lazy, type ReactNode } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
 import { Layout } from "./shared/components/Layout";
@@ -13,6 +13,9 @@ import {
   LazyAudit,
 } from "./shared/lib/lazy-routes";
 
+const LazyLoginPage = lazy(() => import("./features/auth/LoginPage"));
+const LazyUsers = lazy(() => import("./features/users"));
+
 function AuthenticatedLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   return (
@@ -23,6 +26,14 @@ function AuthenticatedLayout({ children }: { children: ReactNode }) {
 }
 
 export const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: (
+      <Suspense fallback={null}>
+        <LazyLoginPage />
+      </Suspense>
+    ),
+  },
   {
     path: "/",
     element: (
@@ -36,7 +47,7 @@ export const router = createBrowserRouter([
   {
     path: "/dumps",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRole="admin">
         <AuthenticatedLayout>
           <LazyDumps />
         </AuthenticatedLayout>
@@ -66,9 +77,19 @@ export const router = createBrowserRouter([
   {
     path: "/connections",
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute requiredRole="admin">
         <AuthenticatedLayout>
           <LazyConnections />
+        </AuthenticatedLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/users",
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AuthenticatedLayout>
+          <LazyUsers />
         </AuthenticatedLayout>
       </ProtectedRoute>
     ),
