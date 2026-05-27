@@ -23,15 +23,15 @@ Before flipping the switch on a production deployment, confirm:
 
 - [ ] R2 credentials are **dedicated** to Vaultly (not shared with other apps)
 - [ ] R2 bucket has **versioning enabled** (defence against accidental deletion)
-- [ ] Keycloak admin password is stored in a secrets manager, not in `.env`
+- [ ] `BETTER_AUTH_SECRET` is stored in a secrets manager, not in `.env`
 - [ ] No `.env` files are committed (`git log --all --full-history -- '*.env'` should be empty)
 
 ### Auth
 
-- [ ] Keycloak realm exists and is named exactly as `KEYCLOAK_REALM`
-- [ ] Both clients (`vaultly-web`, `vaultly-api`) exist with correct redirect URIs
-- [ ] PKCE is enabled on the web client (`S256`)
-- [ ] At least one real user exists (not just the realm admin)
+- [ ] `BETTER_AUTH_SECRET` is set and is at least 32 bytes of random entropy
+- [ ] `BETTER_AUTH_URL` matches the public API domain (used for cookie domain/CORS)
+- [ ] Admin seed user exists (check via `/api/auth/admin/users` or query the `user` table)
+- [ ] At least one non-admin user has been created and can log in successfully
 
 ### Application
 
@@ -140,12 +140,12 @@ Today there is no built-in rotation. Manual procedure:
    ```bash
    docker exec vaultly-api pg_isready -h <DB_HOST> -p <DB_PORT>
    ```
-4. **Is Keycloak reachable?**
+4. **Is Better Auth responding?**
    ```bash
-   curl -I <KEYCLOAK_URL>/realms/<REALM>/.well-known/openid-configuration
+   curl -I <API_URL>/api/auth/ok
    ```
 
-If 1 fails: restart the container. If 2 shows the API crashed on startup: check [troubleshooting §1.1](troubleshooting.md#11-api-crashes-with-relation-does-not-exist). If 3 fails: the DB is down or network is broken. If 4 fails: Keycloak is down — Vaultly will not allow logins but the API itself stays up.
+If 1 fails: restart the container. If 2 shows the API crashed on startup: check [troubleshooting §1.1](troubleshooting.md#11-api-crashes-with-relation-does-not-exist). If 3 fails: the DB is down or network is broken. If 4 fails: Better Auth is not responding — check that `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL` are set correctly and the API has DB access.
 
 ### 4.2 Backups suddenly all failing
 
@@ -177,7 +177,7 @@ If 1 fails: restart the container. If 2 shows the API crashed on startup: check 
    SELECT * FROM audit_logs WHERE user_id = '<suspect>' ORDER BY created_at DESC LIMIT 100;
    ```
 2. Look for patterns: failed PROD modification attempts (good — the guards worked), unusual restore-from-PROD attempts, mass connection creation.
-3. If a token was compromised: invalidate the Keycloak session, force re-login, rotate Vaultly's R2 credentials as defence in depth.
+3. If a session was compromised: revoke the session via the Better Auth admin API, or rotate `BETTER_AUTH_SECRET` to invalidate ALL sessions simultaneously. Rotate Vaultly's R2 credentials as defence in depth.
 4. The audit log is **not cryptographically immutable** — a DBA with control-DB access can edit it ([security-model.md §3](security-model.md#3-audit)). Export the suspicious rows to a separate system before investigating, in case they get tampered with.
 
 ---

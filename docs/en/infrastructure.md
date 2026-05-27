@@ -22,7 +22,7 @@ Both Dockerfiles are multi-stage and live next to their app:
 | `docker-compose.yml` | Production: `api`, `web`, `db` with healthchecks, no ports exposed for `db` |
 | `docker-compose.dev.yml` | Development override (hot reload, open ports, `test` profile for testing DBs) |
 
-> **Keycloak** runs in the cloud. Configure `KEYCLOAK_URL`, `KEYCLOAK_REALM` and `KEYCLOAK_CLIENT_ID` in `.env` pointing at the external environment.
+> **Better Auth** runs inside the API process — no external auth service needed. Configure `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `BETTER_AUTH_ADMIN_EMAIL`, and `BETTER_AUTH_ADMIN_PASSWORD` in `.env`.
 
 > **`docker-compose.dev.yml` is NOT auto-loaded** (renamed from `docker-compose.override.yml` so that `docker compose up` without flags on a prod server does not bring up dev). Always pass `-f` twice or use the `pnpm` scripts.
 

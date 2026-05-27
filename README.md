@@ -18,7 +18,7 @@ Centralized database management platform. Register database connections, run and
 | Frontend        | React                         | ^19.1.0 |
 | Build tool      | Vite                          | ^6.3.3  |
 | Router          | React Router                  | ^7.5.0  |
-| Auth            | Keycloak (OIDC, external)     | —       |
+| Auth            | Better Auth (native, cookie sessions) | —  |
 | Storage         | Cloudflare R2 (S3-compatible) | —       |
 | Control DB      | **PostgreSQL 16+ (required)** | —       |
 | Real-time       | Server-Sent Events (SSE)      | —       |
@@ -39,7 +39,7 @@ Two example deployment topologies. **Neither is mandatory** — Vaultly runs on 
 
 ### Option 1 — PaaS push-deploy (recommended for fast cloud setup)
 
-Best when you want a **working stack in under an hour**, including Keycloak. [Railway](https://railway.com) is the documented template because it ships a pre-built Keycloak setup that drops in with minimal configuration. Same pattern applies to Fly.io, Render, or any PaaS that builds Docker images on git push.
+Best when you want a **working stack in under an hour**. [Railway](https://railway.com) is the documented template because it gives you a running app + database with minimal configuration. Same pattern applies to Fly.io, Render, or any PaaS that builds Docker images on git push.
 
 Walkthrough: [docs/en/deployment-railway.md](docs/en/deployment-railway.md).
 
@@ -99,7 +99,7 @@ The monorepo uses **pnpm workspaces** without Turborepo or Nx. Active workspace:
 | What you need                                     | Where to look                                                                      |
 | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Run locally from scratch                          | [docs/en/local-development.md](docs/en/local-development.md)                             |
-| Deploy to Railway (fast PaaS path with Keycloak template) | [docs/en/deployment-railway.md](docs/en/deployment-railway.md)                     |
+| Deploy to Railway (fast PaaS path)                        | [docs/en/deployment-railway.md](docs/en/deployment-railway.md)                     |
 | Deploy to your own infra (K8s, Nomad, Docker, etc.) | [docs/en/deployment-self-host.md](docs/en/deployment-self-host.md)                     |
 | Connect to managed cloud DBs (Neon / RDS / Azure) | [docs/en/connecting-cloud-databases.md](docs/en/connecting-cloud-databases.md)           |
 | Connect to on-premise DBs (SSH tunnels, VPN)      | [docs/en/connecting-on-premise-databases.md](docs/en/connecting-on-premise-databases.md) |
@@ -138,7 +138,7 @@ cp apps/web/.env.example apps/web/.env
 
 See [docs/en/environment-variables.md](docs/en/environment-variables.md) for the full reference.
 
-> **Keycloak** runs in the cloud. Point `KEYCLOAK_URL`, `KEYCLOAK_REALM` and `KEYCLOAK_CLIENT_ID` at the external instance.
+> **Better Auth** runs inside the API. Set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `BETTER_AUTH_ADMIN_EMAIL`, and `BETTER_AUTH_ADMIN_PASSWORD` in `apps/api/.env`.
 
 ### Start the local database
 
@@ -194,7 +194,7 @@ pnpm --filter @vaultly-control/web build
 | Doc                                                 | Content                                             |
 | --------------------------------------------------- | --------------------------------------------------- |
 | [local-development.md](docs/en/local-development.md)     | Local setup: Node.js vs Docker, commands, debugging       |
-| [deployment-railway.md](docs/en/deployment-railway.md)   | Railway walkthrough: services, variables, Keycloak setup  |
+| [deployment-railway.md](docs/en/deployment-railway.md)   | Railway walkthrough: services, variables, env setup       |
 | [deployment-self-host.md](docs/en/deployment-self-host.md) | Platform-agnostic deployment contract for K8s/Nomad/etc. |
 
 ### How it works (domain)

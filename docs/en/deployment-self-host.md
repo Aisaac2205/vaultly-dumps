@@ -46,9 +46,10 @@ Full reference: [environment-variables.md](environment-variables.md). The contra
 | `NODE_ENV` | yes | `production` in any deployed environment |
 | `PORT` | no (default `3000`) | Listen port |
 | `CORS_ORIGIN` | yes in production | Exact frontend domain, no wildcards |
-| `KEYCLOAK_URL` | yes | External Keycloak instance |
-| `KEYCLOAK_REALM` | yes | Realm name, case-sensitive |
-| `KEYCLOAK_CLIENT_ID` | yes | API client ID in Keycloak |
+| `BETTER_AUTH_SECRET` | yes | Secret for signing sessions (64-char hex) |
+| `BETTER_AUTH_URL` | yes | Public base URL of the API |
+| `BETTER_AUTH_ADMIN_EMAIL` | yes | Seed admin email (used on first boot) |
+| `BETTER_AUTH_ADMIN_PASSWORD` | yes | Seed admin password (used on first boot) |
 | `R2_ACCOUNT_ID` | yes in production | Cloudflare account ID (32-char hex) |
 | `R2_ACCESS_KEY_ID` | yes in production | From R2 API Token |
 | `R2_SECRET_ACCESS_KEY` | yes in production | From R2 API Token |
@@ -61,12 +62,11 @@ The Web layer is **GitOps-friendly by design**: it reads runtime config from `wi
 | Variable | Required | Notes |
 |----------|----------|-------|
 | `VITE_API_URL` | yes | Backend URL (e.g., `https://api.vaultly.example.com`) |
-| `VITE_KEYCLOAK_URL` | yes | Same as API's `KEYCLOAK_URL` |
-| `VITE_KEYCLOAK_REALM` | yes | Same as API's `KEYCLOAK_REALM` |
-| `VITE_KEYCLOAK_CLIENT_ID` | yes | Web client ID in Keycloak (different from API's) |
 | `VITE_APP_BASE_URL` | yes | Public URL of the web (e.g., `https://vaultly.example.com`) |
 
 > The `VITE_*` prefix is historical (these were Vite build-time vars). At runtime they are read from the same names as container env vars by `entrypoint.sh`. You do not need to rebuild the image to change them — just restart the container with new env values.
+
+> Auth is handled entirely by the API via Better Auth. The Web does not need any auth-specific env vars — sessions are cookie-based and the browser handles them automatically.
 
 ---
 
@@ -137,11 +137,10 @@ Recommended: put both behind the same hostname (`vaultly.example.com` for Web, `
 
 The API needs outbound network access to:
 
-- **Keycloak** — wherever you host it (HTTPS, port 443)
 - **Cloudflare R2** — `*.r2.cloudflarestorage.com` (HTTPS, port 443)
 - **Every managed/on-prem DB** you register as a connection (TCP, varies — typically 5432/3306)
 
-If your egress is firewalled, allowlist these explicitly. The Web container has **no outbound network needs** — it just serves static files.
+Better Auth runs inside the API process and connects to the same PostgreSQL instance — no additional egress is needed for auth. The Web container has **no outbound network needs** — it just serves static files.
 
 ---
 
@@ -172,23 +171,9 @@ The API runs migrations on startup with `migrationsRun: true`. Implications:
 
 ---
 
-## 9. The Keycloak gotcha
+## 9. Minimum viable Kubernetes example (illustrative, NOT a template)
 
-Railway has a pre-built Keycloak template that drops in with three clicks. **In self-host, you do NOT get that.** You need to:
-
-1. Deploy Keycloak yourself (Docker image: `quay.io/keycloak/keycloak`).
-2. Configure its own Postgres database.
-3. Create the realm (e.g., `vaultly-control`).
-4. Create both clients (`vaultly-api`, `vaultly-web`) with PKCE enabled.
-5. Configure the redirect URIs to point at your Web domain.
-
-Realm and client setup details are documented per-step in [deployment-railway.md §Configuring the realm and clients](deployment-railway.md#configuring-the-realm-and-clients-in-keycloak) — the steps are the same regardless of where Keycloak runs.
-
-If you want a documented Keycloak realm export to import, that does not exist today. It's a reasonable feature to add — open an issue if you need it.
-
----
-
-## 10. Minimum viable Kubernetes example (illustrative, NOT a template)
+> **Better Auth runs inside the API — no external auth service needed.** Users and sessions are stored in the same PostgreSQL instance. No Keycloak, no separate auth deployment.
 
 Below is the **smallest possible** set of manifests to run Vaultly on K8s. It is intentionally minimal and **does not include** ingress, TLS, secrets management, persistent volumes, or any production hardening. Treat it as a starting point to verify the contract, not as something to deploy as-is.
 

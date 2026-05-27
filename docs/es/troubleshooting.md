@@ -13,7 +13,7 @@ Modos de falla comunes en instalación, configuración y operación, con diagnó
 | Dev local: API crashea al arrancar con `relation "X" does not exist` | [§1.1](#11-api-crashea-con-relation-does-not-exist) |
 | Dev local: API crashea con `ECONNREFUSED 127.0.0.1:5432` | [§1.2](#12-econnrefused-en-postgres) |
 | Dev local: `pnpm install` falla en Windows con EPERM | [§1.3](#13-pnpm-install-falla-en-windows) |
-| Dev local: web muestra página en blanco, errores de `keycloak-js` | [§1.4](#14-web-en-blanco-errores-de-keycloak) |
+| Dev local: la página de login muestra error o la sesión no persiste | [§1.4](#14-errores-de-login-o-sesion-que-no-persiste) |
 | Test de conexión falla: `password authentication failed` | [§2.1](#21-password-authentication-failed) |
 | Test de conexión falla: `SSL connection is required` | [§2.2](#22-error-ssl-required) |
 | Test de conexión falla: timeout a los 5 segundos | [§2.3](#23-connection-timeout) |
@@ -77,17 +77,18 @@ Si el container está arriba pero la API igual no conecta, chequear que `DATABAS
 
 Alternativa: correrlo desde WSL2 donde los symlinks funcionan nativos.
 
-### 1.4 Web en blanco, errores de Keycloak
+### 1.4 Errores de login o sesión que no persiste
 
-**Síntoma**: Frontend carga pero muestra página en blanco. La consola del browser tiene errores de `keycloak-js` sobre issuer inválido o redirect URI.
+**Síntoma**: El formulario de login devuelve error, o el usuario se logueó pero la sesión se pierde al refrescar la página.
 
 **Causas y fixes comunes**:
 
-| Error en consola | Causa | Fix |
-|------------------|-------|-----|
-| `Invalid issuer` | `VITE_KEYCLOAK_URL` no matchea el claim `iss` real del realm | Usar la URL exacta que Keycloak emite en los tokens (chequear `/.well-known/openid-configuration`) |
-| `redirect_uri not allowed` | El origin del web no está en Valid Redirect URIs de Keycloak | Agregar `http://localhost:5173/*` (con `/*`) en la config del cliente |
-| Strings vacíos en `window.APP_CONFIG` | Falta `.env` o vars `VITE_*` no expuestas | Confirmar que `apps/web/.env` existe con todas las `VITE_*` |
+| Síntoma | Causa | Fix |
+|---------|-------|-----|
+| `BETTER_AUTH_SECRET is not set` en logs de la API | Variable de entorno faltante | Setear `BETTER_AUTH_SECRET` en `apps/api/.env` |
+| Login exitoso pero sesión perdida inmediatamente | Mismatch en el dominio de la cookie | Confirmar que `BETTER_AUTH_URL` coincide con el origen exacto que usa el browser (incluyendo `http://localhost:3000` en dev) |
+| `401 Unauthorized` en todos los requests a la API después de loguearse | CORS mal configurado — `credentials: 'include'` no seteado o `CORS_ORIGIN` incorrecto | En dev asegurar `CORS_ORIGIN=http://localhost:5173`; en prod usar el dominio exacto del frontend |
+| Strings vacíos en `window.APP_CONFIG` | Falta `.env` o vars `VITE_*` no expuestas | Confirmar que `apps/web/.env` existe con `VITE_API_URL` seteado |
 
 ---
 
@@ -225,7 +226,7 @@ FROM cronjobs WHERE name = '<nombre del job>';
 
 ### 4.2 Vite vars no quedaron en el build
 
-**Síntoma**: El web carga pero las URLs/URLs de Keycloak están vacías o contienen literalmente `undefined`.
+**Síntoma**: El web carga pero las URLs están vacías o contienen literalmente `undefined`.
 
 **Causa**: Las variables `VITE_*` tienen que existir **en build time**, no solo en runtime. Railway las pasa como build args automáticamente solo si están declaradas como Service Variables (no Shared, no Project).
 

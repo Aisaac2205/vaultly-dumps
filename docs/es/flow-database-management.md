@@ -52,7 +52,7 @@ GET    /backups/r2                     Lista objetos crudos en R2
 GET    /backups/:id                    Obtiene un backup job por ID
 ```
 
-Todos los endpoints requieren JWT válido (Keycloak).
+Todos los endpoints requieren sesión válida (Better Auth).
 
 ---
 

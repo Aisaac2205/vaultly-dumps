@@ -36,7 +36,7 @@ pnpm install
 
 ```bash
 cp .env.example .env
-# Edit with real values (Keycloak, R2, DB_PASSWORD)
+# Edit with real values (Better Auth, R2, DB_PASSWORD)
 ```
 
 > The root `.env` feeds both compose and the apps when running with `pnpm dev`. See [environment-variables.md](environment-variables.md) for the full reference.
@@ -192,9 +192,6 @@ The frontend uses a two-layer configuration system to support local development 
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `VITE_API_URL` | Backend URL | `http://localhost:3000` or `/api` |
-| `VITE_KEYCLOAK_URL` | Keycloak URL | `https://auth.coide.online` |
-| `VITE_KEYCLOAK_REALM` | Keycloak realm | `coide-org` |
-| `VITE_KEYCLOAK_CLIENT_ID` | Web client ID | `clara-dumps` |
 | `VITE_APP_BASE_URL` | App base URL | `http://localhost:5173` |
 
 ### Key files

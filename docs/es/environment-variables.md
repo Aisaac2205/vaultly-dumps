@@ -19,10 +19,13 @@ NODE_ENV=development
 PORT=3000
 CORS_ORIGIN=http://localhost:5173        # required en production
 
-# ── Keycloak (required — instancia externa en la nube) ─────────
-KEYCLOAK_URL=https://<your-keycloak-url>/
-KEYCLOAK_REALM=vaultly-control
-KEYCLOAK_CLIENT_ID=vaultly-control-api
+# ── Better Auth (required) ────────────────────────────────────
+# Secret para firmar sesiones. Generar con:
+# node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+BETTER_AUTH_SECRET=<string-hex-de-64-chars>
+BETTER_AUTH_URL=http://localhost:3000   # URL pública base de la API
+BETTER_AUTH_ADMIN_EMAIL=admin@example.com
+BETTER_AUTH_ADMIN_PASSWORD=<password-fuerte>
 
 # ── Cifrado (required) ─────────────────────────────────────────
 # Clave para cifrar passwords de conexiones en reposo (AES-256-GCM).
@@ -60,12 +63,7 @@ DB_PASSWORD=changeme
 # Backend API URL (axios + SSE hook)
 VITE_API_URL=http://localhost:3000
 
-# Keycloak OIDC (keycloak-js SDK)
-VITE_KEYCLOAK_URL=https://<your-keycloak-url>/
-VITE_KEYCLOAK_REALM=vaultly-control
-VITE_KEYCLOAK_CLIENT_ID=vaultly-control-web
-
-# App base URL (redirects y callbacks)
+# App base URL
 VITE_APP_BASE_URL=http://localhost:5173
 ```
 
@@ -93,10 +91,11 @@ NODE_ENV=production
 PORT=3000
 CORS_ORIGIN=https://vaultly-control.miempresa.com  # required en production
 
-# ── Keycloak (obligatorias) ────────────────────────────────────
-KEYCLOAK_URL=https://auth.miempresa.com
-KEYCLOAK_REALM=vaultly-control
-KEYCLOAK_CLIENT_ID=vaultly-control-api
+# ── Better Auth (obligatorias) ─────────────────────────────────
+BETTER_AUTH_SECRET=<string-hex-de-64-chars>
+BETTER_AUTH_URL=https://vaultly-control.miempresa.com/api
+BETTER_AUTH_ADMIN_EMAIL=admin@miempresa.com
+BETTER_AUTH_ADMIN_PASSWORD=<password-fuerte>
 
 # ── Cloudflare R2 (vacíos OK en development) ───────────────────
 R2_ACCOUNT_ID=
