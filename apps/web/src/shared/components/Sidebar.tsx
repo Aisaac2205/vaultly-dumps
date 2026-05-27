@@ -7,6 +7,7 @@ import {
   Clock,
   Link2,
   FileText,
+  Users,
   LogOut,
 } from "lucide-react";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
@@ -28,15 +29,17 @@ interface NavItemConfig {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   routeKey: RouteKey;
+  adminOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItemConfig[] = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard, routeKey: "dashboard" },
-  { path: "/dumps", label: "Dumps", icon: Database, routeKey: "dumps" },
-  { path: "/restore", label: "Restore", icon: RotateCcw, routeKey: "restore" },
+  { path: "/dumps", label: "Dumps", icon: Database, routeKey: "dumps", adminOnly: true },
+  { path: "/restore", label: "Restaurar", icon: RotateCcw, routeKey: "restore" },
   { path: "/cronjobs", label: "Cronjobs", icon: Clock, routeKey: "cronjobs" },
-  { path: "/connections", label: "Connections", icon: Link2, routeKey: "connections" },
-  { path: "/audit", label: "Audit", icon: FileText, routeKey: "audit" },
+  { path: "/connections", label: "Conexiones", icon: Link2, routeKey: "connections", adminOnly: true },
+  { path: "/users", label: "Usuarios", icon: Users, routeKey: "users", adminOnly: true },
+  { path: "/audit", label: "Auditoría", icon: FileText, routeKey: "audit" },
 ];
 
 function NavItem({ path, label, icon: Icon, routeKey, onNavigate }: NavItemConfig & { onNavigate?: () => void }) {
@@ -81,16 +84,18 @@ export function SidebarContent({ user, onLogout, onNavigate }: SidebarContentPro
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3">
-        {NAV_ITEMS.map((item) => (
-          <NavItem key={item.path} {...item} onNavigate={onNavigate} />
-        ))}
+        {NAV_ITEMS
+          .filter((item) => !item.adminOnly || user?.role === "admin")
+          .map((item) => (
+            <NavItem key={item.path} {...item} onNavigate={onNavigate} />
+          ))}
       </nav>
 
       {/* User & Logout */}
       <div className="flex flex-col gap-2 border-t border-white/10 p-4">
         {user && (
           <span className="truncate font-mono text-xs text-white/60">
-            {user.preferred_username}
+            {user.email}
           </span>
         )}
         <button

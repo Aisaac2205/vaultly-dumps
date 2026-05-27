@@ -52,25 +52,29 @@ This is **the most critical rule**. Restoring over PROD would destroy live data.
 
 ### Stack
 
-- **IdP**: Keycloak (realm `coide-org`, client `clara-dumps` at `https://auth.coide.online`)
-- **Flow**: PKCE in the frontend (via `keycloak-js`)
-- **Token validation**: `jwks-rsa` with cache (10 min, max 5 keys, rate-limited to 10 req/min)
-- **Algorithm**: whatever the JWT's `kid` header says, resolved against the realm's JWKS endpoint
+- **Library**: Better Auth (email/password + admin plugin) — runs inside the NestJS API process. No external IdP.
+- **Integration**: manual catch-all handler at `/api/auth/*` in `apps/api/src/auth/auth.controller.ts`
+- **Session**: cookie-based (`httpOnly`), managed entirely by Better Auth via a pg adapter
+- **Session validation**: `auth.api.getSession()` called per request by `BetterAuthGuard`. Sessions are cached with a 5-minute TTL to reduce DB round-trips.
+- **Database tables**: Better Auth manages its own schema (`user`, `session`, `account`, `verification`) via the pg adapter.
+- **Frontend**: `better-auth/react` client with `useSession()` hook; cookies are sent automatically by the browser.
+- **SSE**: cookies are sent natively by `EventSource` — no query-param token hack required.
+- **Admin seed**: on first boot, a default admin user is created from `BETTER_AUTH_ADMIN_EMAIL` / `BETTER_AUTH_ADMIN_PASSWORD` env vars.
 
-### Required claims in the access token
+### Session data used by the API
 
-| Claim | Required | Use |
-|-------|----------|-----|
-| `sub` | yes | User ID, goes into `audit_logs.userId` and `backup_jobs.triggeredBy` |
-| `preferred_username` | yes | Human-readable identifier, used in logs |
-| `realm_access.roles` | yes | Role array (not used for authorization yet, but required) |
-| `email` | **no** | Optional — the coide-org realm doesn't emit it. If present, used in `audit_logs.userEmail`; otherwise logged as `'anonymous'` |
+| Field | Use |
+|-------|-----|
+| `session.user.id` | User ID, goes into `audit_logs.userId` and `backup_jobs.triggeredBy` |
+| `session.user.name` | Human-readable identifier, used in logs |
+| `session.user.email` | Used in `audit_logs.userEmail` |
+| `session.user.role` | Role check (`admin` vs regular user) |
 
 ### Guard
 
-`JwtAuthGuard` (in `apps/api/src/common/guards/`) is applied **explicitly** on every controller. There is no global guard. If you add a new controller, **remember to protect its endpoints**.
+`BetterAuthGuard` (in `apps/api/src/auth/auth.guard.ts`) is applied **explicitly** on every controller. There is no global guard. If you add a new controller, **remember to protect its endpoints**.
 
-Conscious exception: `/health` does not require auth (it's hit by the K8s probe).
+Conscious exception: `/health` does not require auth (it is hit by the K8s probe).
 
 ---
 
@@ -172,12 +176,13 @@ Combined with `class-validator` on each DTO (`@IsString`, `@IsUUID`, `@IsEnum`, 
 
 | Threat | Mitigation |
 |--------|------------|
-| User with a valid JWT deletes a PROD DB by mistake | Blocked: `update`/`delete` throw 403 if environment=PROD |
+| User with a valid session deletes a PROD DB by mistake | Blocked: `update`/`delete` throw 403 if environment=PROD |
 | User maliciously restores an old dump on top of PROD | Blocked: `restore` throws 403 if target environment=PROD |
 | Dump exfiltrated via R2 URL | Mitigated: private bucket, access via R2 credentials (not public) |
-| JWT token stolen via XSS | Partially mitigated: strict CORS in prod limits the origin |
+| Session cookie stolen via XSS | Mitigated: `httpOnly` flag prevents JavaScript access to the cookie; strict CORS in prod limits the origin |
 | Control DB compromised → leak of PROD credentials | Mitigated: passwords encrypted with AES-256-GCM. Requires `ENCRYPTION_KEY` to decrypt. See §4 |
 | Audit log tampered with by a DBA with access | Mitigated: append-only trigger prevents UPDATE/DELETE on `audit_logs`. See §3 |
 | Cronjob points at attacker host | Mitigated: cronjob requires a `connectionId` that can only be created via `POST /connections` (audited) |
+| Admin account compromised | Rotate `BETTER_AUTH_SECRET` to invalidate all sessions; reset admin password via Better Auth admin API |
 
 Remaining unmitigated threats (SSRF on connection hosts, lack of credential rotation) are **conscious decisions** for the current scope of the system (internal tool, small team, private cloud).

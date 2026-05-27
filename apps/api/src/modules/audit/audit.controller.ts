@@ -1,11 +1,11 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { BetterAuthGuard } from '../../auth/auth.guard';
 import { AuditService } from './audit.service';
 import { AuditFilters } from './audit.repository';
 import { Environment } from '../../database/enums/environment.enum';
 
 @Controller('audit')
-@UseGuards(JwtAuthGuard)
+@UseGuards(BetterAuthGuard)
 export class AuditController {
   constructor(private readonly service: AuditService) {}
 

@@ -45,18 +45,6 @@ COPY apps/web/src ./apps/web/src
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
-ARG VITE_KEYCLOAK_URL
-ENV VITE_KEYCLOAK_URL=$VITE_KEYCLOAK_URL
-
-ARG VITE_KEYCLOAK_REALM
-ENV VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM
-
-ARG VITE_KEYCLOAK_CLIENT_ID
-ENV VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID
-
-ARG VITE_APP_BASE_URL
-ENV VITE_APP_BASE_URL=$VITE_APP_BASE_URL
-
 RUN pnpm --filter @vaultly-control/web build
 
 # ── Stage 4: Production (nginx) ────────────────────────────────

@@ -1,25 +1,25 @@
-import { useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  requiredRole?: string;
 }
 
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isInitializing, login } = useAuth();
-
-  useEffect(() => {
-    if (!isInitializing && !isAuthenticated) {
-      void login();
-    }
-  }, [isAuthenticated, isInitializing, login]);
+export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
+  const { isAuthenticated, isInitializing, user } = useAuth();
 
   if (isInitializing) {
     return null;
   }
 
   if (!isAuthenticated) {
-    return null;
+    return <Navigate to="/login" replace />;
+  }
+
+  if (requiredRole && user?.role !== requiredRole) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

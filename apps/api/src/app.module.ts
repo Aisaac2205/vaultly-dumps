@@ -5,7 +5,6 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import databaseConfig from './config/database.config';
-import keycloakConfig from './config/keycloak.config';
 import r2Config from './config/r2.config';
 import { envValidationSchema } from './config/env.validation';
 import { DatabaseModule } from './database/database.module';
@@ -25,7 +24,7 @@ import { HealthModule } from './health/health.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig, r2Config, keycloakConfig],
+      load: [databaseConfig, r2Config],
       validationSchema: envValidationSchema,
     }),
     ScheduleModule.forRoot(),

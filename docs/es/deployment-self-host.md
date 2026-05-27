@@ -46,9 +46,10 @@ Referencia completa: [environment-variables.md](environment-variables.md). El co
 | `NODE_ENV` | sí | `production` en cualquier entorno deployado |
 | `PORT` | no (default `3000`) | Puerto de escucha |
 | `CORS_ORIGIN` | sí en producción | Dominio exacto del frontend, sin wildcards |
-| `KEYCLOAK_URL` | sí | Instancia externa de Keycloak |
-| `KEYCLOAK_REALM` | sí | Nombre del realm, case-sensitive |
-| `KEYCLOAK_CLIENT_ID` | sí | Client ID de la API en Keycloak |
+| `BETTER_AUTH_SECRET` | sí | Secret para firmar sesiones (hex de 64 chars) |
+| `BETTER_AUTH_URL` | sí | URL pública base de la API |
+| `BETTER_AUTH_ADMIN_EMAIL` | sí | Email del admin seed (se usa en el primer boot) |
+| `BETTER_AUTH_ADMIN_PASSWORD` | sí | Password del admin seed (se usa en el primer boot) |
 | `R2_ACCOUNT_ID` | sí en producción | Cloudflare account ID (hex de 32 chars) |
 | `R2_ACCESS_KEY_ID` | sí en producción | Desde un R2 API Token |
 | `R2_SECRET_ACCESS_KEY` | sí en producción | Desde un R2 API Token |
@@ -61,12 +62,11 @@ La capa Web es **GitOps-friendly por diseño**: lee la config runtime de `window
 | Variable | Requerida | Notas |
 |----------|-----------|-------|
 | `VITE_API_URL` | sí | URL del backend (ej: `https://api.vaultly.example.com`) |
-| `VITE_KEYCLOAK_URL` | sí | Igual que el `KEYCLOAK_URL` de la API |
-| `VITE_KEYCLOAK_REALM` | sí | Igual que el `KEYCLOAK_REALM` de la API |
-| `VITE_KEYCLOAK_CLIENT_ID` | sí | Client ID del web en Keycloak (distinto al de la API) |
 | `VITE_APP_BASE_URL` | sí | URL pública del web (ej: `https://vaultly.example.com`) |
 
 > El prefijo `VITE_` es histórico (eran vars de build-time de Vite). En runtime se leen con los mismos nombres como env vars del container desde `entrypoint.sh`. No hace falta rebuildear la imagen para cambiarlas — solo reiniciá el container con valores nuevos.
+
+> Auth está manejado completamente por la API vía Better Auth. El Web no necesita variables de entorno específicas para auth — las sesiones son por cookie y el browser las maneja automáticamente.
 
 ---
 
@@ -137,11 +137,10 @@ Recomendado: poner ambos detrás del mismo hostname (`vaultly.example.com` para 
 
 La API necesita acceso de red saliente a:
 
-- **Keycloak** — donde sea que lo hostees (HTTPS, port 443)
 - **Cloudflare R2** — `*.r2.cloudflarestorage.com` (HTTPS, port 443)
 - **Cada DB gestionada/on-prem** que registres como conexión (TCP, varía — típicamente 5432/3306)
 
-Si tu egress está firewalleado, agregá estos al allowlist explícitamente. El container del Web **no tiene necesidades de red saliente** — solo sirve archivos estáticos.
+Better Auth corre dentro del proceso de la API y conecta a la misma instancia de PostgreSQL — no se necesita egress adicional para auth. El container del Web **no tiene necesidades de red saliente** — solo sirve archivos estáticos.
 
 ---
 
@@ -172,23 +171,9 @@ La API corre migrations al startup con `migrationsRun: true`. Implicancias:
 
 ---
 
-## 9. El gotcha de Keycloak
+## 9. Ejemplo mínimo viable de Kubernetes (ilustrativo, NO un template)
 
-Railway tiene un template pre-armado de Keycloak que se monta con tres clicks. **En self-host NO tenés eso.** Necesitás:
-
-1. Deployar Keycloak vos mismo (imagen Docker: `quay.io/keycloak/keycloak`).
-2. Configurar su propia base Postgres.
-3. Crear el realm (ej: `vaultly-control`).
-4. Crear los dos clients (`vaultly-api`, `vaultly-web`) con PKCE habilitado.
-5. Configurar los redirect URIs apuntando a tu dominio del Web.
-
-Los pasos detallados del setup de realm y clients están documentados en [deployment-railway.md §Configuración del realm y clients](deployment-railway.md) — los pasos son los mismos sin importar dónde corra Keycloak.
-
-Si querés un export de realm de Keycloak documentado para importar, hoy no existe. Es un feature razonable a sumar — abrí un issue si lo necesitás.
-
----
-
-## 10. Ejemplo mínimo viable de Kubernetes (ilustrativo, NO un template)
+> **Better Auth corre dentro de la API — no se necesita ningún servicio de auth externo.** Los usuarios y sesiones se almacenan en la misma instancia de PostgreSQL. Sin Keycloak, sin deploy de auth separado.
 
 Abajo está el set **más chico posible** de manifests para correr Vaultly en K8s. Es intencionalmente mínimo y **no incluye** ingress, TLS, gestión de secretos, volúmenes persistentes, ni ningún hardening de producción. Tratalo como un punto de partida para verificar el contrato, no como algo para deployar tal cual.
 

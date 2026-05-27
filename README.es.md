@@ -18,7 +18,7 @@ Plataforma de gestión centralizada de bases de datos. Permite administrar conex
 | Frontend        | React                         | ^19.1.0 |
 | Build tool      | Vite                          | ^6.3.3  |
 | Router          | React Router                  | ^7.5.0  |
-| Auth            | Keycloak (OIDC, externo)      | —       |
+| Auth            | Better Auth (nativo, sesiones por cookie) | —  |
 | Storage         | Cloudflare R2 (S3-compatible) | —       |
 | Base de datos   | PostgreSQL 16                 | —       |
 | Tiempo real     | Server-Sent Events (SSE)      | —       |
@@ -27,34 +27,14 @@ Plataforma de gestión centralizada de bases de datos. Permite administrar conex
 
 ## Arquitectura — referencia visual
 
-Dos topologías de deploy de ejemplo. **Ninguna es obligatoria** — Vaultly corre en cualquier plataforma que pueda hostear contenedores Docker y una instancia de PostgreSQL 16+. Elegí la que matchea tu modelo operativo.
+Vaultly corre en cualquier plataforma que pueda hostear contenedores Docker y una instancia de PostgreSQL 16+ — PaaS en la nube, servidores on-prem, clusters air-gapped, o una workstation local.
 
-### Opción 1 — PaaS push-deploy (recomendada para setup cloud rápido)
+![Vista general de la arquitectura](docs/assets/architecture-preview.png)
 
-Lo mejor cuando querés un **stack funcional en menos de una hora**, incluyendo Keycloak. [Railway](https://railway.com) es el template documentado porque viene con un setup de Keycloak pre-armado que se monta con configuración mínima. El mismo patrón aplica a Fly.io, Render, o cualquier PaaS que buildee imágenes Docker en `git push`.
-
-Walkthrough: [docs/es/deployment-railway.md](docs/es/deployment-railway.md).
-
-![Topología PaaS push-deploy (ejemplo Railway)](docs/assets/architecture-preview.png)
-
-### Opción 2 — GitOps pull-based (recomendada para on-prem, air-gapped o cloud aislado)
-
-Lo mejor cuando necesitás deployar en una **red privada**, un ambiente regulado, o una cuenta cloud que no permite webhooks inbound. Los manifests viven en git, un agent (ArgoCD, Flux) adentro del cluster target los pullea, y los updates de imagen fluyen por el mismo mecanismo. La capa web de Vaultly está diseñada para esto: la config de runtime se inyecta vía `window.APP_CONFIG` (`entrypoint.sh` escribe `config.js` desde las env vars del container antes que arranque nginx) — no hace falta un `.env` en la imagen.
-
-Contrato de deployment (env vars, probes, sizing, restricciones de escalado): [docs/es/deployment-self-host.md](docs/es/deployment-self-host.md). Patrón de config del web: [docs/es/local-development.md](docs/es/local-development.md#configuración-de-entorno-web).
-
-![Topología GitOps pull-based (ejemplo Kubernetes + ArgoCD)](docs/assets/architecture-preview-gitops.png)
-
-### Atajo de decisión
-
-| Tu situación | Camino recomendado |
-|--------------|---------------------|
-| Evaluando Vaultly, querés tenerlo corriendo hoy | Railway (Opción 1) |
-| Equipo chico, cloud público, bien con PaaS de vendor | Railway (Opción 1) |
-| Industria regulada, compliance-sensitive | GitOps (Opción 2) |
-| DBs on-prem que no se pueden exponer públicamente | GitOps (Opción 2), Vaultly adentro de la red privada |
-| Cuenta cloud con firewall estricto solo-egress | GitOps (Opción 2) |
-| Multi-entorno, necesitás audit trail completo de deploys en git | GitOps (Opción 2) |
+| Camino de deploy | Ideal para | Guía |
+|------------------|------------|------|
+| **PaaS push-deploy** (Railway, Fly.io, Render) | Setup cloud rápido, stack funcional en menos de una hora | [deployment-railway.md](docs/es/deployment-railway.md) |
+| **Self-host / GitOps** (Docker Compose, Kubernetes + ArgoCD) | On-prem, regulado, air-gapped, o redes privadas | [deployment-self-host.md](docs/es/deployment-self-host.md) |
 
 
 ---
@@ -113,7 +93,7 @@ cp apps/web/.env.example apps/web/.env
 
 Ver [docs/es/environment-variables.md](docs/es/environment-variables.md) para referencia completa.
 
-> **Keycloak** corre en la nube. Configurar `KEYCLOAK_URL`, `KEYCLOAK_REALM` y `KEYCLOAK_CLIENT_ID` apuntando a la instancia externa.
+> **Better Auth** corre dentro de la API. Setear `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `BETTER_AUTH_ADMIN_EMAIL` y `BETTER_AUTH_ADMIN_PASSWORD` en `apps/api/.env`.
 
 ### Levantar la DB local
 
@@ -169,7 +149,7 @@ pnpm --filter @vaultly-control/web build
 | Lo que necesitás                                  | Dónde mirar                                                                            |
 | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Correr localmente desde cero                      | [docs/es/local-development.md](docs/es/local-development.md)                           |
-| Deployar a Railway (camino PaaS rápido con template de Keycloak) | [docs/es/deployment-railway.md](docs/es/deployment-railway.md)                   |
+| Deployar a Railway (camino PaaS rápido)                         | [docs/es/deployment-railway.md](docs/es/deployment-railway.md)                   |
 | Deployar a tu propia infra (K8s, Nomad, Docker, etc.) | [docs/es/deployment-self-host.md](docs/es/deployment-self-host.md)                 |
 | Conectar a DBs cloud gestionadas (Neon / RDS)     | [docs/es/connecting-cloud-databases.md](docs/es/connecting-cloud-databases.md)         |
 | Conectar a DBs on-premise (SSH tunnels, VPN)      | [docs/es/connecting-on-premise-databases.md](docs/es/connecting-on-premise-databases.md) |
@@ -182,7 +162,7 @@ pnpm --filter @vaultly-control/web build
 | Doc                                                    | Contenido                                                 |
 | ------------------------------------------------------ | --------------------------------------------------------- |
 | [local-development.md](docs/es/local-development.md)       | Setup local: Node.js vs Docker, comandos, debugging              |
-| [deployment-railway.md](docs/es/deployment-railway.md)     | Walkthrough Railway: services, variables, setup de Keycloak      |
+| [deployment-railway.md](docs/es/deployment-railway.md)     | Walkthrough Railway: services, variables, setup de entorno       |
 | [deployment-self-host.md](docs/es/deployment-self-host.md) | Contrato de deployment plataforma-agnóstico para K8s/Nomad/etc.  |
 
 ### Cómo funciona (dominio)

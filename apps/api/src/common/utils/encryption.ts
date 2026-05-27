@@ -6,14 +6,13 @@ const AUTH_TAG_LENGTH = 16;
 
 function getKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
-  if (!key || key.length < 32) {
+  if (!key || key.length !== 64) {
     throw new Error(
-      'ENCRYPTION_KEY env var must be set (min 32 chars). ' +
+      'ENCRYPTION_KEY must be a 64-character hex string (32 bytes). ' +
       'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"',
     );
   }
-  // Use first 32 bytes (256 bits) — supports both raw 32-char and 64-char hex keys
-  return Buffer.from(key.length === 64 ? key : key.padEnd(64, '0'), 'hex').subarray(0, 32);
+  return Buffer.from(key, 'hex');
 }
 
 export function encrypt(plaintext: string): string {

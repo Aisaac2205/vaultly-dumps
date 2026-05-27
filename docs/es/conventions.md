@@ -54,7 +54,7 @@ Semantic-release lee SOLO estos tres:
 ✅ feat: add on-demand backup endpoint
 ✅ feat!: change R2 path structure
 ✅ chore: upgrade NestJS to 11.0.7
-✅ refactor: simplify Keycloak strategy initialization
+✅ refactor: simplify auth guard session validation
 
 ❌ fix(connections): handle connection timeout gracefully
 ❌ feat(backup): add on-demand backup endpoint

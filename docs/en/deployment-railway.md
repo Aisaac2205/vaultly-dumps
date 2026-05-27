@@ -2,25 +2,15 @@
 
 > 🇪🇸 Versión en español: [../es/deployment-railway.md](../es/deployment-railway.md)
 
-> **This walkthrough is one deployment template, not the only path.** Vaultly runs on any container platform with a PostgreSQL 16+ instance. Railway is documented here because it gives you a working stack (app + Keycloak) in under an hour, which is useful as a starting point or for evaluation. For Kubernetes, Fly.io, AWS ECS, or self-hosted Docker, the same variables and services apply — only the orchestration layer changes.
+> **This walkthrough is one deployment template, not the only path.** Vaultly runs on any container platform with a PostgreSQL 16+ instance. Railway is documented here because it gives you a working stack in under an hour, which is useful as a starting point or for evaluation. For Kubernetes, Fly.io, AWS ECS, or self-hosted Docker, the same variables and services apply — only the orchestration layer changes.
 
-This walkthrough shows how to deploy Vaultly Control on [Railway](https://railway.com) with two separate projects: the app stack (web + api + db) and the auth infrastructure (Keycloak + its db).
+This walkthrough shows how to deploy Vaultly Control on [Railway](https://railway.com). Auth runs inside the API — no external auth service is needed.
 
 ![Visual reference of the deployment topology](../assets/architecture-preview.png)
 
-## Why two separate projects
-
-Keycloak is **shared infrastructure**: it manages identity for Vaultly today and potentially for other products tomorrow. Isolating it in its own Railway project means:
-
-- Its deploy lifecycle is independent of the API/web.
-- Its Postgres does not mix with Vaultly's.
-- You can rotate credentials, scale the plan, or migrate to another provider without touching the app stack.
-
-If Keycloak later moves to a dedicated cluster, only `KEYCLOAK_URL` (API) and `VITE_KEYCLOAK_URL` (web) need to change.
-
 ---
 
-## Project 1 — Vaultly Dumps (app stack)
+## Project — Vaultly Dumps (app stack)
 
 ### Services
 
@@ -59,10 +49,11 @@ DB_NAME=${{Postgres.PGDATABASE}}
 DB_USER=${{Postgres.PGUSER}}
 DB_PASSWORD=${{Postgres.PGPASSWORD}}
 
-# Keycloak (points to the auth project)
-KEYCLOAK_URL=https://keycloak-production-xxxx.up.railway.app
-KEYCLOAK_REALM=Vaultly
-KEYCLOAK_CLIENT_ID=vaultly-api
+# Better Auth
+BETTER_AUTH_SECRET=<64-char-hex-string>
+BETTER_AUTH_URL=https://${{vaultly-api.RAILWAY_PUBLIC_DOMAIN}}
+BETTER_AUTH_ADMIN_EMAIL=admin@example.com
+BETTER_AUTH_ADMIN_PASSWORD=<strong-password>
 
 # CORS — allows the web to talk to the api
 CORS_ORIGIN=https://${{vaultly-web.RAILWAY_PUBLIC_DOMAIN}}
@@ -84,9 +75,6 @@ R2_BUCKET_NAME=vaultly-dumps
 
 ```bash
 VITE_API_URL=https://${{vaultly-api.RAILWAY_PUBLIC_DOMAIN}}
-VITE_KEYCLOAK_URL=https://keycloak-production-xxxx.up.railway.app
-VITE_KEYCLOAK_REALM=Vaultly
-VITE_KEYCLOAK_CLIENT_ID=vaultly-web
 VITE_APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 ```
 
@@ -97,86 +85,8 @@ VITE_APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 3. Create the **vaultly-web** service, connect it to the repo, configure variables, generate the domain.
 4. Go back to `vaultly-api` and add `CORS_ORIGIN` pointing to the web domain.
 
----
 
-## Project 2 — Keycloak Login Vaultly Control (auth)
-
-### Services
-
-| Service | Source | Image |
-|---------|--------|-------|
-| `Keycloak` | Docker image | `quay.io/keycloak/keycloak:latest` (or pinned) |
-| `Postgres` | Railway plugin | — |
-
-### Variables — `Keycloak`
-
-```bash
-KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=<strong password, generate and save it>
-
-KC_DB=postgres
-KC_DB_URL=jdbc:postgresql://${{Postgres.PGHOST}}:${{Postgres.PGPORT}}/${{Postgres.PGDATABASE}}
-KC_DB_USERNAME=${{Postgres.PGUSER}}
-KC_DB_PASSWORD=${{Postgres.PGPASSWORD}}
-
-KC_HOSTNAME=keycloak-production-xxxx.up.railway.app
-KC_PROXY=edge
-KC_HTTP_ENABLED=true
-```
-
-### Start command
-
-```bash
-/opt/keycloak/bin/kc.sh start --optimized
-```
-
-Generate a public domain with Target Port `8080`.
-
----
-
-## Configuring the realm and clients in Keycloak
-
-Once Keycloak is up, go to `https://<keycloak-domain>/admin` and log in with the admin credentials.
-
-### Create the realm
-
-1. Realm dropdown (top left) → **Create realm**.
-2. Name: `Vaultly` (case-sensitive — must match `KEYCLOAK_REALM` in api/web EXACTLY).
-3. Create.
-
-### Create client `vaultly-web` (SPA, public)
-
-1. **Clients → Create client**
-2. **Client type**: OpenID Connect
-3. **Client ID**: `vaultly-web`
-4. Next → **Capability config**:
-   - Client authentication: **OFF** (it's a public client — SPA without a secret)
-   - Authentication flow: tick **Standard flow** and **Direct access grants**
-5. Next → **Login settings**:
-
-| Field | Value |
-|-------|-------|
-| **Root URL** | `https://vaultly-dumps.up.railway.app` |
-| **Home URL** | `https://vaultly-dumps.up.railway.app` |
-| **Valid redirect URIs** | `https://vaultly-dumps.up.railway.app/*` |
-| **Valid post logout redirect URIs** | `https://vaultly-dumps.up.railway.app/*` |
-| **Web origins** | `https://vaultly-dumps.up.railway.app` (no `/*`) |
-
-6. Save.
-
-**Critical check**: in **Advanced → Proof Key for Code Exchange Code Challenge Method** must be `S256`. keycloak-js sends PKCE by default; if Keycloak does not expect it, login fails with 400.
-
-### Create client `vaultly-api` (resource, validates JWT)
-
-1. **Clients → Create client**
-2. **Client type**: OpenID Connect
-3. **Client ID**: `vaultly-api`
-4. Next → **Capability config**:
-   - Client authentication: it depends — if the API only validates JWTs signed by Keycloak (the common case), you can leave it **OFF**.
-   - Authentication flow: leave only **Standard flow** if you need token introspection; otherwise untick everything.
-5. Save.
-
-The API validates tokens against Keycloak's JWKS (`<KEYCLOAK_URL>/realms/Vaultly/protocol/openid-connect/certs`). It doesn't need a secret if tokens come signed with RS256.
+> **Better Auth runs inside the API — no external auth service needed.** The API handles all auth at `/api/auth/*`. Users and sessions are stored in the same PostgreSQL instance as the rest of Vaultly's data.
 
 ---
 
@@ -187,7 +97,6 @@ The API validates tokens against Keycloak's JWKS (`<KEYCLOAK_URL>/realms/Vaultly
 | nginx web returns 404 on `/` | Railway target port ≠ Dockerfile port | Settings → Networking → set target port to `80` |
 | `host not found in upstream` in nginx logs | nginx.conf hardcodes a hostname that doesn't exist on Railway | Drop the `proxy_pass`; the web talks directly to the api public domain |
 | `EPROTO ... SSL alert 40` from the api | `R2_ACCOUNT_ID` misconfigured → non-existent endpoint | Confirm the account ID in the Cloudflare Dashboard, don't confuse it with the access key |
-| Keycloak login returns 400 Bad Request | `redirect_uri` not whitelisted in the client | Add the web domain to Valid Redirect URIs **with `/*`** |
 | SPA loads with empty strings in URLs | `VITE_*` variables did not reach the build | Confirm they are Service Variables (not Shared) and trigger a redeploy |
 | `flag '--mount=type=cache,...' is missing the cacheKey prefix` | Railway's BuildKit requires `id=s/<service>-...` | Remove the cache mounts — Railway has its own layer cache |
 

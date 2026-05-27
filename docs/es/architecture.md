@@ -24,10 +24,15 @@ La API sigue el patrón de **Monolito Modular**: un único proceso NestJS dividi
 ```
 apps/api/src/
 │
-├── auth/                        # Autenticación (Keycloak OIDC + passport-jwt)
+├── auth/                        # Autenticación (Better Auth, sesiones por cookie)
+│   ├── auth.config.ts           # Instancia de Better Auth
+│   ├── auth.controller.ts       # Handler catch-all /api/auth/*
+│   ├── auth.guard.ts            # BetterAuthGuard
+│   ├── decorators/              # @CurrentUser, etc.
+│   └── seeds/                   # Seed del admin por defecto al primer boot
 │
 ├── common/
-│   ├── guards/                  # Guards JWT (Keycloak)
+│   ├── guards/                  # Guards de autenticación
 │   ├── interceptors/            # Logging, transformación de respuesta
 │   ├── filters/                 # Exception filters centralizados
 │   └── decorators/              # @CurrentUser, @Roles, etc.
@@ -35,7 +40,6 @@ apps/api/src/
 ├── config/
 │   ├── database.config.ts       # TypeORM + PostgreSQL
 │   ├── r2.config.ts             # Cliente S3 para Cloudflare R2
-│   ├── keycloak.config.ts       # Realm y cliente Keycloak
 │   └── env.validation.ts        # Validación de env con Joi
 │
 ├── connections/                 # Seed script para conexiones iniciales

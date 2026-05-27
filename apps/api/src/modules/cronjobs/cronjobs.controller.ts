@@ -10,7 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { BetterAuthGuard } from '../../auth/auth.guard';
+import { RolesGuard, Roles } from '../../auth/roles.guard';
 import { setAuditContext } from '../../common/audit/audit-context';
 import { CronjobsService } from './cronjobs.service';
 import { ConnectionsService } from '../connections/connections.service';
@@ -18,7 +19,8 @@ import { CreateCronjobDto } from './dto/create-cronjob.dto';
 import { UpdateCronjobDto } from './dto/update-cronjob.dto';
 
 @Controller('cronjobs')
-@UseGuards(JwtAuthGuard)
+@UseGuards(BetterAuthGuard, RolesGuard)
+@Roles('admin')
 export class CronjobsController {
   constructor(
     private readonly service: CronjobsService,

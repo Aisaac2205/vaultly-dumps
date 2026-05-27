@@ -54,7 +54,7 @@ GET    /backups/r2                     Lists raw objects in R2
 GET    /backups/:id                    Gets a backup job by ID
 ```
 
-Every endpoint requires a valid JWT (Keycloak).
+Every endpoint requires a valid session (Better Auth).
 
 ---
 

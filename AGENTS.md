@@ -16,7 +16,7 @@ vaultly-dumps/
 
 | Package                | Key Dependencies                                               |
 | ---------------------- | -------------------------------------------------------------- |
-| `@vaultly-control/api` | NestJS 11, TypeORM, PostgreSQL, Passport, Swagger, Joi         |
+| `@vaultly-control/api` | NestJS 11, TypeORM, PostgreSQL, Better Auth, Swagger, Joi      |
 | `@vaultly-control/web` | React 19, React Router 7, Vite, TanStack Query, radix-ui, cmdk |
 
 There is no shared package. Cross-app contracts (enums / string unions for DTOs, query params, etc.) are duplicated: the **backend is the source of truth**, the frontend mirrors the literal values. Drift is caught by `@IsEnum` validators on the backend, not by a shared type.

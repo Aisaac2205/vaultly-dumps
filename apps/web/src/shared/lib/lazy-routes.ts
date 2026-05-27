@@ -11,6 +11,7 @@ export const lazyRoutes = {
   restore: () => import("@/features/restore"),
   cronjobs: () => import("@/features/cronjobs"),
   connections: () => import("@/features/connections"),
+  users: () => import("@/features/users"),
   audit: () => import("@/features/audit"),
 } as const;
 

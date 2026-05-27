@@ -18,7 +18,7 @@ Centralized database management platform. Register database connections, run and
 | Frontend        | React                         | ^19.1.0 |
 | Build tool      | Vite                          | ^6.3.3  |
 | Router          | React Router                  | ^7.5.0  |
-| Auth            | Keycloak (OIDC, external)     | —       |
+| Auth            | Better Auth (native, cookie sessions) | —  |
 | Storage         | Cloudflare R2 (S3-compatible) | —       |
 | Control DB      | **PostgreSQL 16+ (required)** | —       |
 | Real-time       | Server-Sent Events (SSE)      | —       |
@@ -35,34 +35,14 @@ The **managed databases** — the ones your DevOps users register to back up —
 
 ## Architecture — visual reference
 
-Two example deployment topologies. **Neither is mandatory** — Vaultly runs on any platform that can host Docker containers and a PostgreSQL 16+ instance. Pick the one that matches your operational model.
+Vaultly runs on any platform that can host Docker containers and a PostgreSQL 16+ instance — cloud PaaS, on-prem servers, air-gapped clusters, or a local workstation.
 
-### Option 1 — PaaS push-deploy (recommended for fast cloud setup)
+![Architecture overview](docs/assets/architecture-preview.png)
 
-Best when you want a **working stack in under an hour**, including Keycloak. [Railway](https://railway.com) is the documented template because it ships a pre-built Keycloak setup that drops in with minimal configuration. Same pattern applies to Fly.io, Render, or any PaaS that builds Docker images on git push.
-
-Walkthrough: [docs/en/deployment-railway.md](docs/en/deployment-railway.md).
-
-![PaaS push-deploy topology (Railway example)](docs/assets/architecture-preview.png)
-
-### Option 2 — GitOps pull-based (recommended for on-prem, air-gapped, or isolated cloud)
-
-Best when you need to deploy into a **private network**, regulated environment, or cloud account that doesn't allow inbound webhooks. Manifests live in git, an agent (ArgoCD, Flux) inside the target cluster pulls them, and image updates flow through the same mechanism. Vaultly's web layer is designed for this: runtime config is injected via `window.APP_CONFIG` (`entrypoint.sh` writes `config.js` from container env vars before nginx starts) — no `.env` file is needed in the image.
-
-Deployment contract (env vars, probes, sizing, scaling constraints): [docs/en/deployment-self-host.md](docs/en/deployment-self-host.md). Web config pattern: [docs/en/local-development.md](docs/en/local-development.md#web-environment-configuration).
-
-![GitOps pull-based topology (Kubernetes + ArgoCD example)](docs/assets/architecture-preview-gitops.png)
-
-### Decision shortcut
-
-| Your situation | Recommended path |
-|----------------|------------------|
-| Evaluating Vaultly, want it running today | Railway (Option 1) |
-| Small team, public cloud, fine with vendor PaaS | Railway (Option 1) |
-| Regulated industry, compliance-sensitive | GitOps (Option 2) |
-| On-prem DBs that can't be exposed publicly | GitOps (Option 2), Vaultly inside the private network |
-| Cloud account with strict egress-only firewall | GitOps (Option 2) |
-| Multi-environment, need full git audit trail of deploys | GitOps (Option 2) |
+| Deployment path | Best for | Guide |
+|-----------------|----------|-------|
+| **PaaS push-deploy** (Railway, Fly.io, Render) | Fast cloud setup, working stack in under an hour | [deployment-railway.md](docs/en/deployment-railway.md) |
+| **Self-host / GitOps** (Docker Compose, Kubernetes + ArgoCD) | On-prem, regulated, air-gapped, or private networks | [deployment-self-host.md](docs/en/deployment-self-host.md) |
 
 ---
 
@@ -99,7 +79,7 @@ The monorepo uses **pnpm workspaces** without Turborepo or Nx. Active workspace:
 | What you need                                     | Where to look                                                                      |
 | ------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Run locally from scratch                          | [docs/en/local-development.md](docs/en/local-development.md)                             |
-| Deploy to Railway (fast PaaS path with Keycloak template) | [docs/en/deployment-railway.md](docs/en/deployment-railway.md)                     |
+| Deploy to Railway (fast PaaS path)                        | [docs/en/deployment-railway.md](docs/en/deployment-railway.md)                     |
 | Deploy to your own infra (K8s, Nomad, Docker, etc.) | [docs/en/deployment-self-host.md](docs/en/deployment-self-host.md)                     |
 | Connect to managed cloud DBs (Neon / RDS / Azure) | [docs/en/connecting-cloud-databases.md](docs/en/connecting-cloud-databases.md)           |
 | Connect to on-premise DBs (SSH tunnels, VPN)      | [docs/en/connecting-on-premise-databases.md](docs/en/connecting-on-premise-databases.md) |
@@ -138,7 +118,7 @@ cp apps/web/.env.example apps/web/.env
 
 See [docs/en/environment-variables.md](docs/en/environment-variables.md) for the full reference.
 
-> **Keycloak** runs in the cloud. Point `KEYCLOAK_URL`, `KEYCLOAK_REALM` and `KEYCLOAK_CLIENT_ID` at the external instance.
+> **Better Auth** runs inside the API. Set `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `BETTER_AUTH_ADMIN_EMAIL`, and `BETTER_AUTH_ADMIN_PASSWORD` in `apps/api/.env`.
 
 ### Start the local database
 
@@ -194,7 +174,7 @@ pnpm --filter @vaultly-control/web build
 | Doc                                                 | Content                                             |
 | --------------------------------------------------- | --------------------------------------------------- |
 | [local-development.md](docs/en/local-development.md)     | Local setup: Node.js vs Docker, commands, debugging       |
-| [deployment-railway.md](docs/en/deployment-railway.md)   | Railway walkthrough: services, variables, Keycloak setup  |
+| [deployment-railway.md](docs/en/deployment-railway.md)   | Railway walkthrough: services, variables, env setup       |
 | [deployment-self-host.md](docs/en/deployment-self-host.md) | Platform-agnostic deployment contract for K8s/Nomad/etc. |
 
 ### How it works (domain)
