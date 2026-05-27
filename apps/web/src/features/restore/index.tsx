@@ -151,7 +151,7 @@ export default function Restore() {
   return (
     <div className="space-y-5 p-4 sm:p-6 lg:p-8">
       <PageHeader
-        title="Restore"
+        title="Restaurar"
         subtitle={state === "dry-run" ? "Revisa los cambios y confirma para restaurar el dump en el destino." : undefined}
       />
 
