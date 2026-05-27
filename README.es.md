@@ -27,34 +27,14 @@ Plataforma de gestión centralizada de bases de datos. Permite administrar conex
 
 ## Arquitectura — referencia visual
 
-Dos topologías de deploy de ejemplo. **Ninguna es obligatoria** — Vaultly corre en cualquier plataforma que pueda hostear contenedores Docker y una instancia de PostgreSQL 16+. Elegí la que matchea tu modelo operativo.
+Vaultly corre en cualquier plataforma que pueda hostear contenedores Docker y una instancia de PostgreSQL 16+ — PaaS en la nube, servidores on-prem, clusters air-gapped, o una workstation local.
 
-### Opción 1 — PaaS push-deploy (recomendada para setup cloud rápido)
+![Vista general de la arquitectura](docs/assets/architecture-preview.png)
 
-Lo mejor cuando querés un **stack funcional en menos de una hora**. [Railway](https://railway.com) es el template documentado porque te da una app + base de datos corriendo con configuración mínima. El mismo patrón aplica a Fly.io, Render, o cualquier PaaS que buildee imágenes Docker en `git push`.
-
-Walkthrough: [docs/es/deployment-railway.md](docs/es/deployment-railway.md).
-
-![Topología PaaS push-deploy (ejemplo Railway)](docs/assets/architecture-preview.png)
-
-### Opción 2 — GitOps pull-based (recomendada para on-prem, air-gapped o cloud aislado)
-
-Lo mejor cuando necesitás deployar en una **red privada**, un ambiente regulado, o una cuenta cloud que no permite webhooks inbound. Los manifests viven en git, un agent (ArgoCD, Flux) adentro del cluster target los pullea, y los updates de imagen fluyen por el mismo mecanismo. La capa web de Vaultly está diseñada para esto: la config de runtime se inyecta vía `window.APP_CONFIG` (`entrypoint.sh` escribe `config.js` desde las env vars del container antes que arranque nginx) — no hace falta un `.env` en la imagen.
-
-Contrato de deployment (env vars, probes, sizing, restricciones de escalado): [docs/es/deployment-self-host.md](docs/es/deployment-self-host.md). Patrón de config del web: [docs/es/local-development.md](docs/es/local-development.md#configuración-de-entorno-web).
-
-![Topología GitOps pull-based (ejemplo Kubernetes + ArgoCD)](docs/assets/architecture-preview-gitops.png)
-
-### Atajo de decisión
-
-| Tu situación | Camino recomendado |
-|--------------|---------------------|
-| Evaluando Vaultly, querés tenerlo corriendo hoy | Railway (Opción 1) |
-| Equipo chico, cloud público, bien con PaaS de vendor | Railway (Opción 1) |
-| Industria regulada, compliance-sensitive | GitOps (Opción 2) |
-| DBs on-prem que no se pueden exponer públicamente | GitOps (Opción 2), Vaultly adentro de la red privada |
-| Cuenta cloud con firewall estricto solo-egress | GitOps (Opción 2) |
-| Multi-entorno, necesitás audit trail completo de deploys en git | GitOps (Opción 2) |
+| Camino de deploy | Ideal para | Guía |
+|------------------|------------|------|
+| **PaaS push-deploy** (Railway, Fly.io, Render) | Setup cloud rápido, stack funcional en menos de una hora | [deployment-railway.md](docs/es/deployment-railway.md) |
+| **Self-host / GitOps** (Docker Compose, Kubernetes + ArgoCD) | On-prem, regulado, air-gapped, o redes privadas | [deployment-self-host.md](docs/es/deployment-self-host.md) |
 
 
 ---

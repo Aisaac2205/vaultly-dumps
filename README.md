@@ -35,34 +35,14 @@ The **managed databases** — the ones your DevOps users register to back up —
 
 ## Architecture — visual reference
 
-Two example deployment topologies. **Neither is mandatory** — Vaultly runs on any platform that can host Docker containers and a PostgreSQL 16+ instance. Pick the one that matches your operational model.
+Vaultly runs on any platform that can host Docker containers and a PostgreSQL 16+ instance — cloud PaaS, on-prem servers, air-gapped clusters, or a local workstation.
 
-### Option 1 — PaaS push-deploy (recommended for fast cloud setup)
+![Architecture overview](docs/assets/architecture-preview.png)
 
-Best when you want a **working stack in under an hour**. [Railway](https://railway.com) is the documented template because it gives you a running app + database with minimal configuration. Same pattern applies to Fly.io, Render, or any PaaS that builds Docker images on git push.
-
-Walkthrough: [docs/en/deployment-railway.md](docs/en/deployment-railway.md).
-
-![PaaS push-deploy topology (Railway example)](docs/assets/architecture-preview.png)
-
-### Option 2 — GitOps pull-based (recommended for on-prem, air-gapped, or isolated cloud)
-
-Best when you need to deploy into a **private network**, regulated environment, or cloud account that doesn't allow inbound webhooks. Manifests live in git, an agent (ArgoCD, Flux) inside the target cluster pulls them, and image updates flow through the same mechanism. Vaultly's web layer is designed for this: runtime config is injected via `window.APP_CONFIG` (`entrypoint.sh` writes `config.js` from container env vars before nginx starts) — no `.env` file is needed in the image.
-
-Deployment contract (env vars, probes, sizing, scaling constraints): [docs/en/deployment-self-host.md](docs/en/deployment-self-host.md). Web config pattern: [docs/en/local-development.md](docs/en/local-development.md#web-environment-configuration).
-
-![GitOps pull-based topology (Kubernetes + ArgoCD example)](docs/assets/architecture-preview-gitops.png)
-
-### Decision shortcut
-
-| Your situation | Recommended path |
-|----------------|------------------|
-| Evaluating Vaultly, want it running today | Railway (Option 1) |
-| Small team, public cloud, fine with vendor PaaS | Railway (Option 1) |
-| Regulated industry, compliance-sensitive | GitOps (Option 2) |
-| On-prem DBs that can't be exposed publicly | GitOps (Option 2), Vaultly inside the private network |
-| Cloud account with strict egress-only firewall | GitOps (Option 2) |
-| Multi-environment, need full git audit trail of deploys | GitOps (Option 2) |
+| Deployment path | Best for | Guide |
+|-----------------|----------|-------|
+| **PaaS push-deploy** (Railway, Fly.io, Render) | Fast cloud setup, working stack in under an hour | [deployment-railway.md](docs/en/deployment-railway.md) |
+| **Self-host / GitOps** (Docker Compose, Kubernetes + ArgoCD) | On-prem, regulated, air-gapped, or private networks | [deployment-self-host.md](docs/en/deployment-self-host.md) |
 
 ---
 
