@@ -15,7 +15,7 @@ import { RestoreRepository } from './restore.repository';
 import { R2Service } from '../backup/r2.service';
 import { BackupService } from '../backup/backup.service';
 import { ConnectionsService } from '../connections/connections.service';
-import { KeycloakUser } from '../../common/decorators/current-user.decorator';
+import { AuthUser } from '../../auth/decorators/current-user.decorator';
 import { Environment } from '../../database/enums/environment.enum';
 import { DbTypeEnum } from '../../database/enums/db-type.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
@@ -69,7 +69,7 @@ export class RestoreService implements OnApplicationBootstrap {
 
   async createRestore(
     dto: CreateRestoreDto,
-    user: KeycloakUser,
+    user: AuthUser,
   ): Promise<{ jobId: string; dryRunResult?: DryRunResult }> {
     const targetConnection = await this.connectionsService.findById(
       dto.targetConnectionId,
@@ -110,7 +110,7 @@ export class RestoreService implements OnApplicationBootstrap {
         targetEnvironment,
         status: JobStatus.COMPLETED,
         isDryRun: true,
-        triggeredBy: user.sub,
+        triggeredBy: user.id,
         startedAt: new Date(),
         completedAt: new Date(),
       });
@@ -132,7 +132,7 @@ export class RestoreService implements OnApplicationBootstrap {
       targetEnvironment,
       status: JobStatus.PENDING,
       isDryRun: false,
-      triggeredBy: user.sub,
+      triggeredBy: user.id,
       startedAt: new Date(),
     });
 
@@ -148,7 +148,7 @@ export class RestoreService implements OnApplicationBootstrap {
   private async executeRestoreAsync(
     jobId: string,
     dto: CreateRestoreDto,
-    _user: KeycloakUser,
+    _user: AuthUser,
   ): Promise<void> {
     const startedAt = new Date();
     let tempFilePath: string | null = null;

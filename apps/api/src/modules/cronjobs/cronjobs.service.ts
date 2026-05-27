@@ -15,7 +15,7 @@ import { ConnectionsService } from '../connections/connections.service';
 import { CreateCronjobDto } from './dto/create-cronjob.dto';
 import { UpdateCronjobDto } from './dto/update-cronjob.dto';
 import { CronjobEntity } from '../../database/entities/cronjob.entity';
-import { KeycloakUser } from '../../common/decorators/current-user.decorator';
+import { AuthUser } from '../../auth/decorators/current-user.decorator';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { CronFrequency } from '../../database/enums/cron-frequency.enum';
 import { BackupCategory } from '../../database/enums/backup-category.enum';
@@ -39,10 +39,11 @@ const FREQUENCY_TO_PERIOD_MS: Partial<Record<CronFrequency, number>> = {
 
 const MISSED_TICK_TOLERANCE = 1.5;
 
-const SYSTEM_USER: KeycloakUser = {
-  sub: 'system-cronjob',
-  preferred_username: 'system',
-  realm_access: { roles: [] },
+const SYSTEM_USER: AuthUser = {
+  id: 'system-cronjob',
+  email: 'system@vaultly.local',
+  name: 'System',
+  role: 'admin',
 };
 
 @Injectable()

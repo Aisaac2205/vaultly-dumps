@@ -19,7 +19,7 @@ import { EnrichedR2Object } from './interfaces/enriched-r2-object.interface';
 import { BackupStrategy } from './interfaces/backup-strategy.interface';
 import { DumpManifest, DumpManifestSource } from './interfaces/dump-manifest.interface';
 import { ConnectionsService } from '../connections/connections.service';
-import { KeycloakUser } from '../../common/decorators/current-user.decorator';
+import { AuthUser } from '../../auth/decorators/current-user.decorator';
 import { ConnectionEntity } from '../../database/entities/connection.entity';
 import { Environment } from '../../database/enums/environment.enum';
 import { DbTypeEnum } from '../../database/enums/db-type.enum';
@@ -44,7 +44,7 @@ export class BackupService {
 
   async createBackup(
     dto: CreateBackupDto,
-    user: KeycloakUser,
+    user: AuthUser,
     category: BackupCategory = BackupCategory.MANUAL,
   ): Promise<BackupResult> {
     const connection = await this.connectionsService.findById(dto.connectionId);
@@ -72,7 +72,7 @@ export class BackupService {
       category,
       environment: connection.environment,
       dbType: connection.dbType,
-      triggeredBy: user.sub,
+      triggeredBy: user.id,
     };
 
     const job = await this.backupRepository.create({
@@ -80,7 +80,7 @@ export class BackupService {
       environment: connection.environment,
       dbType: connection.dbType,
       status: JobStatus.PENDING,
-      triggeredBy: user.sub,
+      triggeredBy: user.id,
       category,
       storageKeyVersion: STORAGE_KEY_VERSION.NEW,
     });
@@ -168,7 +168,7 @@ export class BackupService {
     }));
   }
 
-  async triggerManual(connectionId: string, user: KeycloakUser): Promise<BackupResult> {
+  async triggerManual(connectionId: string, user: AuthUser): Promise<BackupResult> {
     return this.createBackup({ connectionId }, user, BackupCategory.MANUAL);
   }
 

@@ -1,19 +1,19 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
 
-export interface KeycloakUser {
-  sub: string;
-  email?: string;
-  preferred_username: string;
-  realm_access: { roles: string[] };
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
 }
 
 interface AuthenticatedRequest extends Request {
-  user?: KeycloakUser;
+  user?: AuthUser;
 }
 
 export const CurrentUser = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): KeycloakUser | undefined => {
+  (_data: unknown, ctx: ExecutionContext): AuthUser | undefined => {
     const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
     return request.user;
   },

@@ -1,5 +1,4 @@
 import axios from "axios";
-import { keycloak } from "./keycloak";
 import { APP_CONFIG } from "@/config";
 
 const apiClient = axios.create({
@@ -7,14 +6,7 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-});
-
-apiClient.interceptors.request.use(async (config) => {
-  if (keycloak.authenticated && keycloak.token) {
-    await keycloak.updateToken(30);
-    config.headers.Authorization = `Bearer ${keycloak.token}`;
-  }
-  return config;
+  withCredentials: true,
 });
 
 apiClient.interceptors.response.use(

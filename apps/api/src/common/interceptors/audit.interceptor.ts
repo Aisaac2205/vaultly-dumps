@@ -9,13 +9,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Request } from 'express';
 import { Observable, tap } from 'rxjs';
 import { Repository } from 'typeorm';
-import { KeycloakUser } from '../decorators/current-user.decorator';
+import { AuthUser } from '../../auth/decorators/current-user.decorator';
 import { getAuditContext } from '../audit/audit-context';
 import { AuditLogEntity } from '../../database/entities/audit-log.entity';
 import { Environment } from '../../database/enums/environment.enum';
 
 interface AuthenticatedRequest extends Request {
-  user?: KeycloakUser;
+  user?: AuthUser;
 }
 
 const AUDITED_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
@@ -106,8 +106,8 @@ export class AuditInterceptor implements NestInterceptor {
 
       await this.auditRepo.save({
         action: `${request.method} ${request.path}`,
-        userId: user?.sub ?? 'anonymous',
-        username: user?.preferred_username ?? 'anonymous',
+        userId: user?.id ?? 'anonymous',
+        username: user?.email ?? 'anonymous',
         resourceType: context.getClass().name,
         resourceId,
         metadata: ctx?.metadata

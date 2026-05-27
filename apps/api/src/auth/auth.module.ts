@@ -1,11 +1,16 @@
-import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Module, OnModuleDestroy } from '@nestjs/common';
+import { AuthController } from './auth.controller';
+import { BetterAuthGuard } from './auth.guard';
+import { AdminSeedService } from './seeds/admin.seed';
+import { authPool } from './auth.config';
 
 @Module({
-  imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
-  providers: [JwtStrategy, JwtAuthGuard],
-  exports: [JwtAuthGuard],
+  controllers: [AuthController],
+  providers: [BetterAuthGuard, AdminSeedService],
+  exports: [BetterAuthGuard],
 })
-export class AuthModule {}
+export class AuthModule implements OnModuleDestroy {
+  async onModuleDestroy(): Promise<void> {
+    await authPool.end();
+  }
+}

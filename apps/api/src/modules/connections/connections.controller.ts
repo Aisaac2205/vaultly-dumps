@@ -11,7 +11,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { BetterAuthGuard } from '../../auth/auth.guard';
+import { RolesGuard, Roles } from '../../auth/roles.guard';
 import { setAuditContext } from '../../common/audit/audit-context';
 import { ConnectionsService } from './connections.service';
 import { CreateConnectionDto } from './dto/create-connection.dto';
@@ -20,7 +21,8 @@ import { TestConnectionDto } from './dto/test-connection.dto';
 import { TestRawConnectionDto } from './dto/test-raw-connection.dto';
 
 @Controller('connections')
-@UseGuards(JwtAuthGuard)
+@UseGuards(BetterAuthGuard, RolesGuard)
+@Roles('admin')
 export class ConnectionsController {
   constructor(private readonly service: ConnectionsService) {}
 

@@ -9,8 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CurrentUser, KeycloakUser } from '../../common/decorators/current-user.decorator';
+import { BetterAuthGuard } from '../../auth/auth.guard';
+import { RolesGuard, Roles } from '../../auth/roles.guard';
+import { CurrentUser, AuthUser } from '../../auth/decorators/current-user.decorator';
 import { setAuditContext } from '../../common/audit/audit-context';
 import { BackupService } from './backup.service';
 import { CreateBackupDto } from './dto/create-backup.dto';
@@ -18,14 +19,15 @@ import { ListEnrichedDumpsQueryDto } from './dto/list-enriched-dumps.query.dto';
 import { Environment } from '../../database/enums/environment.enum';
 
 @Controller('backups')
-@UseGuards(JwtAuthGuard)
+@UseGuards(BetterAuthGuard, RolesGuard)
+@Roles('admin')
 export class BackupController {
   constructor(private readonly service: BackupService) {}
 
   @Post()
   async createBackup(
     @Body() dto: CreateBackupDto,
-    @CurrentUser() user: KeycloakUser,
+    @CurrentUser() user: AuthUser,
     @Req() req: Request,
   ) {
     const result = await this.service.createBackup(dto, user);
@@ -56,7 +58,7 @@ export class BackupController {
   @Post('trigger/:connectionId')
   async triggerManual(
     @Param('connectionId') connectionId: string,
-    @CurrentUser() user: KeycloakUser,
+    @CurrentUser() user: AuthUser,
     @Req() req: Request,
   ) {
     const result = await this.service.triggerManual(connectionId, user);
