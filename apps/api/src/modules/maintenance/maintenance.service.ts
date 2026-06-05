@@ -1,12 +1,18 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { BackupService } from '../backup/backup.service';
 import { BackupRepository } from '../backup/backup.repository';
 import { R2Service } from '../backup/r2.service';
 import { RestoreRepository } from '../restore/restore.repository';
+import { ConnectionsService } from '../connections/connections.service';
 import { EnrichedR2Object } from '../backup/interfaces/enriched-r2-object.interface';
+import { ManualRetentionSettingEntity } from '../../database/entities/manual-retention-setting.entity';
 import { BackupCategory } from '../../database/enums/backup-category.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { CleanupParamsDto } from './dto/cleanup-params.dto';
+import { UpdateManualRetentionDto } from './dto/update-manual-retention.dto';
 import {
   CleanupError,
   CleanupPreview,
@@ -16,6 +22,7 @@ import {
 
 const BYTES_PER_MB = 1024 * 1024;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MANUAL_SWEEP_LOCK_ID = 778_716_811;
 
 @Injectable()
 export class MaintenanceService {
@@ -26,6 +33,11 @@ export class MaintenanceService {
     private readonly backupRepository: BackupRepository,
     private readonly r2Service: R2Service,
     private readonly restoreRepository: RestoreRepository,
+    private readonly connectionsService: ConnectionsService,
+    @InjectRepository(ManualRetentionSettingEntity)
+    private readonly manualRetentionRepo: Repository<ManualRetentionSettingEntity>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   // --- Ad-hoc cleanup (manual UI) -----------------------------------------
@@ -57,6 +69,93 @@ export class MaintenanceService {
       return { deleted: 0, freedMb: 0, errors: [] };
     }
     return this.prune(connectionSlug, category, policy);
+  }
+
+  // --- Global manual-dump retention + daily sweeper -----------------------
+
+  /** Current global manual-dump retention policy (transient default if unset). */
+  async getManualRetention(): Promise<ManualRetentionSettingEntity> {
+    const existing = await this.manualRetentionRepo.findOne({ where: { id: 1 } });
+    return (
+      existing ??
+      this.manualRetentionRepo.create({
+        id: 1,
+        enabled: false,
+        keepLast: null,
+        maxAgeDays: null,
+        maxTotalSizeMb: null,
+      })
+    );
+  }
+
+  /** Full-replace of the global manual-dump retention policy (singleton row). */
+  async updateManualRetention(
+    dto: UpdateManualRetentionDto,
+  ): Promise<ManualRetentionSettingEntity> {
+    const entity = this.manualRetentionRepo.create({
+      id: 1,
+      enabled: dto.enabled ?? false,
+      keepLast: dto.keepLast ?? null,
+      maxAgeDays: dto.maxAgeDays ?? null,
+      maxTotalSizeMb: dto.maxTotalSizeMb ?? null,
+    });
+    return this.manualRetentionRepo.save(entity);
+  }
+
+  /**
+   * Daily sweep: applies the global manual-dump retention to every connection.
+   * Guarded by a pg advisory lock so only one replica runs it; wrapped so a
+   * failure never crashes the process.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async sweepManualRetention(): Promise<void> {
+    try {
+      const lock = await this.dataSource.query<Array<{ acquired: boolean }>>(
+        'SELECT pg_try_advisory_lock($1) AS acquired',
+        [MANUAL_SWEEP_LOCK_ID],
+      );
+      if (!lock[0]?.acquired) return;
+
+      try {
+        const settings = await this.getManualRetention();
+        if (!settings.enabled) return;
+
+        const policy: RetentionPolicy = {
+          keepLast: settings.keepLast ?? undefined,
+          maxAgeDays: settings.maxAgeDays ?? undefined,
+          maxTotalSizeMb: settings.maxTotalSizeMb ?? undefined,
+        };
+        if (!this.hasCriterion(policy)) return;
+
+        const connections = await this.connectionsService.findAll();
+        for (const connection of connections) {
+          try {
+            const result = await this.applyRetention(
+              connection.slug,
+              BackupCategory.MANUAL,
+              policy,
+            );
+            if (result.deleted > 0) {
+              this.logger.log(
+                `Manual sweep "${connection.slug}": pruned ${result.deleted} (${result.freedMb} MB)`,
+              );
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.warn(
+              `Manual sweep failed for "${connection.slug}": ${message}`,
+            );
+          }
+        }
+      } finally {
+        await this.dataSource.query('SELECT pg_advisory_unlock($1)', [
+          MANUAL_SWEEP_LOCK_ID,
+        ]);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`sweepManualRetention crashed: ${message}`);
+    }
   }
 
   // --- Core engine --------------------------------------------------------
