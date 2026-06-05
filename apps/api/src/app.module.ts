@@ -18,6 +18,7 @@ import { RestoreModule } from './modules/restore/restore.module';
 import { JobsModule } from './modules/jobs/jobs.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { CronjobsModule } from './modules/cronjobs/cronjobs.module';
+import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -48,6 +49,7 @@ import { HealthModule } from './health/health.module';
     JobsModule,
     AuditModule,
     CronjobsModule,
+    MaintenanceModule,
     HealthModule,
   ],
   providers: [

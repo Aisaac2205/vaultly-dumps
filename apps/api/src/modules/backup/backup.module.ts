@@ -58,6 +58,7 @@ import { RestoreStrategy } from './interfaces/restore-strategy.interface';
   ],
   exports: [
     BackupService,
+    BackupRepository,
     R2Service,
     'BACKUP_STRATEGIES',
     'RESTORE_STRATEGIES',

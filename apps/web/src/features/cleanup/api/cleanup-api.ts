@@ -4,11 +4,11 @@ import type { CleanupParams, CleanupPreview, CleanupResult } from "../types";
 export const cleanupApi = {
   preview: (params: CleanupParams) =>
     apiClient
-      .get<CleanupPreview>("/backups/cleanup/preview", { params })
+      .get<CleanupPreview>("/maintenance/cleanup/preview", { params })
       .then((r) => r.data),
 
   run: (params: CleanupParams) =>
     apiClient
-      .post<CleanupResult>("/backups/cleanup", params)
+      .post<CleanupResult>("/maintenance/cleanup", params)
       .then((r) => r.data),
 };

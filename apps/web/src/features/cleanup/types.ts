@@ -1,13 +1,14 @@
 import type { BackupCategory } from "@/types/backup.types";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 
-export type CleanupMode = "keepLast" | "olderThanDays";
+export type CleanupMode = "keepLast" | "maxAgeDays";
 
 export interface CleanupParams {
   connectionSlug: string;
   category: BackupCategory;
-  olderThanDays?: number;
   keepLast?: number;
+  maxAgeDays?: number;
+  maxTotalSizeMb?: number;
 }
 
 export interface CleanupPreview {

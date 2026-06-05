@@ -16,7 +16,6 @@ import { setAuditContext } from '../../common/audit/audit-context';
 import { BackupService } from './backup.service';
 import { CreateBackupDto } from './dto/create-backup.dto';
 import { ListEnrichedDumpsQueryDto } from './dto/list-enriched-dumps.query.dto';
-import { CleanupParamsDto } from './dto/cleanup-params.dto';
 import { Environment } from '../../database/enums/environment.enum';
 
 @Controller('backups')
@@ -49,30 +48,6 @@ export class BackupController {
   @Get('r2/enriched')
   listEnrichedDumps(@Query() query: ListEnrichedDumpsQueryDto) {
     return this.service.listEnrichedDumps(query.connectionSlug, query.category);
-  }
-
-  // Dry run: what a cleanup would remove. Read-only, no audit.
-  @Get('cleanup/preview')
-  previewCleanup(@Query() query: CleanupParamsDto) {
-    return this.service.previewCleanup(query);
-  }
-
-  @Post('cleanup')
-  async runCleanup(@Body() dto: CleanupParamsDto, @Req() req: Request) {
-    const result = await this.service.runCleanup(dto);
-    setAuditContext(req, {
-      environment: Environment.PROD,
-      metadata: {
-        connectionSlug: dto.connectionSlug,
-        category: dto.category,
-        olderThanDays: dto.olderThanDays,
-        keepLast: dto.keepLast,
-        deleted: result.deleted,
-        freedMb: result.freedMb,
-        errors: result.errors.length,
-      },
-    });
-    return result;
   }
 
   @Get('r2')

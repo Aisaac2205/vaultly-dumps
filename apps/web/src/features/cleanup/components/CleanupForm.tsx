@@ -41,7 +41,7 @@ export function CleanupForm() {
     if (!connectionSlug || !category || !amountValid) return null;
     return mode === "keepLast"
       ? { connectionSlug, category, keepLast: amountNum }
-      : { connectionSlug, category, olderThanDays: amountNum };
+      : { connectionSlug, category, maxAgeDays: amountNum };
   }, [connectionSlug, category, amountValid, amountNum, mode]);
 
   const { data: preview, isFetching: previewFetching } = useCleanupPreview(params);
@@ -124,9 +124,9 @@ export function CleanupForm() {
                   <input
                     type="radio"
                     name="cleanup-mode"
-                    value="olderThanDays"
-                    checked={mode === "olderThanDays"}
-                    onChange={() => setMode("olderThanDays")}
+                    value="maxAgeDays"
+                    checked={mode === "maxAgeDays"}
+                    onChange={() => setMode("maxAgeDays")}
                   />
                   Más viejos que
                 </label>
