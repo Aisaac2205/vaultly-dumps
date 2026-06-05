@@ -1,5 +1,6 @@
 import { useConnections } from "@/features/connections/hooks/useConnections";
 import { cn } from "@/shared/lib/cn";
+import { EnvironmentBadge } from "@/shared/components/EnvironmentBadge";
 
 interface ConnectionLabelProps {
   id: string;
@@ -12,22 +13,6 @@ interface ConnectionLabelProps {
 
 function shortId(id: string): string {
   return id.length > 8 ? `${id.slice(0, 8)}…` : id;
-}
-
-function EnvTag({ env }: { env: string }) {
-  const isProd = env.toLowerCase() === "prod";
-  return (
-    <span
-      className={cn(
-        "ml-1.5 inline-flex shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider",
-        isProd
-          ? "border border-destructive/30 bg-destructive/10 text-destructive"
-          : "bg-muted text-muted-foreground",
-      )}
-    >
-      {env}
-    </span>
-  );
 }
 
 export function ConnectionLabel({
@@ -50,7 +35,9 @@ export function ConnectionLabel({
         title={`${resolvedName}${resolvedEnv ? ` · ${resolvedEnv}` : ""} (${id})`}
       >
         <span className="truncate">{resolvedName}</span>
-        {showEnv && resolvedEnv && <EnvTag env={resolvedEnv} />}
+        {showEnv && resolvedEnv && (
+          <EnvironmentBadge env={resolvedEnv} size="xs" className="ml-1.5" />
+        )}
       </span>
     );
   }

@@ -1,4 +1,4 @@
-import { Badge } from "@/shared/ui/badge";
+import { Badge, BadgeDot } from "@/shared/ui/badge";
 import { cn } from "@/shared/lib/cn";
 
 interface ConnectionStateBadgeProps {
@@ -12,21 +12,10 @@ export function ConnectionStateBadge({
 }: ConnectionStateBadgeProps) {
   return (
     <Badge
-      className={cn(
-        "inline-flex items-center gap-1.5",
-        isActive
-          ? "bg-success-bg text-success"
-          : "bg-muted text-muted-foreground",
-        className,
-      )}
+      variant="outline"
+      className={cn(isActive ? "text-text-secondary" : "text-muted-foreground", className)}
     >
-      <span
-        className={cn(
-          "inline-block h-1.5 w-1.5 rounded-full",
-          isActive ? "bg-success" : "bg-muted-foreground",
-        )}
-        aria-hidden="true"
-      />
+      <BadgeDot tone={isActive ? "success" : "neutral"} />
       {isActive ? "Activa" : "Inactiva"}
     </Badge>
   );

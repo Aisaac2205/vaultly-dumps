@@ -1,8 +1,7 @@
 import { DataTable, type Column } from "@/shared/ui/data-table";
-import { Badge } from "@/shared/ui/badge";
-import { cn } from "@/shared/lib/cn";
 
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
+import { EnvironmentBadge } from "@/shared/components/EnvironmentBadge";
 import {
   Database,
   Trash2,
@@ -65,21 +64,6 @@ function ActionCell({ action }: { action: string }) {
       <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <code className="text-xs font-mono">{action}</code>
     </div>
-  );
-}
-
-const ENV_VARIANTS: Record<string, string> = {
-  prod: "border-destructive/30 bg-destructive/10 text-destructive",
-  dev: "border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  sqa: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-};
-
-function EnvironmentBadge({ env }: { env: string }) {
-  const variant = ENV_VARIANTS[env] ?? "border-border bg-muted text-muted-foreground";
-  return (
-    <Badge className={cn("border text-xs font-mono", variant)}>
-      {env}
-    </Badge>
   );
 }
 

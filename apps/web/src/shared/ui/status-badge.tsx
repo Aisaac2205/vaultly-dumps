@@ -1,31 +1,19 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import { Badge } from "@/shared/ui/badge";
+import { Badge, BadgeDot, type BadgeDotTone } from "@/shared/ui/badge";
 
-const statusBadgeVariants = cva("inline-flex items-center gap-1.5", {
-  variants: {
-    variant: {
-      pending: "bg-warning-bg text-warning",
-      running: "bg-info-bg text-info",
-      completed: "bg-success-bg text-success",
-      failed: "bg-error-bg text-error",
-    },
-  },
-  defaultVariants: {
-    variant: "pending",
-  },
-});
+type Status = "pending" | "running" | "completed" | "failed";
 
-interface StatusBadgeProps extends VariantProps<typeof statusBadgeVariants> {
-  status: "pending" | "running" | "completed" | "failed";
+interface StatusBadgeProps {
+  status: Status;
 }
 
-function statusToVariant(
-  status: StatusBadgeProps["status"],
-): StatusBadgeProps["variant"] {
-  return status;
-}
+const STATUS_TONE: Record<Status, BadgeDotTone> = {
+  pending: "warning",
+  running: "info",
+  completed: "success",
+  failed: "error",
+};
 
-const STATUS_LABELS: Record<StatusBadgeProps["status"], string> = {
+const STATUS_LABELS: Record<Status, string> = {
   pending: "Pendiente",
   running: "En progreso",
   completed: "Completado",
@@ -33,14 +21,9 @@ const STATUS_LABELS: Record<StatusBadgeProps["status"], string> = {
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const variant = statusToVariant(status);
-
   return (
-    <Badge className={statusBadgeVariants({ variant })}>
-      <span
-        className="inline-block h-1.5 w-1.5 rounded-full bg-current"
-        aria-hidden="true"
-      />
+    <Badge variant="outline" className="text-text-secondary">
+      <BadgeDot tone={STATUS_TONE[status]} pulse={status === "running"} />
       {STATUS_LABELS[status]}
     </Badge>
   );
