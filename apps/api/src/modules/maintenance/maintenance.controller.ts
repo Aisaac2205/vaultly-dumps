@@ -16,6 +16,7 @@ import { Environment } from '../../database/enums/environment.enum';
 import { MaintenanceService } from './maintenance.service';
 import { CleanupParamsDto } from './dto/cleanup-params.dto';
 import { UpdateManualRetentionDto } from './dto/update-manual-retention.dto';
+import { DbHygieneQueryDto } from './dto/db-hygiene.query.dto';
 
 @Controller('maintenance')
 @UseGuards(BetterAuthGuard, RolesGuard)
@@ -44,6 +45,30 @@ export class MaintenanceController {
         freedMb: result.freedMb,
         errors: result.errors.length,
       },
+    });
+    return result;
+  }
+
+  // --- Storage overview (read-only) ---
+
+  @Get('storage/overview')
+  getStorageOverview() {
+    return this.service.getStorageOverview();
+  }
+
+  // --- DB hygiene: prune old FAILED job rows ---
+
+  @Get('db/preview')
+  previewDbHygiene(@Query() query: DbHygieneQueryDto) {
+    return this.service.previewDbHygiene(query.olderThanDays);
+  }
+
+  @Post('db/cleanup')
+  async runDbHygiene(@Body() dto: DbHygieneQueryDto, @Req() req: Request) {
+    const result = await this.service.runDbHygiene(dto.olderThanDays);
+    setAuditContext(req, {
+      environment: Environment.PROD,
+      metadata: { olderThanDays: dto.olderThanDays, deleted: result.deleted },
     });
     return result;
   }

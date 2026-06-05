@@ -19,6 +19,15 @@ import {
   CleanupResult,
   RetentionPolicy,
 } from './interfaces/retention.interface';
+import {
+  StorageCategoryUsage,
+  StorageConnectionUsage,
+  StorageOverview,
+} from './interfaces/storage.interface';
+import {
+  DbHygienePreview,
+  DbHygieneResult,
+} from './interfaces/db-hygiene.interface';
 
 const BYTES_PER_MB = 1024 * 1024;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -156,6 +165,81 @@ export class MaintenanceService {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`sweepManualRetention crashed: ${message}`);
     }
+  }
+
+  // --- Storage overview ---------------------------------------------------
+
+  /** Aggregates R2 dump usage by connection and by category. Read-only. */
+  async getStorageOverview(): Promise<StorageOverview> {
+    const objects = await this.r2Service.list();
+    const dumps = objects.filter((obj) => obj.key.endsWith('.dump'));
+
+    const connections = await this.connectionsService.findAll();
+    const nameBySlug = new Map(connections.map((c) => [c.slug, c.name]));
+
+    const byConn = new Map<
+      string,
+      { count: number; bytes: number; oldest: number | null }
+    >();
+    const byCat = new Map<string, { count: number; bytes: number }>();
+    let totalBytes = 0;
+
+    for (const obj of dumps) {
+      const [slug, category] = obj.key.split('/');
+      if (!slug || !category) continue;
+      totalBytes += obj.size;
+
+      const conn = byConn.get(slug) ?? { count: 0, bytes: 0, oldest: null };
+      conn.count += 1;
+      conn.bytes += obj.size;
+      const ts = obj.lastModified.getTime();
+      conn.oldest = conn.oldest === null ? ts : Math.min(conn.oldest, ts);
+      byConn.set(slug, conn);
+
+      const cat = byCat.get(category) ?? { count: 0, bytes: 0 };
+      cat.count += 1;
+      cat.bytes += obj.size;
+      byCat.set(category, cat);
+    }
+
+    const byConnection: StorageConnectionUsage[] = [...byConn.entries()]
+      .map(([slug, v]) => ({
+        connectionSlug: slug,
+        connectionName: nameBySlug.get(slug) ?? slug,
+        count: v.count,
+        sizeMb: this.bytesToMb(v.bytes),
+        oldest: v.oldest === null ? null : new Date(v.oldest).toISOString(),
+      }))
+      .sort((a, b) => b.sizeMb - a.sizeMb);
+
+    const byCategory: StorageCategoryUsage[] = [...byCat.entries()]
+      .map(([category, v]) => ({
+        category: category as BackupCategory,
+        count: v.count,
+        sizeMb: this.bytesToMb(v.bytes),
+      }))
+      .sort((a, b) => b.sizeMb - a.sizeMb);
+
+    return {
+      totalDumps: dumps.length,
+      totalSizeMb: this.bytesToMb(totalBytes),
+      byConnection,
+      byCategory,
+    };
+  }
+
+  // --- DB hygiene (prune FAILED job rows) ---------------------------------
+
+  async previewDbHygiene(olderThanDays: number): Promise<DbHygienePreview> {
+    const cutoff = new Date(Date.now() - olderThanDays * MS_PER_DAY);
+    const failedCount = await this.backupRepository.countFailedOlderThan(cutoff);
+    return { failedCount };
+  }
+
+  async runDbHygiene(olderThanDays: number): Promise<DbHygieneResult> {
+    const cutoff = new Date(Date.now() - olderThanDays * MS_PER_DAY);
+    const deleted = await this.backupRepository.deleteFailedOlderThan(cutoff);
+    return { deleted };
   }
 
   // --- Core engine --------------------------------------------------------
