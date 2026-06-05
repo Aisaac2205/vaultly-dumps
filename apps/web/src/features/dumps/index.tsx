@@ -12,6 +12,8 @@ import DumpsFilters from "./components/DumpsFilters";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { CleanupForm } from "@/features/cleanup/components/CleanupForm";
 import { ManualRetentionSettings } from "@/features/cleanup/components/ManualRetentionSettings";
+import { StoragePanel } from "@/features/cleanup/components/StoragePanel";
+import { DbHygienePanel } from "@/features/cleanup/components/DbHygienePanel";
 import type { DumpsFilters as DumpsFiltersType } from "./types";
 
 export default function Dumps() {
@@ -143,8 +145,10 @@ export default function Dumps() {
         </TabsContent>
 
         <TabsContent value="cleanup" className="space-y-4">
+          <StoragePanel />
           <CleanupForm />
           <ManualRetentionSettings />
+          <DbHygienePanel />
         </TabsContent>
       </Tabs>
     </div>
