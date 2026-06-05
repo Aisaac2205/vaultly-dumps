@@ -7,6 +7,7 @@ import { useAuth } from "./shared/hooks/useAuth";
 import {
   LazyDashboard,
   LazyDumps,
+  LazyCleanup,
   LazyRestore,
   LazyCronjobs,
   LazyConnections,
@@ -50,6 +51,16 @@ export const router = createBrowserRouter([
       <ProtectedRoute requiredRole="admin">
         <AuthenticatedLayout>
           <LazyDumps />
+        </AuthenticatedLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/cleanup",
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AuthenticatedLayout>
+          <LazyCleanup />
         </AuthenticatedLayout>
       </ProtectedRoute>
     ),
