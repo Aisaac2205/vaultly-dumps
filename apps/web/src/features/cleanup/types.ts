@@ -27,3 +27,18 @@ export interface CleanupResult {
   freedMb: number;
   errors: CleanupError[];
 }
+
+export interface ManualRetentionSettings {
+  enabled: boolean;
+  keepLast: number | null;
+  maxAgeDays: number | null;
+  maxTotalSizeMb: number | null;
+  updatedAt?: string;
+}
+
+export interface ManualRetentionUpdate {
+  enabled?: boolean;
+  keepLast?: number;
+  maxAgeDays?: number;
+  maxTotalSizeMb?: number;
+}

@@ -9,6 +9,9 @@ import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
 import { DumpsStats } from "./components/DumpsStats";
 import { DumpsTable } from "./components/DumpsTable";
 import DumpsFilters from "./components/DumpsFilters";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { CleanupForm } from "@/features/cleanup/components/CleanupForm";
+import { ManualRetentionSettings } from "@/features/cleanup/components/ManualRetentionSettings";
 import type { DumpsFilters as DumpsFiltersType } from "./types";
 
 export default function Dumps() {
@@ -122,15 +125,28 @@ export default function Dumps() {
         </Alert>
       )}
 
-      <DumpsFilters
-        filters={filters}
-        connections={connections}
-        onApply={handleApplyFilters}
-        onReset={handleResetFilters}
-      />
+      <Tabs defaultValue="list">
+        <TabsList>
+          <TabsTrigger value="list">Listado</TabsTrigger>
+          <TabsTrigger value="cleanup">Limpieza</TabsTrigger>
+        </TabsList>
 
-      <DumpsStats dumps={dumps} />
-      <DumpsTable dumps={dumps} isLoading={false} total={total} />
+        <TabsContent value="list" className="space-y-6">
+          <DumpsFilters
+            filters={filters}
+            connections={connections}
+            onApply={handleApplyFilters}
+            onReset={handleResetFilters}
+          />
+          <DumpsStats dumps={dumps} />
+          <DumpsTable dumps={dumps} isLoading={false} total={total} />
+        </TabsContent>
+
+        <TabsContent value="cleanup" className="space-y-4">
+          <CleanupForm />
+          <ManualRetentionSettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
