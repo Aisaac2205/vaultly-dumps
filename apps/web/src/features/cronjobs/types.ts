@@ -5,13 +5,21 @@ export type JobStatus = "pending" | "running" | "completed" | "failed";
 export interface Connection {
   id: string;
   name: string;
+  slug: string;
   environment: string;
   dbType?: "postgres" | "mysql";
   host?: string;
   database?: string;
 }
 
-export interface Cronjob {
+export interface RetentionFields {
+  retentionEnabled?: boolean;
+  retentionKeepLast?: number;
+  retentionMaxAgeDays?: number;
+  retentionMaxSizeMb?: number;
+}
+
+export interface Cronjob extends RetentionFields {
   id: string;
   name: string;
   connectionId: string;
@@ -24,17 +32,22 @@ export interface Cronjob {
   lastStatus?: JobStatus;
 }
 
-export interface CreateCronjobDto {
+export interface CreateCronjobDto extends RetentionFields {
   name: string;
   connectionId: string;
   cronExpression: string;
   frequency: CronFrequency;
 }
 
-export interface UpdateCronjobDto {
+export interface UpdateCronjobDto extends RetentionFields {
   name?: string;
   connectionId?: string;
   cronExpression?: string;
   frequency?: CronFrequency;
   isActive?: boolean;
+}
+
+export interface RetentionPreview {
+  count: number;
+  totalSizeMb: number;
 }

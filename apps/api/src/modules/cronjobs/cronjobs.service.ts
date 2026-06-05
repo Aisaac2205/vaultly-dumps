@@ -11,6 +11,8 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { CronjobsRepository } from './cronjobs.repository';
 import { BackupService } from '../backup/backup.service';
+import { MaintenanceService } from '../maintenance/maintenance.service';
+import { RetentionPolicy } from '../maintenance/interfaces/retention.interface';
 import { ConnectionsService } from '../connections/connections.service';
 import { CreateCronjobDto } from './dto/create-cronjob.dto';
 import { UpdateCronjobDto } from './dto/update-cronjob.dto';
@@ -54,6 +56,7 @@ export class CronjobsService implements OnApplicationBootstrap {
     private readonly repository: CronjobsRepository,
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly backupService: BackupService,
+    private readonly maintenanceService: MaintenanceService,
     private readonly connectionsService: ConnectionsService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -322,6 +325,9 @@ export class CronjobsService implements OnApplicationBootstrap {
           });
 
           this.logger.log(`Cronjob "${cronjob.name}" completed`);
+
+          // Retention runs AFTER a successful backup and must never fail the run.
+          await this.applyRetention(cronjob);
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Error desconocido';
           this.logger.error(`Cronjob "${cronjob.name}" failed: ${message}`);
@@ -348,6 +354,37 @@ export class CronjobsService implements OnApplicationBootstrap {
       this.logger.error(
         `executeCronjob("${cronjobName}") crashed before status tracking: ${message}`,
       );
+    }
+  }
+
+  // Prune old dumps for this cronjob's connection+category per its retention
+  // policy. Self-contained try/catch: a retention failure must never propagate
+  // and turn a successful backup into a FAILED run.
+  private async applyRetention(cronjob: CronjobEntity): Promise<void> {
+    if (!cronjob.retentionEnabled) return;
+
+    const policy: RetentionPolicy = {
+      keepLast: cronjob.retentionKeepLast ?? undefined,
+      maxAgeDays: cronjob.retentionMaxAgeDays ?? undefined,
+      maxTotalSizeMb: cronjob.retentionMaxSizeMb ?? undefined,
+    };
+
+    try {
+      const connection = await this.connectionsService.findById(cronjob.connectionId);
+      const category = FREQUENCY_TO_CATEGORY[cronjob.frequency];
+      const result = await this.maintenanceService.applyRetention(
+        connection.slug,
+        category,
+        policy,
+      );
+      if (result.deleted > 0 || result.errors.length > 0) {
+        this.logger.log(
+          `Retention "${cronjob.name}": pruned ${result.deleted} (${result.freedMb} MB), ${result.errors.length} error(s)`,
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Retention failed for "${cronjob.name}": ${message}`);
     }
   }
 
