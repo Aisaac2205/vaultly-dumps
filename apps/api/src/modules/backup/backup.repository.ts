@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, LessThan, Repository } from 'typeorm';
 import { BackupJobEntity } from '../../database/entities/backup-job.entity';
 import { JobStatus } from '../../database/enums/job-status.enum';
 
@@ -43,6 +43,22 @@ export class BackupRepository {
   async deleteByFileKeys(fileKeys: string[]): Promise<number> {
     if (fileKeys.length === 0) return 0;
     const result = await this.repository.delete({ fileKey: In(fileKeys) });
+    return result.affected ?? 0;
+  }
+
+  /** Count of FAILED jobs created before the cutoff (DB-hygiene preview). */
+  countFailedOlderThan(cutoff: Date): Promise<number> {
+    return this.repository.count({
+      where: { status: JobStatus.FAILED, createdAt: LessThan(cutoff) },
+    });
+  }
+
+  /** Removes FAILED jobs created before the cutoff. Returns rows removed. */
+  async deleteFailedOlderThan(cutoff: Date): Promise<number> {
+    const result = await this.repository.delete({
+      status: JobStatus.FAILED,
+      createdAt: LessThan(cutoff),
+    });
     return result.affected ?? 0;
   }
 }

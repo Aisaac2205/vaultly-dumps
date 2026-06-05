@@ -1,21 +1,37 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { BackupService } from '../backup/backup.service';
 import { BackupRepository } from '../backup/backup.repository';
 import { R2Service } from '../backup/r2.service';
 import { RestoreRepository } from '../restore/restore.repository';
+import { ConnectionsService } from '../connections/connections.service';
 import { EnrichedR2Object } from '../backup/interfaces/enriched-r2-object.interface';
+import { ManualRetentionSettingEntity } from '../../database/entities/manual-retention-setting.entity';
 import { BackupCategory } from '../../database/enums/backup-category.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { CleanupParamsDto } from './dto/cleanup-params.dto';
+import { UpdateManualRetentionDto } from './dto/update-manual-retention.dto';
 import {
   CleanupError,
   CleanupPreview,
   CleanupResult,
   RetentionPolicy,
 } from './interfaces/retention.interface';
+import {
+  StorageCategoryUsage,
+  StorageConnectionUsage,
+  StorageOverview,
+} from './interfaces/storage.interface';
+import {
+  DbHygienePreview,
+  DbHygieneResult,
+} from './interfaces/db-hygiene.interface';
 
 const BYTES_PER_MB = 1024 * 1024;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MANUAL_SWEEP_LOCK_ID = 778_716_811;
 
 @Injectable()
 export class MaintenanceService {
@@ -26,6 +42,11 @@ export class MaintenanceService {
     private readonly backupRepository: BackupRepository,
     private readonly r2Service: R2Service,
     private readonly restoreRepository: RestoreRepository,
+    private readonly connectionsService: ConnectionsService,
+    @InjectRepository(ManualRetentionSettingEntity)
+    private readonly manualRetentionRepo: Repository<ManualRetentionSettingEntity>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   // --- Ad-hoc cleanup (manual UI) -----------------------------------------
@@ -57,6 +78,168 @@ export class MaintenanceService {
       return { deleted: 0, freedMb: 0, errors: [] };
     }
     return this.prune(connectionSlug, category, policy);
+  }
+
+  // --- Global manual-dump retention + daily sweeper -----------------------
+
+  /** Current global manual-dump retention policy (transient default if unset). */
+  async getManualRetention(): Promise<ManualRetentionSettingEntity> {
+    const existing = await this.manualRetentionRepo.findOne({ where: { id: 1 } });
+    return (
+      existing ??
+      this.manualRetentionRepo.create({
+        id: 1,
+        enabled: false,
+        keepLast: null,
+        maxAgeDays: null,
+        maxTotalSizeMb: null,
+      })
+    );
+  }
+
+  /** Full-replace of the global manual-dump retention policy (singleton row). */
+  async updateManualRetention(
+    dto: UpdateManualRetentionDto,
+  ): Promise<ManualRetentionSettingEntity> {
+    const entity = this.manualRetentionRepo.create({
+      id: 1,
+      enabled: dto.enabled ?? false,
+      keepLast: dto.keepLast ?? null,
+      maxAgeDays: dto.maxAgeDays ?? null,
+      maxTotalSizeMb: dto.maxTotalSizeMb ?? null,
+    });
+    return this.manualRetentionRepo.save(entity);
+  }
+
+  /**
+   * Daily sweep: applies the global manual-dump retention to every connection.
+   * Guarded by a pg advisory lock so only one replica runs it; wrapped so a
+   * failure never crashes the process.
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async sweepManualRetention(): Promise<void> {
+    try {
+      const lock = await this.dataSource.query<Array<{ acquired: boolean }>>(
+        'SELECT pg_try_advisory_lock($1) AS acquired',
+        [MANUAL_SWEEP_LOCK_ID],
+      );
+      if (!lock[0]?.acquired) return;
+
+      try {
+        const settings = await this.getManualRetention();
+        if (!settings.enabled) return;
+
+        const policy: RetentionPolicy = {
+          keepLast: settings.keepLast ?? undefined,
+          maxAgeDays: settings.maxAgeDays ?? undefined,
+          maxTotalSizeMb: settings.maxTotalSizeMb ?? undefined,
+        };
+        if (!this.hasCriterion(policy)) return;
+
+        const connections = await this.connectionsService.findAll();
+        for (const connection of connections) {
+          try {
+            const result = await this.applyRetention(
+              connection.slug,
+              BackupCategory.MANUAL,
+              policy,
+            );
+            if (result.deleted > 0) {
+              this.logger.log(
+                `Manual sweep "${connection.slug}": pruned ${result.deleted} (${result.freedMb} MB)`,
+              );
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.warn(
+              `Manual sweep failed for "${connection.slug}": ${message}`,
+            );
+          }
+        }
+      } finally {
+        await this.dataSource.query('SELECT pg_advisory_unlock($1)', [
+          MANUAL_SWEEP_LOCK_ID,
+        ]);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`sweepManualRetention crashed: ${message}`);
+    }
+  }
+
+  // --- Storage overview ---------------------------------------------------
+
+  /** Aggregates R2 dump usage by connection and by category. Read-only. */
+  async getStorageOverview(): Promise<StorageOverview> {
+    const objects = await this.r2Service.list();
+    const dumps = objects.filter((obj) => obj.key.endsWith('.dump'));
+
+    const connections = await this.connectionsService.findAll();
+    const nameBySlug = new Map(connections.map((c) => [c.slug, c.name]));
+
+    const byConn = new Map<
+      string,
+      { count: number; bytes: number; oldest: number | null }
+    >();
+    const byCat = new Map<string, { count: number; bytes: number }>();
+    let totalBytes = 0;
+
+    for (const obj of dumps) {
+      const [slug, category] = obj.key.split('/');
+      if (!slug || !category) continue;
+      totalBytes += obj.size;
+
+      const conn = byConn.get(slug) ?? { count: 0, bytes: 0, oldest: null };
+      conn.count += 1;
+      conn.bytes += obj.size;
+      const ts = obj.lastModified.getTime();
+      conn.oldest = conn.oldest === null ? ts : Math.min(conn.oldest, ts);
+      byConn.set(slug, conn);
+
+      const cat = byCat.get(category) ?? { count: 0, bytes: 0 };
+      cat.count += 1;
+      cat.bytes += obj.size;
+      byCat.set(category, cat);
+    }
+
+    const byConnection: StorageConnectionUsage[] = [...byConn.entries()]
+      .map(([slug, v]) => ({
+        connectionSlug: slug,
+        connectionName: nameBySlug.get(slug) ?? slug,
+        count: v.count,
+        sizeMb: this.bytesToMb(v.bytes),
+        oldest: v.oldest === null ? null : new Date(v.oldest).toISOString(),
+      }))
+      .sort((a, b) => b.sizeMb - a.sizeMb);
+
+    const byCategory: StorageCategoryUsage[] = [...byCat.entries()]
+      .map(([category, v]) => ({
+        category: category as BackupCategory,
+        count: v.count,
+        sizeMb: this.bytesToMb(v.bytes),
+      }))
+      .sort((a, b) => b.sizeMb - a.sizeMb);
+
+    return {
+      totalDumps: dumps.length,
+      totalSizeMb: this.bytesToMb(totalBytes),
+      byConnection,
+      byCategory,
+    };
+  }
+
+  // --- DB hygiene (prune FAILED job rows) ---------------------------------
+
+  async previewDbHygiene(olderThanDays: number): Promise<DbHygienePreview> {
+    const cutoff = new Date(Date.now() - olderThanDays * MS_PER_DAY);
+    const failedCount = await this.backupRepository.countFailedOlderThan(cutoff);
+    return { failedCount };
+  }
+
+  async runDbHygiene(olderThanDays: number): Promise<DbHygieneResult> {
+    const cutoff = new Date(Date.now() - olderThanDays * MS_PER_DAY);
+    const deleted = await this.backupRepository.deleteFailedOlderThan(cutoff);
+    return { deleted };
   }
 
   // --- Core engine --------------------------------------------------------

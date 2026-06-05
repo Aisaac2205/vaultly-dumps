@@ -27,3 +27,47 @@ export interface CleanupResult {
   freedMb: number;
   errors: CleanupError[];
 }
+
+export interface ManualRetentionSettings {
+  enabled: boolean;
+  keepLast: number | null;
+  maxAgeDays: number | null;
+  maxTotalSizeMb: number | null;
+  updatedAt?: string;
+}
+
+export interface ManualRetentionUpdate {
+  enabled?: boolean;
+  keepLast?: number;
+  maxAgeDays?: number;
+  maxTotalSizeMb?: number;
+}
+
+export interface StorageConnectionUsage {
+  connectionSlug: string;
+  connectionName: string;
+  count: number;
+  sizeMb: number;
+  oldest: string | null;
+}
+
+export interface StorageCategoryUsage {
+  category: BackupCategory;
+  count: number;
+  sizeMb: number;
+}
+
+export interface StorageOverview {
+  totalDumps: number;
+  totalSizeMb: number;
+  byConnection: StorageConnectionUsage[];
+  byCategory: StorageCategoryUsage[];
+}
+
+export interface DbHygienePreview {
+  failedCount: number;
+}
+
+export interface DbHygieneResult {
+  deleted: number;
+}
