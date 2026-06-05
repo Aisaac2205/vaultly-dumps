@@ -18,6 +18,12 @@ import { R2Object } from './interfaces/r2-object.interface';
 import { EnrichedR2Object } from './interfaces/enriched-r2-object.interface';
 import { BackupStrategy } from './interfaces/backup-strategy.interface';
 import { DumpManifest, DumpManifestSource } from './interfaces/dump-manifest.interface';
+import { CleanupParamsDto } from './dto/cleanup-params.dto';
+import {
+  CleanupError,
+  CleanupPreview,
+  CleanupResult,
+} from './interfaces/cleanup.interface';
 import { ConnectionsService } from '../connections/connections.service';
 import { AuthUser } from '../../auth/decorators/current-user.decorator';
 import { ConnectionEntity } from '../../database/entities/connection.entity';
@@ -204,6 +210,100 @@ export class BackupService {
           timestamp,
         };
       });
+  }
+
+  /**
+   * Dry run: the exact dumps that would be deleted for a connection + category
+   * under the given retention criteria. No mutation.
+   */
+  async previewCleanup(params: CleanupParamsDto): Promise<CleanupPreview> {
+    const items = await this.resolveDumpsForCleanup(params);
+    const totalBytes = items.reduce((sum, item) => sum + item.size, 0);
+    return {
+      items,
+      count: items.length,
+      totalSizeMb: this.bytesToMb(totalBytes),
+    };
+  }
+
+  /**
+   * Deletes the selected dumps from R2 (both `.dump` and its `.manifest.json`)
+   * and removes the matching DB rows. A failure on one object is recorded and
+   * the run continues — partial failures never abort the whole cleanup.
+   */
+  async runCleanup(params: CleanupParamsDto): Promise<CleanupResult> {
+    const items = await this.resolveDumpsForCleanup(params);
+
+    const errors: CleanupError[] = [];
+    const deletedKeys: string[] = [];
+    let freedBytes = 0;
+
+    for (const item of items) {
+      try {
+        await this.r2Service.delete(item.key);
+        deletedKeys.push(item.key);
+        freedBytes += item.size;
+      } catch (error) {
+        // Dump itself failed — skip its manifest/DB row so we don't orphan state.
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push({ key: item.key, message });
+        continue;
+      }
+
+      // Best-effort manifest delete: a missing or failed manifest must not
+      // undo the dump removal we already committed.
+      const manifestKey = item.key.replace(/\.dump$/, '.manifest.json');
+      try {
+        await this.r2Service.delete(manifestKey);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push({ key: manifestKey, message });
+      }
+    }
+
+    await this.backupRepository.deleteByFileKeys(deletedKeys);
+
+    return {
+      deleted: deletedKeys.length,
+      freedMb: this.bytesToMb(freedBytes),
+      errors,
+    };
+  }
+
+  /**
+   * Resolves which dumps fall under the retention criteria. Dumps arrive
+   * newest-first (see listEnrichedDumps), so `keepLast` simply drops the head.
+   * When both criteria are set they combine protectively: a dump is removed
+   * only if it is BOTH beyond the kept window AND older than the cutoff.
+   */
+  private async resolveDumpsForCleanup(
+    params: CleanupParamsDto,
+  ): Promise<EnrichedR2Object[]> {
+    const { connectionSlug, category, olderThanDays, keepLast } = params;
+
+    if (olderThanDays === undefined && keepLast === undefined) {
+      throw new BadRequestException(
+        'Debe indicar al menos un criterio de limpieza: "olderThanDays" o "keepLast".',
+      );
+    }
+
+    const dumps = await this.listEnrichedDumps(connectionSlug, category);
+
+    let candidates = dumps;
+    if (keepLast !== undefined) {
+      candidates = candidates.slice(keepLast);
+    }
+    if (olderThanDays !== undefined) {
+      const cutoff = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
+      candidates = candidates.filter(
+        (dump) => dump.lastModified.getTime() < cutoff,
+      );
+    }
+    return candidates;
+  }
+
+  private bytesToMb(bytes: number): number {
+    return Number((bytes / (1024 * 1024)).toFixed(2));
   }
 
   async listDumpsFromR2(): Promise<R2Object[]> {
