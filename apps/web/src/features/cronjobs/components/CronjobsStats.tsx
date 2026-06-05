@@ -1,7 +1,18 @@
 import { StatCard } from "@/shared/ui/stat-card";
 import { Clock, Play, CheckCircle2, Calendar } from "lucide-react";
 import type { Cronjob } from "../types";
-import { formatDate } from "../lib/format";
+import { nextRunParts } from "../lib/format";
+
+function ValueWithUnit({ value, unit }: { value: string; unit: string }) {
+  return (
+    <span className="flex items-baseline gap-1">
+      {value}
+      {unit && (
+        <span className="text-sm font-normal text-muted-foreground">{unit}</span>
+      )}
+    </span>
+  );
+}
 
 interface CronjobsStatsProps {
   cronjobs: Cronjob[];
@@ -29,10 +40,11 @@ export function CronjobsStats({
     .filter((c) => c.nextRunAt)
     .map((c) => new Date(c.nextRunAt!).getTime())
     .sort((a, b) => a - b);
-  const earliest =
+  const nextRun = nextRunParts(
     nextRunTimes.length > 0
-      ? formatDate(new Date(nextRunTimes[0]).toISOString())
-      : null;
+      ? new Date(nextRunTimes[0]).toISOString()
+      : null,
+  );
 
   const STATUS_LABELS: Record<string, string> = {
     pending: "Pendiente",
@@ -60,11 +72,16 @@ export function CronjobsStats({
       <StatCard
         label="Estado principal"
         value={
-          topStatus
-            ? `${STATUS_LABELS[topStatus[0]] ?? topStatus[0]} (${topStatus[1]})`
-            : total > 0
-              ? "—"
-              : "N/A"
+          topStatus ? (
+            <ValueWithUnit
+              value={String(topStatus[1])}
+              unit={STATUS_LABELS[topStatus[0]] ?? topStatus[0]}
+            />
+          ) : total > 0 ? (
+            "—"
+          ) : (
+            "N/A"
+          )
         }
         icon={<CheckCircle2 className="h-4 w-4" />}
         loading={loading}
@@ -72,7 +89,7 @@ export function CronjobsStats({
       />
       <StatCard
         label="Próxima ejecución"
-        value={earliest ?? "—"}
+        value={<ValueWithUnit value={nextRun.value} unit={nextRun.unit} />}
         icon={<Calendar className="h-4 w-4" />}
         loading={loading}
         compact

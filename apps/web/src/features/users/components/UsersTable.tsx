@@ -1,17 +1,16 @@
-import { Badge } from "@/shared/ui/badge";
+import { Badge, BadgeDot } from "@/shared/ui/badge";
 import { DataTable, type Column } from "@/shared/ui/data-table";
 import { UserActions } from "./UserActions";
 import type { User } from "../types";
 
 function RoleBadge({ role }: { role: string }) {
+  const isAdmin = role === "admin";
   return (
     <Badge
-      className={
-        role === "admin"
-          ? "bg-success-bg text-success"
-          : "bg-muted text-muted-foreground"
-      }
+      variant="outline"
+      className={isAdmin ? "text-text-secondary" : "text-muted-foreground"}
     >
+      <BadgeDot tone={isAdmin ? "success" : "neutral"} />
       {role}
     </Badge>
   );

@@ -1,5 +1,5 @@
 import type { ConnectionTestResult } from "../types";
-import { Badge } from "@/shared/ui/badge";
+import { Badge, BadgeDot } from "@/shared/ui/badge";
 
 interface TestConnectionBadgeProps {
   result: ConnectionTestResult | null;
@@ -12,10 +12,8 @@ export default function TestConnectionBadge({
 }: TestConnectionBadgeProps) {
   if (isLoading) {
     return (
-      <Badge
-        variant="secondary"
-        className="bg-info-bg text-info border-transparent"
-      >
+      <Badge variant="outline" className="text-text-secondary">
+        <BadgeDot tone="info" pulse />
         Testeando...
       </Badge>
     );
@@ -27,22 +25,17 @@ export default function TestConnectionBadge({
 
   if (result.success) {
     return (
-      <Badge
-        variant="secondary"
-        className="bg-success-bg text-success border-transparent"
-      >
-        ✓ Conectado —{" "}
-        <span className="font-mono">{result.latencyMs}ms</span>
+      <Badge variant="outline" className="text-text-secondary">
+        <BadgeDot tone="success" />
+        Conectado · <span className="font-mono">{result.latencyMs}ms</span>
       </Badge>
     );
   }
 
   return (
-    <Badge
-      variant="secondary"
-      className="bg-error-bg text-error border-transparent"
-    >
-      ✗ Error: {result.error ?? "Error desconocido"}
+    <Badge variant="outline" className="text-text-secondary">
+      <BadgeDot tone="error" />
+      Error: {result.error ?? "Error desconocido"}
     </Badge>
   );
 }

@@ -4,7 +4,7 @@ import { type ReactNode } from "react";
 
 interface StatCardProps {
   label: string;
-  value: string | number;
+  value: ReactNode;
   icon?: ReactNode;
   trend?: { value: number; positive: boolean };
   statusColor?: string;
@@ -25,8 +25,8 @@ export function StatCard({
     return (
       <Card>
         <CardContent className="p-6">
-          <Skeleton className="mb-3 h-3 w-24" />
-          <Skeleton className="h-7 w-16" />
+          <Skeleton className="mb-3.5 h-3.5 w-24" />
+          <Skeleton className={compact ? "h-7 w-16" : "h-9 w-24"} />
         </CardContent>
       </Card>
     );
@@ -35,29 +35,29 @@ export function StatCard({
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {label}
+        <div className="flex items-center gap-2">
+          {icon && <span className="text-muted-foreground/70">{icon}</span>}
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <p
+            className={`truncate font-semibold leading-none tracking-tight tabular-nums text-text-primary ${
+              compact ? "text-2xl" : "text-3xl"
+            }`}
+            style={statusColor ? { color: statusColor } : undefined}
+          >
+            {value}
           </p>
-          {icon && (
-            <span className="text-muted-foreground">{icon}</span>
+          {trend && (
+            <span
+              className={`inline-flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums ${
+                trend.positive ? "bg-success-bg text-success" : "bg-error-bg text-error"
+              }`}
+            >
+              {trend.positive ? "↑" : "↓"} {trend.value}%
+            </span>
           )}
         </div>
-        <p
-          className={`mt-2 font-mono font-semibold ${compact ? "text-lg" : "text-2xl"}`}
-          style={statusColor ? { color: statusColor } : undefined}
-        >
-          {value}
-        </p>
-        {trend && (
-          <p
-            className={`mt-1 text-xs font-medium ${
-              trend.positive ? "text-success" : "text-error"
-            }`}
-          >
-            {trend.positive ? "↑" : "↓"} {trend.value}%
-          </p>
-        )}
       </CardContent>
     </Card>
   );

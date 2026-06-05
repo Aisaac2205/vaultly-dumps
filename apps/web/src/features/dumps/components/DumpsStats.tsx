@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { StatCard } from "@/shared/ui/stat-card";
 import { Database, HardDrive, Calendar, Server } from "lucide-react";
 import type { BackupJob } from "../types";
 import { formatSizeMb } from "../lib/format";
@@ -29,53 +29,39 @@ export function DumpsStats({ dumps }: DumpsStatsProps) {
     (a, b) => b[1] - a[1],
   )[0];
 
+  const lastBackupLabel = lastBackup?.completedAt
+    ? new Date(lastBackup.completedAt).toLocaleDateString("es-AR", {
+        day: "2-digit",
+        month: "short",
+      })
+    : "N/A";
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Total Backups</CardTitle>
-          <Database className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{dumps.length}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Espacio Total</CardTitle>
-          <HardDrive className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{formatSizeMb(totalSize)}</div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Último Backup</CardTitle>
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {lastBackup?.completedAt
-              ? new Date(lastBackup.completedAt).toLocaleDateString("es-AR", {
-                  day: "2-digit",
-                  month: "short",
-                })
-              : "N/A"}
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">Más Respaldada</CardTitle>
-          <Server className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold truncate">
-            {topConn?.[0] ?? "N/A"}
-          </div>
-        </CardContent>
-      </Card>
+      <StatCard
+        label="Total Backups"
+        value={dumps.length}
+        icon={<Database className="h-4 w-4" />}
+        compact
+      />
+      <StatCard
+        label="Espacio Total"
+        value={formatSizeMb(totalSize)}
+        icon={<HardDrive className="h-4 w-4" />}
+        compact
+      />
+      <StatCard
+        label="Último Backup"
+        value={lastBackupLabel}
+        icon={<Calendar className="h-4 w-4" />}
+        compact
+      />
+      <StatCard
+        label="Más Respaldada"
+        value={topConn?.[0] ?? "N/A"}
+        icon={<Server className="h-4 w-4" />}
+        compact
+      />
     </div>
   );
 }
