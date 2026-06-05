@@ -1,6 +1,8 @@
 import { StatCard } from "@/shared/ui/stat-card";
 import { Database, Activity, Layers, Server } from "lucide-react";
 import type { Connection } from "../types";
+import postgresSvg from "@/shared/assets/PostgresSQL.svg";
+import mysqlSvg from "@/shared/assets/MySQL.svg";
 
 interface ConnectionsStatsProps {
   connections: Connection[];
@@ -58,7 +60,18 @@ export function ConnectionsStats({
       />
       <StatCard
         label="Por tipo de BD"
-        value={`PG ${postgres} / MySQL ${mysql}`}
+        value={
+          <span className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5">
+              <img src={postgresSvg} alt="PostgreSQL" className="h-4 w-4 shrink-0" />
+              {postgres}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <img src={mysqlSvg} alt="MySQL" className="h-4 w-4 shrink-0" />
+              {mysql}
+            </span>
+          </span>
+        }
         icon={<Server className="h-4 w-4" />}
         loading={loading}
         compact

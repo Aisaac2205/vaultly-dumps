@@ -21,11 +21,13 @@ export function KpiGrid({ stats, connections }: KpiGridProps) {
         label="Tasa de éxito (30d)"
         value={stats ? `${stats.successRate30d}%` : "—"}
         icon={<CheckCircle className="h-4 w-4" />}
+        compact
       />
       <StatCard
         label="Backups hoy"
         value={stats?.backupsToday ?? 0}
         icon={<CalendarCheck className="h-4 w-4" />}
+        compact
       />
       <StatCard
         label="Fallidos (7d)"
@@ -34,11 +36,13 @@ export function KpiGrid({ stats, connections }: KpiGridProps) {
         statusColor={
           stats && stats.failed7d > 0 ? "var(--color-error)" : undefined
         }
+        compact
       />
       <StatCard
         label="Conexiones activas"
         value={`${active}/${connections.length}`}
         icon={<Database className="h-4 w-4" />}
+        compact
       />
     </div>
   );
