@@ -20,6 +20,6 @@ import { RestoreRepository } from './restore.repository';
   ],
   controllers: [RestoreController, RestoreSseController],
   providers: [RestoreService, RestoreRepository],
-  exports: [RestoreService],
+  exports: [RestoreService, RestoreRepository],
 })
 export class RestoreModule {}

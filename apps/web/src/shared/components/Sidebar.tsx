@@ -3,6 +3,7 @@ import type { AuthUser } from "../hooks/useAuth";
 import {
   LayoutDashboard,
   Database,
+  Trash2,
   RotateCcw,
   Clock,
   Link2,
@@ -35,6 +36,7 @@ interface NavItemConfig {
 const NAV_ITEMS: NavItemConfig[] = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard, routeKey: "dashboard" },
   { path: "/dumps", label: "Dumps", icon: Database, routeKey: "dumps", adminOnly: true },
+  { path: "/cleanup", label: "Limpieza", icon: Trash2, routeKey: "cleanup", adminOnly: true },
   { path: "/restore", label: "Restaurar", icon: RotateCcw, routeKey: "restore" },
   { path: "/cronjobs", label: "Cronjobs", icon: Clock, routeKey: "cronjobs" },
   { path: "/connections", label: "Conexiones", icon: Link2, routeKey: "connections", adminOnly: true },

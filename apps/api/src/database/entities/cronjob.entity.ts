@@ -37,6 +37,19 @@ export class CronjobEntity {
   @Column({ type: 'enum', enum: JobStatus, nullable: true })
   lastStatus!: JobStatus | null;
 
+  // --- Retention policy: prune this connection+category after each run ---
+  @Column({ default: false })
+  retentionEnabled!: boolean;
+
+  @Column({ type: 'integer', nullable: true })
+  retentionKeepLast!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  retentionMaxAgeDays!: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  retentionMaxSizeMb!: number | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

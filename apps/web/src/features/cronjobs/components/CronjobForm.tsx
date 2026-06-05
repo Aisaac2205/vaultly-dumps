@@ -19,6 +19,16 @@ import {
   CardTitle,
 } from "@/shared/ui/card";
 import { validateCronExpression } from "../lib/cron-validator";
+import {
+  useRetentionPreview,
+  type RetentionPreviewParams,
+} from "../hooks/useRetentionPreview";
+
+function parseOptionalInt(value: string): number | undefined {
+  if (value.trim() === "") return undefined;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 ? n : undefined;
+}
 
 interface CronPreset {
   label: string;
@@ -85,6 +95,34 @@ export default function CronjobForm({
   );
 
   const [validationError, setValidationError] = useState<string | null>(null);
+
+  const [retention, setRetention] = useState({
+    enabled: cronjob?.retentionEnabled ?? false,
+    keepLast: cronjob?.retentionKeepLast?.toString() ?? "",
+    maxAgeDays: cronjob?.retentionMaxAgeDays?.toString() ?? "",
+    maxSizeMb: cronjob?.retentionMaxSizeMb?.toString() ?? "",
+  });
+
+  const previewParams: RetentionPreviewParams | null = useMemo(() => {
+    if (!retention.enabled) return null;
+    const slug = connections.find((c) => c.id === formData.connectionId)?.slug;
+    if (!slug) return null;
+    const keepLast = parseOptionalInt(retention.keepLast);
+    const maxAgeDays = parseOptionalInt(retention.maxAgeDays);
+    const maxTotalSizeMb = parseOptionalInt(retention.maxSizeMb);
+    if (keepLast === undefined && maxAgeDays === undefined && maxTotalSizeMb === undefined) {
+      return null;
+    }
+    return {
+      connectionSlug: slug,
+      category: formData.frequency,
+      keepLast,
+      maxAgeDays,
+      maxTotalSizeMb,
+    };
+  }, [retention, connections, formData.connectionId, formData.frequency]);
+
+  const { data: retentionPreview } = useRetentionPreview(previewParams);
 
   const nameCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -153,6 +191,10 @@ export default function CronjobForm({
         connectionId: formData.connectionId,
         cronExpression: formData.cronExpression.trim(),
         frequency: formData.frequency,
+        retentionEnabled: retention.enabled,
+        retentionKeepLast: parseOptionalInt(retention.keepLast),
+        retentionMaxAgeDays: parseOptionalInt(retention.maxAgeDays),
+        retentionMaxSizeMb: parseOptionalInt(retention.maxSizeMb),
       });
     } catch {
       // Error handling is done by the parent
@@ -333,6 +375,99 @@ export default function CronjobForm({
             <br />
             0 */6 * * * = cada 6 horas
           </div>
+
+          {/* Retención */}
+          <fieldset className="mt-4 rounded-md border border-border p-3">
+            <legend className="px-1 text-xs font-semibold text-muted-foreground">
+              Retención
+            </legend>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={retention.enabled}
+                onChange={(e) =>
+                  setRetention((r) => ({ ...r, enabled: e.target.checked }))
+                }
+                disabled={isLoading}
+              />
+              Podar dumps viejos automáticamente tras cada corrida
+            </label>
+
+            {retention.enabled && (
+              <>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="ret-keep-last"
+                      className="text-xs font-semibold text-muted-foreground"
+                    >
+                      Conservar últimos
+                    </label>
+                    <input
+                      id="ret-keep-last"
+                      className={inputClass}
+                      type="number"
+                      min={0}
+                      value={retention.keepLast}
+                      onChange={(e) =>
+                        setRetention((r) => ({ ...r, keepLast: e.target.value }))
+                      }
+                      placeholder="Ej. 24"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="ret-max-age"
+                      className="text-xs font-semibold text-muted-foreground"
+                    >
+                      Máx. antigüedad (días)
+                    </label>
+                    <input
+                      id="ret-max-age"
+                      className={inputClass}
+                      type="number"
+                      min={1}
+                      value={retention.maxAgeDays}
+                      onChange={(e) =>
+                        setRetention((r) => ({ ...r, maxAgeDays: e.target.value }))
+                      }
+                      placeholder="Ej. 30"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label
+                      htmlFor="ret-max-size"
+                      className="text-xs font-semibold text-muted-foreground"
+                    >
+                      Tope de tamaño (MB)
+                    </label>
+                    <input
+                      id="ret-max-size"
+                      className={inputClass}
+                      type="number"
+                      min={1}
+                      value={retention.maxSizeMb}
+                      onChange={(e) =>
+                        setRetention((r) => ({ ...r, maxSizeMb: e.target.value }))
+                      }
+                      placeholder="Ej. 5000"
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+                <p
+                  aria-live="polite"
+                  className="mt-2 text-xs text-muted-foreground"
+                >
+                  {retentionPreview
+                    ? `Ahora se podarían ${retentionPreview.count} dump(s) · ${retentionPreview.totalSizeMb} MB (siempre se conserva ≥1).`
+                    : "Indicá al menos un criterio y elegí la conexión para ver el impacto."}
+                </p>
+              </>
+            )}
+          </fieldset>
 
           {validationError && (
             <div className="mt-4 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
