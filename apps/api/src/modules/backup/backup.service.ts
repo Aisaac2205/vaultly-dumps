@@ -181,23 +181,29 @@ export class BackupService {
     const prefix = `${connection.slug}/${category}/`;
     const objects = await this.r2Service.list(prefix);
 
-    return objects.filter((obj) => obj.key.endsWith('.dump')).map((obj) => {
-      const filename = obj.key.split('/').pop() ?? '';
-      const timestamp = filename.replace(/\.dump$/, '');
+    return objects
+      .filter((obj) => obj.key.endsWith('.dump'))
+      // R2 ListObjectsV2 returns keys in ascending lexicographic order (oldest
+      // first). Sort newest-first so downstream "N most recent" slices keep the
+      // latest dumps instead of dropping them.
+      .sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime())
+      .map((obj) => {
+        const filename = obj.key.split('/').pop() ?? '';
+        const timestamp = filename.replace(/\.dump$/, '');
 
-      return {
-        key: obj.key,
-        size: obj.size,
-        lastModified: obj.lastModified,
-        etag: obj.etag,
-        connectionId: connection.id,
-        connectionSlug: connection.slug,
-        connectionName: connection.name,
-        dbType: connection.dbType,
-        category,
-        timestamp,
-      };
-    });
+        return {
+          key: obj.key,
+          size: obj.size,
+          lastModified: obj.lastModified,
+          etag: obj.etag,
+          connectionId: connection.id,
+          connectionSlug: connection.slug,
+          connectionName: connection.name,
+          dbType: connection.dbType,
+          category,
+          timestamp,
+        };
+      });
   }
 
   async listDumpsFromR2(): Promise<R2Object[]> {
