@@ -48,11 +48,18 @@ export function ConnectionsStats({
       <StatCard
         label="Por ambiente"
         value={
-          topEnv
-            ? `${topEnv[0]} (${topEnv[1]})`
-            : total > 0
-              ? "—"
-              : "N/A"
+          topEnv ? (
+            <span className="flex items-baseline gap-1">
+              {topEnv[1]}
+              <span className="text-sm font-normal text-muted-foreground">
+                {topEnv[0]}
+              </span>
+            </span>
+          ) : total > 0 ? (
+            "—"
+          ) : (
+            "N/A"
+          )
         }
         icon={<Layers className="h-4 w-4" />}
         loading={loading}
@@ -63,11 +70,11 @@ export function ConnectionsStats({
         value={
           <span className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5">
-              <img src={postgresSvg} alt="PostgreSQL" className="h-4 w-4 shrink-0" />
+              <img src={postgresSvg} alt="PostgreSQL" className="h-5 w-5 shrink-0" />
               {postgres}
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <img src={mysqlSvg} alt="MySQL" className="h-4 w-4 shrink-0" />
+              <img src={mysqlSvg} alt="MySQL" className="h-5 w-5 shrink-0" />
               {mysql}
             </span>
           </span>

@@ -25,8 +25,8 @@ export function StatCard({
     return (
       <Card>
         <CardContent className="p-6">
-          <Skeleton className="mb-3.5 h-2.5 w-24" />
-          <Skeleton className={compact ? "h-5 w-14" : "h-7 w-20"} />
+          <Skeleton className="mb-3.5 h-3.5 w-24" />
+          <Skeleton className={compact ? "h-7 w-16" : "h-9 w-24"} />
         </CardContent>
       </Card>
     );
@@ -35,31 +35,29 @@ export function StatCard({
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
-            {label}
+        <div className="flex items-center gap-2">
+          {icon && <span className="text-muted-foreground/70">{icon}</span>}
+          <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <p
+            className={`truncate font-semibold leading-none tracking-tight tabular-nums text-text-primary ${
+              compact ? "text-2xl" : "text-3xl"
+            }`}
+            style={statusColor ? { color: statusColor } : undefined}
+          >
+            {value}
           </p>
-          {icon && (
-            <span className="text-muted-foreground/70">{icon}</span>
+          {trend && (
+            <span
+              className={`inline-flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums ${
+                trend.positive ? "bg-success-bg text-success" : "bg-error-bg text-error"
+              }`}
+            >
+              {trend.positive ? "↑" : "↓"} {trend.value}%
+            </span>
           )}
         </div>
-        <p
-          className={`mt-2.5 truncate font-mono font-semibold leading-none tracking-tight tabular-nums ${
-            compact ? "text-base" : "text-xl"
-          }`}
-          style={statusColor ? { color: statusColor } : undefined}
-        >
-          {value}
-        </p>
-        {trend && (
-          <p
-            className={`mt-2 text-xs font-medium tabular-nums ${
-              trend.positive ? "text-success" : "text-error"
-            }`}
-          >
-            {trend.positive ? "↑" : "↓"} {trend.value}%
-          </p>
-        )}
       </CardContent>
     </Card>
   );
