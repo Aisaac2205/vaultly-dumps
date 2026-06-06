@@ -20,12 +20,12 @@ export function DbHygienePanel() {
 
   function handleRun() {
     if (!valid) return;
-    if (!window.confirm(`¿Eliminar ${count} registro(s) FAILED de la base?`)) {
+    if (!window.confirm(`¿Borrar ${count} registro(s) de backups fallidos?`)) {
       return;
     }
     run.mutate(daysNum, {
       onSuccess: (result) =>
-        toast.success(`${result.deleted} registro(s) FAILED eliminado(s)`),
+        toast.success(`${result.deleted} registro(s) fallido(s) borrado(s)`),
       onError: (error) =>
         toast.error(error.message || "No se pudo limpiar la base"),
     });
@@ -36,11 +36,12 @@ export function DbHygienePanel() {
       <CardContent className="space-y-4 p-5 sm:p-6">
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
-            Higiene de la base
+            Backups fallidos viejos
           </h3>
           <p className="text-xs text-muted-foreground">
-            Elimina los registros de backups <strong>FAILED</strong> más viejos que
-            los días indicados. No toca R2.
+            Cada intento que falla deja un registro en la base. Borrá los más
+            viejos que los días indicados para que no se acumulen.{" "}
+            <span className="text-text-secondary">Tus dumps no se tocan.</span>
           </p>
         </div>
 
@@ -62,9 +63,11 @@ export function DbHygienePanel() {
             />
           </div>
           <p aria-live="polite" className="text-sm text-muted-foreground">
-            {valid
-              ? `${count} registro(s) FAILED se eliminarían`
-              : "Indicá un número de días"}
+            {!valid
+              ? "Indicá cuántos días"
+              : count === 0
+                ? "Nada para borrar"
+                : `${count} registro(s) fallido(s) se borrarían`}
           </p>
           <Button
             type="button"
@@ -73,7 +76,7 @@ export function DbHygienePanel() {
             disabled={!valid || count === 0 || run.isPending}
             onClick={handleRun}
           >
-            {run.isPending ? "Limpiando..." : "Limpiar"}
+            {run.isPending ? "Borrando..." : "Borrar"}
           </Button>
         </div>
       </CardContent>

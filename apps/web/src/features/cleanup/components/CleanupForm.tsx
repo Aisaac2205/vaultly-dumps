@@ -54,6 +54,11 @@ export function CleanupForm() {
     setCategory(null);
   }
 
+  function handleModeChange(next: CleanupMode) {
+    setMode(next);
+    setAmount(""); // el valor anterior no aplica al nuevo criterio
+  }
+
   function handleConfirm() {
     if (!params) return;
     runCleanup.mutate(params, {
@@ -116,7 +121,7 @@ export function CleanupForm() {
                     name="cleanup-mode"
                     value="keepLast"
                     checked={mode === "keepLast"}
-                    onChange={() => setMode("keepLast")}
+                    onChange={() => handleModeChange("keepLast")}
                   />
                   Conservar últimos
                 </label>
@@ -126,7 +131,7 @@ export function CleanupForm() {
                     name="cleanup-mode"
                     value="maxAgeDays"
                     checked={mode === "maxAgeDays"}
-                    onChange={() => setMode("maxAgeDays")}
+                    onChange={() => handleModeChange("maxAgeDays")}
                   />
                   Más viejos que
                 </label>

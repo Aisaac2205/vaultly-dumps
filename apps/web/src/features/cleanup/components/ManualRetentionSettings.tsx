@@ -95,11 +95,11 @@ export function ManualRetentionSettings() {
       <CardContent className="space-y-4 p-5 sm:p-6">
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
-            Retención de dumps manuales
+            Dumps manuales
           </h3>
-          <p className="text-xs text-muted-foreground">
-            Los dumps manuales no tienen cronjob. Esta política se aplica
-            automáticamente una vez al día (siempre se conserva ≥1).
+          <p className="max-w-2xl text-xs text-muted-foreground">
+            No tienen cronjob, así que se limpian con esta política una vez al
+            día. Siempre se conserva al menos 1.
           </p>
         </div>
 
@@ -110,7 +110,7 @@ export function ManualRetentionSettings() {
             onChange={(e) => setEnabled(e.target.checked)}
             disabled={isLoading}
           />
-          Activar retención automática de manuales
+          Activar limpieza automática de dumps manuales
         </label>
 
         {enabled && (

@@ -8,6 +8,7 @@ import { lazy } from "react";
 export const lazyRoutes = {
   dashboard: () => import("@/features/dashboard"),
   dumps: () => import("@/features/dumps"),
+  cleanup: () => import("@/features/cleanup"),
   restore: () => import("@/features/restore"),
   cronjobs: () => import("@/features/cronjobs"),
   connections: () => import("@/features/connections"),
@@ -19,6 +20,7 @@ export type RouteKey = keyof typeof lazyRoutes;
 
 export const LazyDashboard = lazy(lazyRoutes.dashboard);
 export const LazyDumps = lazy(lazyRoutes.dumps);
+export const LazyCleanup = lazy(lazyRoutes.cleanup);
 export const LazyRestore = lazy(lazyRoutes.restore);
 export const LazyCronjobs = lazy(lazyRoutes.cronjobs);
 export const LazyConnections = lazy(lazyRoutes.connections);

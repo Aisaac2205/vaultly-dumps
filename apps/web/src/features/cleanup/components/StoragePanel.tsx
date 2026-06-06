@@ -25,7 +25,7 @@ export function StoragePanel() {
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <HardDrive className="size-4 text-muted-foreground/70" aria-hidden="true" />
-            <h3 className="text-sm font-semibold text-text-primary">Almacenamiento</h3>
+            <h3 className="text-sm font-semibold text-text-primary">Almacenamiento R2</h3>
           </div>
           <span className="font-mono text-sm tabular-nums text-text-primary">
             {data.totalDumps} dumps · {data.totalSizeMb} MB
