@@ -3,6 +3,8 @@ import type {
   StorageOverview,
   DbHygienePreview,
   DbHygieneResult,
+  ReconcilePreview,
+  ReconcileResult,
 } from "../types";
 
 export const maintenanceApi = {
@@ -21,5 +23,15 @@ export const maintenanceApi = {
   dbHygieneRun: (olderThanDays: number) =>
     apiClient
       .post<DbHygieneResult>("/maintenance/db/cleanup", { olderThanDays })
+      .then((r) => r.data),
+
+  reconcilePreview: () =>
+    apiClient
+      .get<ReconcilePreview>("/maintenance/reconcile/preview")
+      .then((r) => r.data),
+
+  reconcileRun: () =>
+    apiClient
+      .post<ReconcileResult>("/maintenance/reconcile")
       .then((r) => r.data),
 };

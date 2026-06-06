@@ -71,3 +71,27 @@ export interface DbHygienePreview {
 export interface DbHygieneResult {
   deleted: number;
 }
+
+export interface StaleDbRow {
+  id: string;
+  fileKey: string;
+}
+
+export interface OrphanDump {
+  key: string;
+  hasManifest: boolean;
+}
+
+export interface ReconcilePreview {
+  staleDbRows: StaleDbRow[];
+  orphanManifests: string[];
+  orphanDumps: OrphanDump[];
+}
+
+export interface ReconcileResult {
+  dbRowsDeleted: number;
+  manifestsDeleted: number;
+  dumpsDeleted: number;
+  untrackedKept: number;
+  errors: CleanupError[];
+}
