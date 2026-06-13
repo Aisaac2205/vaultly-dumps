@@ -46,6 +46,13 @@ export class BackupRepository {
     return result.affected ?? 0;
   }
 
+  /** Deletes job rows by id. Returns rows removed. */
+  async deleteByIds(ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    const result = await this.repository.delete({ id: In(ids) });
+    return result.affected ?? 0;
+  }
+
   /** Count of FAILED jobs created before the cutoff (DB-hygiene preview). */
   countFailedOlderThan(cutoff: Date): Promise<number> {
     return this.repository.count({

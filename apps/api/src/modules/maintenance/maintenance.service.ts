@@ -28,6 +28,12 @@ import {
   DbHygienePreview,
   DbHygieneResult,
 } from './interfaces/db-hygiene.interface';
+import {
+  OrphanDump,
+  ReconcilePreview,
+  ReconcileResult,
+  StaleDbRow,
+} from './interfaces/reconcile.interface';
 
 const BYTES_PER_MB = 1024 * 1024;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -240,6 +246,102 @@ export class MaintenanceService {
     const cutoff = new Date(Date.now() - olderThanDays * MS_PER_DAY);
     const deleted = await this.backupRepository.deleteFailedOlderThan(cutoff);
     return { deleted };
+  }
+
+  // --- Reconciliation (R2 <-> DB drift) -----------------------------------
+
+  /**
+   * Detects drift between R2 and the DB. Read-only.
+   * - staleDbRows: COMPLETED rows whose dump is gone from R2.
+   * - orphanManifests: manifests with no dump sibling.
+   * - orphanDumps: dumps with no DB row (hasManifest = restorable vs junk).
+   */
+  async reconcilePreview(): Promise<ReconcilePreview> {
+    const objects = await this.r2Service.list();
+    const dumpKeys = new Set(
+      objects.filter((o) => o.key.endsWith('.dump')).map((o) => o.key),
+    );
+    const manifestKeys = new Set(
+      objects.filter((o) => o.key.endsWith('.manifest.json')).map((o) => o.key),
+    );
+
+    const jobs = await this.backupRepository.findAll();
+    const jobFileKeys = new Set(
+      jobs
+        .map((j) => j.fileKey)
+        .filter((key): key is string => key !== null),
+    );
+
+    const staleDbRows: StaleDbRow[] = jobs
+      .filter(
+        (j) =>
+          j.status === JobStatus.COMPLETED &&
+          j.fileKey !== null &&
+          !dumpKeys.has(j.fileKey),
+      )
+      .map((j) => ({ id: j.id, fileKey: j.fileKey as string }));
+
+    const orphanDumps: OrphanDump[] = [...dumpKeys]
+      .filter((key) => !jobFileKeys.has(key))
+      .map((key) => ({
+        key,
+        hasManifest: manifestKeys.has(key.replace(/\.dump$/, '.manifest.json')),
+      }));
+
+    const orphanManifests: string[] = [...manifestKeys].filter(
+      (mk) => !dumpKeys.has(mk.replace(/\.manifest\.json$/, '.dump')),
+    );
+
+    return { staleDbRows, orphanManifests, orphanDumps };
+  }
+
+  /**
+   * Cleans only the unambiguously-safe drift: stale DB rows, orphan manifests,
+   * and orphan dumps WITHOUT a manifest (failed uploads). Orphan dumps WITH a
+   * manifest are restorable and are kept intact. Partial failures are reported.
+   */
+  async reconcileRun(): Promise<ReconcileResult> {
+    const preview = await this.reconcilePreview();
+    const errors: CleanupError[] = [];
+
+    const dbRowsDeleted = await this.backupRepository.deleteByIds(
+      preview.staleDbRows.map((r) => r.id),
+    );
+
+    let manifestsDeleted = 0;
+    for (const key of preview.orphanManifests) {
+      try {
+        await this.r2Service.delete(key);
+        manifestsDeleted += 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push({ key, message });
+      }
+    }
+
+    let dumpsDeleted = 0;
+    let untrackedKept = 0;
+    for (const dump of preview.orphanDumps) {
+      if (dump.hasManifest) {
+        untrackedKept += 1; // restorable — never auto-delete
+        continue;
+      }
+      try {
+        await this.r2Service.delete(dump.key);
+        dumpsDeleted += 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        errors.push({ key: dump.key, message });
+      }
+    }
+
+    return {
+      dbRowsDeleted,
+      manifestsDeleted,
+      dumpsDeleted,
+      untrackedKept,
+      errors,
+    };
   }
 
   // --- Core engine --------------------------------------------------------

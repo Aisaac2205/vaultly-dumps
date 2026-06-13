@@ -4,6 +4,8 @@ import type {
   StorageOverview,
   DbHygienePreview,
   DbHygieneResult,
+  ReconcilePreview,
+  ReconcileResult,
 } from "../types";
 
 export function useStorageOverview() {
@@ -29,6 +31,26 @@ export function useRunDbHygiene() {
     mutationFn: (olderThanDays) => maintenanceApi.dbHygieneRun(olderThanDays),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["db-hygiene-preview"] });
+      void queryClient.invalidateQueries({ queryKey: ["dumps"] });
+    },
+  });
+}
+
+export function useReconcilePreview() {
+  return useQuery<ReconcilePreview>({
+    queryKey: ["reconcile-preview"],
+    queryFn: maintenanceApi.reconcilePreview,
+    staleTime: 15_000,
+  });
+}
+
+export function useRunReconcile() {
+  const queryClient = useQueryClient();
+  return useMutation<ReconcileResult, Error, void>({
+    mutationFn: () => maintenanceApi.reconcileRun(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["reconcile-preview"] });
+      void queryClient.invalidateQueries({ queryKey: ["storage-overview"] });
       void queryClient.invalidateQueries({ queryKey: ["dumps"] });
     },
   });

@@ -73,6 +73,29 @@ export class MaintenanceController {
     return result;
   }
 
+  // --- Reconciliation (R2 <-> DB drift) ---
+
+  @Get('reconcile/preview')
+  reconcilePreview() {
+    return this.service.reconcilePreview();
+  }
+
+  @Post('reconcile')
+  async reconcileRun(@Req() req: Request) {
+    const result = await this.service.reconcileRun();
+    setAuditContext(req, {
+      environment: Environment.PROD,
+      metadata: {
+        dbRowsDeleted: result.dbRowsDeleted,
+        manifestsDeleted: result.manifestsDeleted,
+        dumpsDeleted: result.dumpsDeleted,
+        untrackedKept: result.untrackedKept,
+        errors: result.errors.length,
+      },
+    });
+    return result;
+  }
+
   // --- Global manual-dump retention policy ---
 
   @Get('retention/manual')
