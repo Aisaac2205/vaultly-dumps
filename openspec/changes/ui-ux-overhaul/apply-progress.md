@@ -167,3 +167,88 @@ Pre-existing warnings breakdown:
 - The `buttonVariants` and `cardVariants` CVA exports trigger `react-refresh/only-export-components` warnings — these are intentional (re-exporting the CVA function enables external composition) and consistent with shadcn/ui conventions.
 - PressFeedback warning on asChild test persists from PR 1 — expected, non-fatal.
 
+---
+
+## PR 3: feat/ui-shell
+
+**Commits**: 4 (3 task + 1 test)
+**Date**: 2026-06-13
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (PR 3 targets `feat/ui-ux-overhaul`, which targets `main`)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T3-01 | Redesign Sidebar — compound API + token theming | ✅ Done | ~85 | 12 tests; `bg-sidebar` replaces `bg-black`; `border-l-2 border-sidebar-indicator bg-sidebar-active` replaces `border-r-2 border-white bg-white/10`; `cn()` for className; focus rings added |
+| T3-02 | Create Topbar with breadcrumbs + theme slot | ✅ Done | ~107 | 4 Topbar + 6 Breadcrumbs tests; breadcrumbs resolve route labels; theme toggle is no-op button (C1) |
+| T3-03 | Update Layout — topbar integration + motion wrapper | ✅ Done | ~19 net | 6 Layout tests; `AnimatePresence` + `motion.main` page transition slot; mobile header `bg-sidebar`; sheet `bg-sidebar` |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `168ed7d` | `feat: rewrite sidebar with token-based theming and compound API` | T3-01 |
+| `15c2be0` | `feat: add topbar with breadcrumbs and theme toggle slot` | T3-02 |
+| `7f3e7dc` | `feat: integrate layout shell with topbar and page transitions` | T3-03 |
+| `65b910f` | `test: add sidebar and layout shell test coverage` | Tests |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/shared/components/Sidebar.tsx` | Modified | +85 (compound rewrite, +137/−52) |
+| `apps/web/src/shared/components/Breadcrumbs.tsx` | Created | 63 |
+| `apps/web/src/shared/components/Topbar.tsx` | Created | 44 |
+| `apps/web/src/shared/hooks/useTheme.ts` | Created | 39 |
+| `apps/web/src/shared/components/Layout.tsx` | Modified | +19 net (+32/−13) |
+| `apps/web/src/shared/components/__tests__/Sidebar.test.tsx` | Created | 155 |
+| `apps/web/src/shared/components/__tests__/Breadcrumbs.test.tsx` | Created | 47 |
+| `apps/web/src/shared/components/__tests__/Topbar.test.tsx` | Created | 33 |
+| `apps/web/src/shared/components/__tests__/Layout.test.tsx` | Created | 69 |
+| `apps/web/src/shared/hooks/__tests__/useTheme.test.ts` | Created | 24 |
+
+### Test Results
+
+```
+✓ src/shared/hooks/__tests__/useTheme.test.ts (3 tests)
+✓ src/shared/components/__tests__/Sidebar.test.tsx (12 tests)
+✓ src/shared/components/__tests__/Breadcrumbs.test.tsx (6 tests)
+✓ src/shared/components/__tests__/Topbar.test.tsx (4 tests)
+✓ src/shared/components/__tests__/Layout.test.tsx (6 tests)
++ 10 pre-existing test files
+
+Test Files: 16 passed (16)
+Tests:      70 passed (70)
+```
+
+### Typecheck
+
+```
+pnpm --filter @vaultly-control/web typecheck → clean (no errors)
+```
+
+### Lint
+
+```
+0 errors, 25 warnings (all pre-existing — no new warnings introduced by PR 3)
+```
+
+Pre-existing warnings: 7× `react-hooks/set-state-in-effect`, 3× `react-hooks/exhaustive-deps`, 15× `react-refresh/only-export-components`.
+
+### Deviations from Design/Spec
+
+1. **Compound sidebar API**: The spec and design.md describe a straightforward MODIFY of the existing sidebar. This implementation introduced a compound component pattern (`SidebarRoot`, `SidebarHeader`, `SidebarNav`, `SidebarItem`, `SidebarUser`) with React context for `onNavigate`. The `SidebarContent` convenience wrapper preserves backward compatibility with the mobile sheet. This is a superset of the spec requirements — all spec scenarios (token theming, left hairline indicator, `cn()`, focus rings) are satisfied. The compound pattern was explicitly requested in the orchestrator instructions.
+
+2. **Page transitions in PR 3**: The design.md (Section 5 "Page Transitions") and tasks.md note that page transitions are finalized in PR 13. PR 3 ships the infrastructure: `AnimatePresence mode="wait"` wrapping `motion.main` keyed by `pathname`, with reduced-motion gating via `useReducedMotion()`. The transition values (`opacity` + `y` shift) match the design spec. PR 13 will only need to tune timing/values if desired — no structural changes required.
+
+3. **Topbar user menu**: The topbar includes a static "Account" placeholder button. The full user dropdown menu (avatar, roles, etc.) is deferred to a future PR since the tasks only require a "user menu placeholder."
+
+4. **useTheme hook**: Uses `useSyncExternalStore` with a no-op subscribe to provide a stable `ThemeState` contract. `toggleTheme()` is a no-op. When dark mode ships, only the hook internals change — zero consumer API changes needed.
+
+### Notes
+
+- Sonner `<Toaster>` renders into a portal that may not appear in jsdom — the Layout test verifies the component import exists but skips strict DOM assertion on the portal element.
+- The Breadcrumbs component uses a `ROUTE_LABELS` map for Spanish route labels (e.g., "Limpieza", "Restaurar", "Auditoría"). Unknown segments are capitalized as fallback.
+- All sidebar token references (`bg-sidebar`, `bg-sidebar-active`, `text-sidebar-text`, `border-sidebar-border`, `border-sidebar-indicator`) are from `globals.css` `@theme` block — no new CSS tokens were added in this PR.
+
