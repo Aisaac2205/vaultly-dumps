@@ -221,8 +221,7 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 hidden h-screen flex-col bg-sidebar font-medium md:flex",
-        "relative transition-[width] duration-200 ease-out",
+        "fixed left-0 top-0 z-30 hidden h-screen flex-col bg-sidebar font-medium transition-[width] duration-200 ease-out md:flex",
         isCollapsed ? "w-[56px]" : "w-[240px]",
       )}
     >

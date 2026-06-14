@@ -74,10 +74,10 @@ function LayoutInner({ children, user, onLogout }: LayoutProps) {
         </span>
       </header>
 
-      {/* Main content area — margin adapts to sidebar width, content uses full width */}
+      {/* Main content area — margin adapts to sidebar width, content fills available space */}
       <div
         className={cn(
-          "flex min-h-screen w-full flex-1 flex-col pt-14 md:pt-0 transition-[margin] duration-200 ease-out",
+          "flex min-h-screen flex-1 flex-col pt-14 md:pt-0 transition-[margin] duration-200 ease-out",
           sidebarCollapsed ? "md:ml-[56px]" : "md:ml-[240px]",
         )}
       >
