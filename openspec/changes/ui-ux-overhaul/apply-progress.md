@@ -440,5 +440,81 @@ None — implementation matches the spec for 3c2 scope.
 - **`data-theme` removal on light**: Light mode removes the attribute entirely (`removeAttribute`). This is intentional — the CSS cascade uses `[data-theme="dark"]` only. Light is the implicit default.
 - **3c3 (stats primitives) is next** in the chained PR sequence. No files from that scope were touched.
 
+---
 
+## PR 3c3: feat/ui-stats-primitives
+
+**Commits**: 2
+**Date**: 2026-06-13
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (PR 3c3 targets `feat/ui-ux-overhaul`, which targets `main`)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| 3c3-01 | Sparkline inline SVG line chart | ✅ Done | +87 (+94 test) | 6 tests; handles <2 data points, constant data, custom dimensions, aria-label |
+| 3c3-02 | TrendIndicator chip with direction + color | ✅ Done | +83 (+105 test) | 8 tests; percent/number formats, inverted=true, size variants, className merge |
+
+### Commits
+
+| Hash | Message | Files | + | − |
+|------|---------|-------|---|---|
+| `f6494bd` | `feat: add Sparkline component with inline SVG line chart` | `sparkline.tsx`, `sparkline.test.tsx` | 87 | 0 (impl) + 94 | 0 (test) |
+| `b75aa93` | `feat: add TrendIndicator component with direction arrow and color states` | `trend-indicator.tsx`, `trend-indicator.test.tsx` | 83 | 0 (impl) + 105 | 0 (test) |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/shared/ui/sparkline.tsx` | Created | 87 |
+| `apps/web/src/shared/ui/sparkline.test.tsx` | Created | 94 |
+| `apps/web/src/shared/ui/trend-indicator.tsx` | Created | 83 |
+| `apps/web/src/shared/ui/trend-indicator.test.tsx` | Created | 105 |
+
+**Total functional lines**: ~170 (under the 400-line budget)
+**Total test lines**: ~199 (tests NOT counted toward budget)
+
+### Test Results
+
+```
+✓ src/shared/ui/sparkline.test.tsx (6 tests)
+✓ src/shared/ui/trend-indicator.test.tsx (8 tests)
++ 16 pre-existing test files (unchanged)
+
+Test Files: 18 passed (18)
+Tests:      109 passed (109)
+```
+
+**New tests breakdown:**
+- `Sparkline` (6 tests): renders SVG with 2+ data points, returns null for <2 points, correct path with linear data, constant data without NaN, custom width/height, aria-label on SVG
+- `TrendIndicator` (8 tests): up direction + success color, down direction + error color, neutral + muted, format="number" raw value, inverted=true color swap, size="sm"/"md" classes, custom className merge, no "+" prefix for negatives
+
+### Typecheck
+
+```
+pnpm typecheck → clean (no errors in api or web)
+```
+
+### Lint
+
+```
+0 errors, 26 warnings (all pre-existing — no new warnings introduced by PR 3c3)
+```
+
+### Deviations from Design/Spec
+
+1. **No motion/animation on Sparkline**: The spec sketch mentions "prefers-reduced-motion: NO animation needed for a static line." The implementation follows this — SVG paths are rendered statically with no entry animation. Sparklines are purely decorative inline charts.
+2. **No `motion/react` dependency in either component**: Both components are pure functional components with zero animation dependencies. TrendIndicator uses static Lucide icons and CSS-based color classes. This keeps the dependency graph minimal.
+3. **`value=0` display**: Neutral values render `0.0%` (not `0%`) because the `|v| < 0.1` branch triggers `toFixed(1)`. This is visually consistent — a single decimal for small magnitudes that could be non-zero at higher precision.
+4. **TrendIndicator `format="number"`**: Raw numbers are displayed without a unit suffix. The consumer is responsible for appending units (e.g., `ms`, `req/s`). This keeps the component format-agnostic.
+
+### Notes
+
+- **Zero CSS token changes**: No modifications to `globals.css`. The `text-success`, `bg-success/10`, `text-error`, `bg-error/10`, `text-muted-foreground`, `bg-muted` classes are all from existing `@theme` tokens defined in PR 1 (3c1 scope).
+- **No new dependencies**: Both components use only `react`, `lucide-react` (already a dependency), `clsx`/`tailwind-merge` (via `cn()`), and `class-variance-authority` (not used in 3c3 — both components use simple inline class strings).
+- **Sparkline path precision**: Coordinates are rounded to 2 decimal places via `.toFixed(2)` to keep SVG output compact and avoid sub-pixel rendering artifacts.
+- **TrendIndicator icon sizing**: Icons use `h-3 w-3` (sm) and `h-4 w-4` (md) via Tailwind classes, matching the spec. The `shrink-0` class prevents icons from shrinking in flex containers.
+- **`ref` as prop**: Both components follow React 19 conventions — `ref` is passed as a regular prop (no `forwardRef` needed), though neither Sparkline nor TrendIndicator currently accept a `ref` prop since they don't forward to DOM elements.
+- **Shell + theme system complete**: With 3c1 (icon-rail sidebar), 3c2 (theme system), and 3c3 (stats primitives), the shared UI foundation is complete. Next in sequence: PR 4 (pagination backend), then PRs 5-12 (feature pages).
 
