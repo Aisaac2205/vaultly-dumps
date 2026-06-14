@@ -8,6 +8,7 @@ import {
 } from "@/shared/ui/table";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { type ReactNode } from "react";
+import { cn } from "@/shared/lib/cn";
 
 export interface Column<T> {
   header: string;
@@ -23,6 +24,8 @@ interface DataTableProps<T> {
   emptyMessage?: string;
   className?: string;
   compact?: boolean;
+  /** Slot rendered below the table for pagination or other footer controls. */
+  pagination?: ReactNode;
 }
 
 export function DataTable<T>({
@@ -32,24 +35,24 @@ export function DataTable<T>({
   emptyMessage = "No hay datos",
   className,
   compact = false,
+  pagination,
 }: DataTableProps<T>) {
   const headPadding = compact ? "px-3 py-2" : "px-6 py-4";
   const cellPadding = compact ? "px-3 py-2" : "px-6 py-5";
   const wrapperClass = className ?? "rounded-xl bg-card shadow-sm overflow-hidden";
-  const tableLayout = compact ? "" : "sm:table-fixed";
   const minWidth = compact ? "" : "min-w-[360px]";
 
   if (loading) {
     return (
       <div className={wrapperClass}>
         <div className="overflow-x-auto">
-          <Table className={`${tableLayout} ${minWidth}`}>
+          <Table className={minWidth}>
             <TableHeader>
               <TableRow>
                 {columns.map((col, i) => (
                   <TableHead
                     key={i}
-                    className={`${headPadding} text-sm font-medium ${col.headerClassName ?? ""}`}
+                    className={cn(headPadding, "text-sm font-medium truncate", col.headerClassName)}
                   >
                     {col.header}
                   </TableHead>
@@ -63,7 +66,7 @@ export function DataTable<T>({
                   {columns.map((col, colIdx) => (
                     <TableCell
                       key={colIdx}
-                      className={`${cellPadding} ${col.className ?? ""}`}
+                      className={cn(cellPadding, col.className)}
                     >
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
@@ -73,6 +76,11 @@ export function DataTable<T>({
             </TableBody>
           </Table>
         </div>
+        {pagination && (
+          <div className="flex items-center justify-end border-t px-4 py-3">
+            {pagination}
+          </div>
+        )}
       </div>
     );
   }
@@ -86,15 +94,22 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={wrapperClass}>
+    <div
+      className={cn(
+        wrapperClass,
+        "[&_tbody]:[[data-loaded]_&]:opacity-100 @starting-style:[&_tbody]:[[data-loaded]_&]:opacity-0",
+        "[&_tbody]:transition-opacity [&_tbody]:duration-[var(--duration-normal)]",
+      )}
+      data-loaded=""
+    >
       <div className="overflow-x-auto">
-        <Table className={`${tableLayout} ${minWidth}`}>
+        <Table className={minWidth}>
           <TableHeader>
             <TableRow>
               {columns.map((col, i) => (
                 <TableHead
                   key={i}
-                  className={`${headPadding} text-sm font-medium text-muted-foreground ${col.headerClassName ?? ""}`}
+                  className={cn(headPadding, "text-sm font-medium text-muted-foreground truncate", col.headerClassName)}
                 >
                   {col.header}
                 </TableHead>
@@ -111,7 +126,7 @@ export function DataTable<T>({
                 {columns.map((col, colIdx) => (
                   <TableCell
                     key={colIdx}
-                    className={`${cellPadding} align-middle ${col.className ?? ""}`}
+                    className={cn(cellPadding, "align-middle", col.className)}
                   >
                     {col.accessor(item)}
                   </TableCell>
@@ -121,6 +136,11 @@ export function DataTable<T>({
           </TableBody>
         </Table>
       </div>
+      {pagination && (
+        <div className="flex items-center justify-end border-t px-4 py-3">
+          {pagination}
+        </div>
+      )}
     </div>
   );
 }
