@@ -299,6 +299,7 @@ Pre-existing warnings unchanged: 17 (set-state-in-effect, exhaustive-deps, react
 | File | Action | Lines |
 |------|--------|-------|
 | `apps/web/src/shared/components/Sidebar.tsx` | Modified | +85 net (+137/−52) |
+| `apps/web/src/shared/components/Layout.tsx` | Modified | +3 net (+10/−7) — wire `SidebarRoot` for mobile sheet close-on-nav (new compound API) |
 | `apps/web/src/shared/components/__tests__/Sidebar.test.tsx` | Created | 155 |
 | `openspec/changes/ui-ux-overhaul/apply-progress.md` | Modified | +section |
 
