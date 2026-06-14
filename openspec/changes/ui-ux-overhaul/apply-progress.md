@@ -271,3 +271,89 @@ Pre-existing warnings unchanged: 17 (set-state-in-effect, exhaustive-deps, react
 - `@starting-style` was added to the data-table wrapper for skeleton→data transition, but since Tailwind v4's support for the `@starting-style` at-rule in utility classes is limited, the implementation uses a CSS-based opacity transition as the primary mechanism with `data-loaded` attribute.
 - `useReducedMotion()` is used in Dialog and Sheet to disable scale/slide animations when the user prefers reduced motion.
 
+---
+
+## PR 3b: feat/ui-shell-topbar
+
+**Commits**: 3 (1 impl + 1 fix + 1 test)
+**Date**: 2026-06-13
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (3b targets main; depends on 3a — Layout integration deferred)
+**Note**: Originally PR 3b was scoped to Topbar + Layout + Breadcrumbs + useTheme. The Layout integration commit (`7f3e7dc`) used the new compound Sidebar API (`SidebarRoot`) introduced in PR 3a, which made 3b's typecheck depend on 3a being merged. To ship 3b independently, the Layout integration was **deferred to a follow-up PR** that lands after 3a merges. 3b scope reduced to: new components (Topbar, Breadcrumbs, useTheme) without Layout wiring. **Follow-up PR (3c)** will wire the Topbar into Layout, add `AnimatePresence` page transitions, and update the mobile header to use sidebar tokens.
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T3-02 | Create Topbar with breadcrumbs + theme slot | ✅ Done (partial) | +107 | Topbar created; Breadcrumbs with `ROUTE_LABELS` map (Spanish); theme toggle is no-op button (C1). **Layout integration deferred to PR 3c.** |
+| T3-03 | Update Layout — topbar integration + motion wrapper | ⏭️ Deferred to 3c | — | Will land in PR 3c after 3a merges |
+| T3-03.5 | useTheme hook contract | ✅ Done | +39 | `useSyncExternalStore` with no-op `toggleTheme`; stable API for future dark mode |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `b71b0dd` | `feat: add topbar with breadcrumbs and theme toggle slot` | T3-02 |
+| `bfd8a4e` | `fix: render breadcrumbs root as span, not link` | T3-02 polish |
+| `dadb5dd` | `test: add topbar, breadcrumbs, and useTheme test coverage` | Tests |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/shared/components/Topbar.tsx` | Created | 44 |
+| `apps/web/src/shared/components/Breadcrumbs.tsx` | Created | 63 |
+| `apps/web/src/shared/hooks/useTheme.ts` | Created | 39 |
+| `apps/web/src/shared/components/__tests__/Breadcrumbs.test.tsx` | Created | 47 |
+| `apps/web/src/shared/components/__tests__/Topbar.test.tsx` | Created | 33 |
+| `apps/web/src/shared/hooks/__tests__/useTheme.test.ts` | Created | 24 |
+| `openspec/changes/ui-ux-overhaul/apply-progress.md` | Modified | +section |
+
+### Test Results
+
+```
+✓ src/shared/hooks/__tests__/useTheme.test.ts (3 tests)
+✓ src/shared/components/__tests__/Topbar.test.tsx (4 tests)
+✓ src/shared/components/__tests__/Breadcrumbs.test.tsx (6 tests)
+
+Test Files: 14 passed (14)
+Tests:      52 passed (52)
+```
+
+### Typecheck
+
+```
+pnpm --filter @vaultly-control/web typecheck → clean (no errors)
+```
+
+### Lint
+
+```
+0 errors, 25 warnings (all pre-existing — no new warnings introduced by PR 3b)
+```
+
+### Deviations from Design/Spec
+
+1. **Layout integration deferred**: The original scope included integrating the Topbar into the Layout component (`AnimatePresence` + `motion.main` page transitions, mobile header with `bg-sidebar`). That commit was removed from 3b because it depended on PR 3a's `SidebarRoot` API. PR 3c (follow-up) will land this once 3a is merged. **This means: after 3a + 3b both merge, the shell will not yet show the Topbar in the UI** — the components exist and are tested, but the Layout still uses the old header. PR 3c will close the loop.
+
+2. **Topbar user menu**: Static "Account" placeholder button in the Topbar. The full user dropdown menu (avatar, roles, etc.) is deferred to a future PR since the tasks only require a "user menu placeholder."
+
+3. **useTheme hook**: Uses `useSyncExternalStore` with a no-op subscribe to provide a stable `ThemeState` contract. `toggleTheme()` is a no-op. When dark mode ships, only the hook internals change — zero consumer API changes needed.
+
+4. **Breadcrumbs root as `<span>`**: When the user is on the dashboard root, the breadcrumb renders `<span>Dashboard</span>` (not a `<Link to="/">` which would be a self-link). A11y improvement.
+
+### Notes
+
+- Sonner `<Toaster>` renders into a portal that may not appear in jsdom — no Layout test in this PR, so this is moot here (deferred to 3c).
+- The Breadcrumbs component uses a `ROUTE_LABELS` map for Spanish route labels (e.g., "Limpieza", "Restaurar", "Auditoría"). Unknown segments are capitalized as fallback.
+- The `useTheme` hook exports `Theme`, `ThemeState`, `ResolvedTheme` types. They are not yet consumed by any component — they exist for the future dark mode PR (locked decision C1).
+
+### Next PR (3c)
+
+Once PR 3a is merged, a quick follow-up PR will:
+
+1. Re-apply the deferred Layout integration (`AnimatePresence` + `motion.main` keyed by `pathname`, `useReducedMotion()` gating).
+2. Update mobile header from `bg-black` → `bg-sidebar`.
+3. Add `Layout.test.tsx` (the one dropped from 3b because it asserted on 3a's Sidebar API).
+4. Estimated size: ~80-100 lines (under 400 budget).
+
