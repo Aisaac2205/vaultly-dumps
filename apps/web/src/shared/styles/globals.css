@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-sidebar: #2B2B2B;
-  --color-sidebar-text: #FFFFFF;
-  --color-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --color-sidebar-active: rgba(255, 255, 255, 0.12);
-  --color-sidebar-border: rgba(255, 255, 255, 0.10);
+  --color-sidebar: #0A0A0A;
+  --color-sidebar-text: #FAFAFA;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-sidebar-active: rgba(255, 255, 255, 0.10);
+  --color-sidebar-border: rgba(255, 255, 255, 0.08);
   --color-sidebar-indicator: var(--color-accent);
   --color-bg: #F7F7F7;
   --color-bg-subtle: #F7F7F7;
   --color-background: #FFFFFF;
-  --color-text-primary: #2B2B2B;
+  --color-text-primary: #0A0A0A;
   --color-text-secondary: #6B6B6B;
   --color-border: #E5E5E5;
   --color-success: #22C55E;
@@ -151,7 +151,7 @@
 
 /* ── Dark mode slots (no component wiring — ships later) ── */
 [data-theme="dark"] {
-  --color-sidebar: #1A1A1A;
+  --color-sidebar: #000000;
   --color-sidebar-text: #E5E5E5;
   --color-sidebar-hover: rgba(255, 255, 255, 0.06);
   --color-sidebar-active: rgba(255, 255, 255, 0.10);
