@@ -1,5 +1,9 @@
 import { useState, type ReactNode } from "react";
-import { Sidebar, SidebarContent } from "./Sidebar";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarRoot,
+} from "./Sidebar";
 import type { AuthUser } from "../hooks/useAuth";
 import { Sheet, SheetContent } from "../ui/sheet";
 import { Menu } from "lucide-react";
@@ -14,6 +18,7 @@ interface LayoutProps {
 
 export function Layout({ children, user, onLogout }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeMobileSidebar = () => setSidebarOpen(false);
 
   return (
     <div className="flex min-h-screen">
@@ -25,13 +30,11 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
         <SheetContent
           side="left"
           showCloseButton={false}
-          className="w-[240px] bg-black p-0 border-r-0"
+          className="w-[240px] bg-sidebar p-0 border-r-0"
         >
-          <SidebarContent
-            user={user}
-            onLogout={onLogout}
-            onNavigate={() => setSidebarOpen(false)}
-          />
+          <SidebarRoot onNavigate={closeMobileSidebar}>
+            <SidebarContent user={user} onLogout={onLogout} />
+          </SidebarRoot>
         </SheetContent>
       </Sheet>
 
