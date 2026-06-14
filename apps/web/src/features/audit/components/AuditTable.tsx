@@ -1,7 +1,6 @@
 import { DataTable, type Column } from "@/shared/ui/data-table";
 
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
-import { EnvironmentBadge } from "@/shared/components/EnvironmentBadge";
 import {
   Database,
   Trash2,
@@ -148,8 +147,10 @@ const columns: Column<AuditLog>[] = [
     accessor: (log) => <ResourceCell log={log} />,
   },
   {
-    header: "Ambiente",
-    accessor: (log) => <EnvironmentBadge env={log.environment} />,
+    header: "Entorno",
+    accessor: (log) => (
+      <span className="text-muted-foreground font-mono text-xs uppercase">{log.environment}</span>
+    ),
     className: "hidden sm:table-cell",
     headerClassName: "hidden sm:table-cell",
   },
