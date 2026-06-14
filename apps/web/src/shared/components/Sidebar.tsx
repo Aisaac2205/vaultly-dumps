@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { Children, createContext, useContext, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import type { AuthUser } from "../hooks/useAuth";
 import {
@@ -11,10 +11,13 @@ import {
   FileText,
   Users,
   LogOut,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { lazyRoutes, type RouteKey } from "@/shared/lib/lazy-routes";
 import { cn } from "@/shared/lib/cn";
+import { useSidebar } from "./SidebarProvider";
 
 /* -------------------------------------------------------------------------- */
 /*  Sidebar context (compound component foundation)                           */
@@ -22,11 +25,12 @@ import { cn } from "@/shared/lib/cn";
 
 interface SidebarContextValue {
   onNavigate?: () => void;
+  collapsed?: boolean;
 }
 
 const SidebarContext = createContext<SidebarContextValue>({});
 
-function useSidebarContext(): SidebarContextValue {
+function useSidebarNavContext(): SidebarContextValue {
   return useContext(SidebarContext);
 }
 
@@ -58,26 +62,38 @@ const NAV_ITEMS: NavItemConfig[] = [
 /*  Compound sub-components                                                   */
 /* -------------------------------------------------------------------------- */
 
-/** Provides `onNavigate` to all descendant `<SidebarItem>` elements. */
-function SidebarRoot({
-  children,
-  onNavigate,
-}: {
+interface SidebarRootProps {
   children: ReactNode;
   onNavigate?: () => void;
-}) {
+  /** Collapse mode. Defaults to `"none"` (always expanded with labels). */
+  collapsible?: "icon" | "offcanvas" | "none";
+}
+
+/** Provides `onNavigate` and `collapsed` to all descendant compound components. */
+function SidebarRoot({ children, onNavigate, collapsible = "none" }: SidebarRootProps) {
+  const sidebarState = useSidebar();
+  const collapsed = collapsible === "icon" && sidebarState.state === "collapsed";
+
   return (
-    <SidebarContext.Provider value={{ onNavigate }}>
+    <SidebarContext.Provider value={{ onNavigate, collapsed }}>
       {children}
     </SidebarContext.Provider>
   );
 }
 
-/** Logo / branding section. */
+/** Logo / branding section. In collapsed mode only the first child (logo) is rendered. */
 function SidebarHeader({ children }: { children: ReactNode }) {
+  const { collapsed } = useSidebarNavContext();
+  const childArray = Children.toArray(children);
+
   return (
-    <div className="flex items-center gap-3 border-b border-sidebar-border px-4 py-5">
-      {children}
+    <div
+      className={cn(
+        "flex items-center gap-3 border-b border-sidebar-border transition-all duration-200",
+        collapsed ? "justify-center px-2 py-5" : "px-4 py-5",
+      )}
+    >
+      {collapsed ? childArray.slice(0, 1) : children}
     </div>
   );
 }
@@ -87,9 +103,9 @@ function SidebarNav({ children }: { children: ReactNode }) {
   return <nav className="flex-1 overflow-y-auto py-3">{children}</nav>;
 }
 
-/** Single navigation link with token-based active state. */
+/** Single navigation link with token-based active state. Collapse-aware. */
 function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) {
-  const { onNavigate } = useSidebarContext();
+  const { onNavigate, collapsed } = useSidebarNavContext();
 
   const prefetch = () => {
     void lazyRoutes[routeKey]();
@@ -102,6 +118,8 @@ function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) 
       onMouseEnter={prefetch}
       onFocus={prefetch}
       onClick={onNavigate}
+      aria-label={collapsed ? label : undefined}
+      title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
           "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
@@ -109,16 +127,17 @@ function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) 
           isActive
             ? "border-l-2 border-sidebar-indicator bg-sidebar-active text-sidebar-text"
             : "text-sidebar-text/70 hover:bg-sidebar-hover hover:text-sidebar-text",
+          collapsed && "justify-center px-2",
         )
       }
     >
-      <Icon className="h-4 w-4 shrink-0" />
-      {label}
+      <Icon className="h-4 w-4 shrink-0" aria-hidden={collapsed ? true : undefined} />
+      {!collapsed && <span>{label}</span>}
     </NavLink>
   );
 }
 
-/** User info + logout in the sidebar footer. */
+/** User info + logout in the sidebar footer. Collapse-aware. */
 function SidebarUser({
   user,
   onLogout,
@@ -126,22 +145,48 @@ function SidebarUser({
   user: AuthUser | null;
   onLogout: () => Promise<void>;
 }) {
+  const { collapsed } = useSidebarNavContext();
+
   return (
     <div className="flex flex-col gap-2 border-t border-sidebar-border p-4">
-      {user && (
+      {!collapsed && user && (
         <span className="truncate font-mono text-xs text-sidebar-text/60">
           {user.email}
         </span>
       )}
       <button
-        className="flex items-center gap-2 text-left text-xs text-sidebar-text/50 transition-colors hover:text-sidebar-text"
+        className={cn(
+          "flex items-center gap-2 text-left text-xs text-sidebar-text/50 transition-colors hover:text-sidebar-text",
+          collapsed && "justify-center",
+        )}
         onClick={() => void onLogout()}
         type="button"
+        aria-label="Cerrar Sesión"
       >
         <LogOut className="h-3.5 w-3.5" />
-        Cerrar Sesión
+        {!collapsed && "Cerrar Sesión"}
       </button>
     </div>
+  );
+}
+
+/** Thin toggle strip on the right edge of the sidebar. Click toggles collapse. */
+function SidebarRail() {
+  const { state, toggle } = useSidebar();
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={state === "expanded" ? "Collapse sidebar" : "Expand sidebar"}
+      className="absolute right-0 top-0 z-10 flex h-full w-4 items-center justify-center transition-colors hover:bg-sidebar-hover group"
+    >
+      {state === "expanded" ? (
+        <ChevronLeft className="h-3 w-3 text-sidebar-text/40 transition-colors group-hover:text-sidebar-text/70" />
+      ) : (
+        <ChevronRight className="h-3 w-3 text-sidebar-text/40 transition-colors group-hover:text-sidebar-text/70" />
+      )}
+    </button>
   );
 }
 
@@ -187,13 +232,25 @@ export function SidebarContent({
 interface SidebarProps {
   user: AuthUser | null;
   onLogout: () => Promise<void>;
+  /** Collapse mode. Defaults to `"none"` (always expanded with labels). */
+  collapsible?: "icon" | "offcanvas" | "none";
 }
 
-export function Sidebar({ user, onLogout }: SidebarProps) {
+export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) {
+  const { state } = useSidebar();
+  const isCollapsed = collapsible === "icon" && state === "collapsed";
+
   return (
-    <aside className="fixed left-0 top-0 hidden h-screen w-[240px] flex-col bg-sidebar font-medium md:flex">
-      <SidebarRoot>
+    <aside
+      className={cn(
+        "fixed left-0 top-0 hidden h-screen flex-col bg-sidebar font-medium md:flex",
+        "relative transition-[width] duration-200 ease-out",
+        isCollapsed ? "w-[56px]" : "w-[240px]",
+      )}
+    >
+      <SidebarRoot collapsible={collapsible}>
         <SidebarContent user={user} onLogout={onLogout} />
+        {collapsible === "icon" && <SidebarRail />}
       </SidebarRoot>
     </aside>
   );
