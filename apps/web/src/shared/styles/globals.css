@@ -117,6 +117,13 @@
     color: var(--color-text-primary);
     background-color: var(--color-bg);
     line-height: 1.5;
+    transition: background-color 150ms ease-out, color 150ms ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body {
+      transition: none;
+    }
   }
 
   code,
