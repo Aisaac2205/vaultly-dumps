@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/shared/ui/card";
+import { Badge, BadgeDot } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { type ReactNode } from "react";
 
@@ -36,7 +37,7 @@ export function StatCard({
     <Card>
       <CardContent className="p-6">
         <div className="flex items-center gap-2">
-          {icon && <span className="text-muted-foreground/70">{icon}</span>}
+          {icon && <span className="text-muted-foreground">{icon}</span>}
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
         </div>
         <div className="mt-3 flex items-center gap-2">
@@ -49,13 +50,10 @@ export function StatCard({
             {value}
           </p>
           {trend && (
-            <span
-              className={`inline-flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums ${
-                trend.positive ? "bg-success-bg text-success" : "bg-error-bg text-error"
-              }`}
-            >
+            <Badge variant="outline" className="shrink-0">
+              <BadgeDot tone={trend.positive ? "success" : "error"} />
               {trend.positive ? "↑" : "↓"} {trend.value}%
-            </span>
+            </Badge>
           )}
         </div>
       </CardContent>
