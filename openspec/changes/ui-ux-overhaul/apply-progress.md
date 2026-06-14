@@ -273,6 +273,68 @@ Pre-existing warnings unchanged: 17 (set-state-in-effect, exhaustive-deps, react
 
 ---
 
+## PR 3a: feat/ui-shell-sidebar
+
+**Commits**: 2 (1 impl + 1 test)
+**Date**: 2026-06-13
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (3a targets main; 3b follows as a separate PR in the chain)
+**Note**: PR 3 was originally planned as a single ~200-line PR (`feat/ui-shell`). Implementation landed at +663 net lines (10 files). To protect review focus, it was split: 3a = Sidebar, 3b = Topbar + Layout + Breadcrumbs + useTheme. Both branch from `main` and are independent.
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T3-01 | Redesign Sidebar — compound API + token theming | ✅ Done | +85 net | 12 tests; `bg-sidebar` replaces `bg-black`; left hairline indicator (`border-l-2 border-sidebar-indicator bg-sidebar-active`) replaces `border-r-2 border-white bg-white/10`; `cn()` for className; focus rings added |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `637dd09` | `feat: rewrite sidebar with token-based theming and compound API` | T3-01 |
+| `eeca9fb` | `test: add sidebar test coverage` | Tests |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/shared/components/Sidebar.tsx` | Modified | +85 net (+137/−52) |
+| `apps/web/src/shared/components/Layout.tsx` | Modified | +3 net (+10/−7) — wire `SidebarRoot` for mobile sheet close-on-nav (new compound API) |
+| `apps/web/src/shared/components/__tests__/Sidebar.test.tsx` | Created | 155 |
+| `openspec/changes/ui-ux-overhaul/apply-progress.md` | Modified | +section |
+
+### Test Results
+
+```
+✓ src/shared/components/__tests__/Sidebar.test.tsx (12 tests)
+
+Test Files: 12 passed (12)
+Tests:      51 passed (51)
+```
+
+### Typecheck
+
+```
+pnpm --filter @vaultly-control/web typecheck → clean (no errors)
+```
+
+### Lint
+
+```
+0 errors, 25 warnings (all pre-existing — no new warnings introduced by PR 3a)
+```
+
+### Deviations from Design/Spec
+
+1. **Compound sidebar API**: The spec and design.md describe a straightforward MODIFY of the existing sidebar. This implementation introduced a compound component pattern (`SidebarRoot`, `SidebarHeader`, `SidebarNav`, `SidebarItem`, `SidebarUser`) with React context for `onNavigate`. The `SidebarContent` convenience wrapper preserves backward compatibility with the mobile sheet. This is a superset of the spec requirements — all spec scenarios (token theming, left hairline indicator, `cn()`, focus rings) are satisfied. The compound pattern was explicitly requested in the orchestrator instructions.
+
+### Notes
+
+- All sidebar token references (`bg-sidebar`, `bg-sidebar-active`, `text-sidebar-text`, `border-sidebar-border`, `border-sidebar-indicator`) are from `globals.css` `@theme` block — no new CSS tokens were added in this PR.
+- The original implementation included a sibling commit `9ce309d` ("fix: render breadcrumbs root as span, not link") on the integration branch; this fix is **not** included in 3a (sidebar-only scope) and is included in 3b.
+
+---
+
 ## PR 3b: feat/ui-shell-topbar
 
 **Commits**: 3 (1 impl + 1 fix + 1 test)
