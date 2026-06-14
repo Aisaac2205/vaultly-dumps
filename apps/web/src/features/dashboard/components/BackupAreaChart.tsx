@@ -22,8 +22,8 @@ interface BackupAreaChartProps {
 }
 
 const chartConfig: ChartConfig = {
-  scheduled: { label: "Programados", color: "#2b2b2b" },
-  manual: { label: "Manuales", color: "#a1a1aa" },
+  scheduled: { label: "Programados", color: "var(--color-chart-scheduled)" },
+  manual: { label: "Manuales", color: "var(--color-chart-manual)" },
 };
 
 type TimeRange = "90d" | "30d" | "7d";
