@@ -8,6 +8,25 @@
   <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
   <link rel="shortcut icon" href="/favicon.ico" />
   <title>Vaultly</title>
+  <script>
+    // Apply theme before first paint to prevent flash.
+    (function () {
+      var t;
+      try {
+        t = localStorage.getItem("vaultly:theme");
+      } catch (_) {
+        /* localStorage unavailable */
+      }
+      var d =
+        t === "dark"
+          ? "dark"
+          : (!t || t === "system") &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : null;
+      if (d) document.documentElement.setAttribute("data-theme", d);
+    })();
+  </script>
 </head>
 
 <body>
