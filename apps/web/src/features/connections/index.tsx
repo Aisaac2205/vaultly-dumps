@@ -34,7 +34,6 @@ export default function Connections() {
     data: connections = [],
     isLoading: isQueryLoading,
     error: queryError,
-    refetch,
   } = useConnections();
 
   const createMutation = useCreateConnection();

@@ -3,7 +3,7 @@ import { Check, ChevronsUpDown, Wifi } from "lucide-react";
 import type { Connection } from "../types";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
+
 import {
   Command,
   CommandEmpty,

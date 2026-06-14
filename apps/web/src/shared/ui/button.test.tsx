@@ -16,4 +16,12 @@ describe('Button', () => {
     
     expect(handler).toHaveBeenCalledTimes(1);
   });
+
+  it('has press feedback classes for active state', () => {
+    render(<Button>Press me</Button>);
+    const button = screen.getByRole('button', { name: 'Press me' });
+
+    expect(button.className).toContain('active:scale-[0.97]');
+    expect(button.className).toContain('transition-[transform,color,background-color,border-color]');
+  });
 });
