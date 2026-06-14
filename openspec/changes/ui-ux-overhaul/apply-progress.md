@@ -346,5 +346,99 @@ pnpm typecheck → clean (no errors in api or web)
 - **`SidebarProvider` renders no DOM**: Pure context wrapper — zero `<div>` or wrapper element. Keeps the Layout tree flat.
 - **3c2 (theme system) and 3c3 (stats primitives) are next** in the chained PR sequence. No files from those scopes were touched. `useTheme.ts` internals remain unchanged (C1 no-op contract preserved).
 
+---
+
+## PR 3c2: feat/ui-theme-system
+
+**Commits**: 5 (4 impl + 1 test)
+**Date**: 2026-06-13
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (PR 3c2 targets `feat/ui-ux-overhaul`, which targets `main`)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| 3c2-01 | Real `useTheme` implementation | ✅ Done | +176/−26 | Module-level state; `useSyncExternalStore`; localStorage persistence; `prefers-color-scheme` listener; `data-theme` on `<html>`; SSR-safe deferred init |
+| 3c2-02 | Inline theme-init script in `index.html` | ✅ Done | +19 | Synchronous script sets `data-theme` before first paint; prevents flash of light theme |
+| 3c2-03 | Wire theme toggle in Topbar | ✅ Done | +4/−4 | `Moon` icon when dark, `Sun` icon when light; `resolvedTheme`-driven |
+| 3c2-04 | Cross-fade transition on theme switch | ✅ Done | +7 | 150ms `ease-out` on `body` for `background-color` and `color`; `prefers-reduced-motion` gate |
+| 3c2-05 | Test coverage | ✅ Done | +212/−9 | 12 useTheme tests + 7 Topbar tests (19 total, +10 new from baseline) |
+
+### Commits
+
+| Hash | Message | Files | + | − |
+|------|---------|-------|---|---|
+| `1896235` | `feat: implement real useTheme with localStorage and prefers-color-scheme` | `useTheme.ts` | 176 | 26 |
+| `59197bf` | `feat: add inline theme-init script to index.html for no-flash load` | `index.html` | 19 | 0 |
+| `00b9d42` | `feat: wire theme toggle in Topbar with Sun/Moon icon swap` | `Topbar.tsx` | 4 | 4 |
+| `bbc6169` | `style: add 150ms cross-fade transition on theme switch` | `globals.css` | 7 | 0 |
+| `b52a072` | `test: extend useTheme and Topbar tests for theme system` | `useTheme.test.ts`, `Topbar.test.tsx` | 212 | 9 |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/shared/hooks/useTheme.ts` | Modified | +176, −26 |
+| `apps/web/index.html` | Modified | +19 |
+| `apps/web/src/shared/components/Topbar.tsx` | Modified | +4, −4 |
+| `apps/web/src/shared/styles/globals.css` | Modified | +7 |
+| `apps/web/src/shared/hooks/__tests__/useTheme.test.ts` | Modified | +133, −2 |
+| `apps/web/src/shared/components/__tests__/Topbar.test.tsx` | Modified | +79, −7 |
+
+### Test Results
+
+```
+✓ src/shared/hooks/__tests__/useTheme.test.ts (12 tests)  ← 3 old → 12 new
+✓ src/shared/components/__tests__/Topbar.test.tsx (7 tests)  ← 4 old → 7 new
++ 14 pre-existing test files (unchanged)
+
+Test Files: 16 passed (16)
+Tests:      95 passed (95)
+```
+
+**Breakdown per describe block:**
+- `useTheme` (12 tests): default "system", resolves dark from OS pref, `setTheme("dark")` adds data-theme, `setTheme("light")` removes data-theme, toggle cycles light→dark→system→light, localStorage persistence, survives remount, reacts to system preference change (when theme is "system"), ignores system change when explicit, `data-theme` on `<html>` not body, stable setTheme/toggleTheme across rerenders, ignores invalid localStorage values
+- `Topbar` (7 tests): breadcrumbs, theme toggle button, account placeholder, hidden on mobile, Sun icon in light mode, Moon icon in dark mode, clicking toggle updates `data-theme`
+
+### Typecheck
+
+```
+pnpm typecheck → clean (no errors in api or web)
+```
+
+### Lint
+
+```
+0 errors, 26 warnings (all pre-existing — no new warnings introduced by PR 3c2)
+```
+
+Pre-existing warnings: 7× `react-hooks/set-state-in-effect`, 3× `react-hooks/exhaustive-deps`, 16× `react-refresh/only-export-components`.
+
+### Architecture Decisions
+
+1. **Module-level external store pattern**: The theme state lives at module scope, not in React state. `useSyncExternalStore` subscribes to changes via a listener set. `setTheme` and `toggleTheme` are plain module functions — reference-stable by definition, no `useCallback` needed. This is simpler and more correct than `useState` + `useEffect` for a globally-singleton concern.
+
+2. **Lazy matchMedia initialisation**: `window.matchMedia` is not called at module evaluation time. It's deferred until `ensureQuery()` is first called (inside `getSnapshot` or `subscribe`). This avoids crashes in environments without `matchMedia` (jsdom, SSR) and enables test resets via `__internalReset()`.
+
+3. **`__internalReset()` export**: Test-only helper resets module-level state (`matchMediaQuery`, `currentTheme`, `currentResolved`, `initialised`, `cached`, `listeners`, DOM). Called in `beforeEach` to guarantee test isolation. Not part of the public API — prefixed with `__` to signal internal use.
+
+4. **Inline `<script>` in `<head>`**: The script reads `localStorage` and `matchMedia` synchronously, sets `data-theme` on `<html>`, and blocks rendering until complete. This runs before any CSS or React, guaranteeing zero flash of incorrect theme. The hook reads the same key and manages updates from React.
+
+5. **`onSystemChange` reads `e.matches`**: When the OS preference changes, the `MediaQueryListEvent` carries the new `matches` value. The handler uses this directly instead of re-querying `matchMediaQuery.matches` (which is read-only in real browsers and stale in mocks).
+
+### Deviations from Design/Spec
+
+None — implementation matches the spec for 3c2 scope.
+
+### Notes
+
+- **API unchanged**: The `ThemeState` interface is backward-compatible. `theme` now returns `"light" | "dark" | "system"` (was `"light" | "dark"`), and `resolvedTheme` is new, but existing consumers only used `toggleTheme()` which is still callable. No consumer code needed changes.
+- **Toggle cycle**: `light → dark → system → light`. From default "system", first click goes to "light" (resolved matches current OS), second to "dark". This follows the spec's preferred cycle.
+- **No `useTheme` export changes in other files**: `Topbar.tsx` is the only consumer. It now destructures `resolvedTheme` alongside `toggleTheme`.
+- **`__internalReset` in test imports**: Both test files import it explicitly. ESLint and TypeScript consider it a used import since it's called in `beforeEach` / individual tests.
+- **`data-theme` removal on light**: Light mode removes the attribute entirely (`removeAttribute`). This is intentional — the CSS cascade uses `[data-theme="dark"]` only. Light is the implicit default.
+- **3c3 (stats primitives) is next** in the chained PR sequence. No files from that scope were touched.
+
 
 
