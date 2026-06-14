@@ -47,7 +47,7 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="space-y-5 sm:space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -61,7 +61,7 @@ export default function Dashboard() {
 
   if (dashboardErrors.length > 0) {
     return (
-      <div className="space-y-5 sm:space-y-8 p-4 sm:p-6 lg:p-8">
+      <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
         <Alert variant="destructive">
           <AlertDescription>
             Error al cargar el dashboard:{" "}
@@ -73,7 +73,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-8 p-4 sm:p-6 lg:p-8">
+    <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
       <DashboardHeader lastUpdated={new Date()} />
 
       <FailureAlertBanner failedCount={stats?.failed7d ?? 0} />

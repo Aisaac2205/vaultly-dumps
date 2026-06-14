@@ -419,3 +419,99 @@ Once PR 3a is merged, a quick follow-up PR will:
 3. Add `Layout.test.tsx` (the one dropped from 3b because it asserted on 3a's Sidebar API).
 4. Estimated size: ~80-100 lines (under 400 budget).
 
+---
+
+## PR 3c1: feat/ui-icon-rail-sidebar
+
+**Commits**: 4 (3 impl + 1 test)
+**Date**: 2026-06-13
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (PR 3c1 targets `feat/ui-ux-overhaul`, which targets `main`)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| 3c1-01 | SidebarProvider + useSidebar with localStorage | ✅ Done | 92 | Renders children; initial state "expanded"; toggle flips; persists to localStorage; survives remount |
+| 3c1-02 | Extend compound Sidebar with collapsible icon rail | ✅ Done | +80/−23 | `collapsible="icon"` hides labels at 56px; `collapsible="offcanvas"` unchanged; `collapsible="none"` backward-compat |
+| 3c1-03 | SidebarRail toggle strip with chevron | ✅ Done | _(in 3c1-02)_ | ChevronLeft expanded / ChevronRight collapsed; click toggles via useSidebar |
+| 3c1-04 | Wire SidebarProvider in Layout | ✅ Done | +29/−5 | Layout split into provider wrapper + LayoutInner; `md:ml-[56px]` / `md:ml-[240px]` dynamic margin with CSS transition |
+| 3c1-05 | Test coverage | ✅ Done | +234/−2 | 13 new tests (SidebarProvider: 5; collapsible icon mode: 7; offcanvas: 1) |
+
+### Commits
+
+| Hash | Message | Files | + | − |
+|------|---------|-------|---|---|
+| `38c9b63` | `feat: add SidebarProvider and useSidebar hook with localStorage persistence` | `SidebarProvider.tsx` (new) | 92 | 0 |
+| `cb652b0` | `feat: extend compound Sidebar with collapsible icon rail and SidebarRail toggle` | `Sidebar.tsx` (modified) | 80 | 23 |
+| `bfe3c69` | `feat: wire SidebarProvider in Layout with collapsible desktop sidebar` | `Layout.tsx` (modified) | 29 | 5 |
+| `3f722cc` | `test: add sidebar collapse, persistence, and accessibility test coverage` | `Sidebar.test.tsx` (modified) | 234 | 2 |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/shared/components/SidebarProvider.tsx` | Created | 92 |
+| `apps/web/src/shared/components/Sidebar.tsx` | Modified | +80, −23 |
+| `apps/web/src/shared/components/Layout.tsx` | Modified | +29, −5 |
+| `apps/web/src/shared/components/__tests__/Sidebar.test.tsx` | Modified | +234, −2 |
+
+### Test Results
+
+```
+✓ src/shared/components/__tests__/Sidebar.test.tsx (25 tests)  ← 12 existing + 13 new
++ 15 pre-existing test files (unchanged)
+
+Test Files: 16 passed (16)
+Tests:      83 passed (83)
+```
+
+**Breakdown per describe block:**
+- `Sidebar` (existing): 5 tests — all pass
+- `SidebarItem` (existing): 4 tests — all pass
+- `SidebarContent` (existing): 1 test — passes
+- `SidebarUser` (existing): 1 test — passes
+- `SidebarProvider` (NEW): 5 tests — provider renders, initial state, toggle flips, localStorage persistence, state survives remount
+- `Sidebar — collapsible icon mode` (NEW): 7 tests — labels visible/hidden, width 56px/240px, SidebarRail aria-label, SidebarRail click toggles, aria-label on collapsed items, title tooltip on collapsed items
+- `Sidebar — collapsible offcanvas` (NEW): 1 test — mobile sheet always shows labels regardless of collapse state
+
+### Typecheck
+
+```
+pnpm typecheck → clean (no errors in api or web)
+```
+
+### Lint
+
+```
+0 errors, 26 warnings (+1 from useSidebar export — same react-refresh/only-export-components pattern as cn() / buttonVariants() / cardVariants())
+```
+
+### Architecture Decisions
+
+1. **`useSidebar()` safe default**: When called outside `<SidebarProvider>`, the hook returns `{ state: "expanded", toggle: noop, setState: noop }`. This means compound sub-components (`SidebarItem`, `SidebarHeader`, `SidebarUser`) can be rendered without a provider — they default to expanded with all labels visible. The mobile sheet (`collapsible="offcanvas"`) uses this to stay full-width with labels at all times. The desktop sidebar gets `collapsible="icon"` and reads real collapse state through the Layout wrapper's `SidebarProvider`.
+
+2. **`collapsed` in existing compound context**: The `collapsible` prop lives on `SidebarRoot`, which computes `collapsed = collapsible === "icon" && sidebarState.state === "collapsed"` and injects it into `SidebarContext`. All sub-components read `collapsed` from the same context they already use for `onNavigate`. No new context — just an added boolean.
+
+3. **`SidebarRail` uses `useSidebar()` directly** (not `useSidebarNavContext()`): The rail toggles global state, not the compound context's derived `collapsed` boolean. This ensures the toggle is always available regardless of collapsible mode.
+
+4. **Layout split into `Layout` + `LayoutInner`**: `useSidebar()` must be called inside the `<SidebarProvider>` boundary. `Layout` renders `<SidebarProvider>`, and `LayoutInner` (a child) consumes the hook to compute `md:ml-[56px]` vs `md:ml-[240px]`.
+
+5. **`Children.toArray` in `SidebarHeader`**: When collapsed, only the first child (logo `<img>`) is rendered; brand text is dropped. This avoids fragile CSS selectors like `[&>:not(:first-child)]:hidden` while keeping the component API unchanged.
+
+### Deviations from Design/Spec
+
+1. **No `motion/react` layout animation**: The design spec mentions `motion/react` `layout` prop for width animation. This implementation uses CSS `transition-[width] duration-200 ease-out` on the `<aside>` element and `transition-[margin]` on the main content. CSS transitions are lighter (no JS layout measurement) and are fully interruptible by the browser. The visual result is identical: smooth 200ms width/margin tween.
+
+2. **`SidebarRail` commit combined**: The suggested commits listed `SidebarRail` as a separate commit, but it lives in the same file as the collapsible mode. Combined into one commit (`cb652b0`) to keep the file atomic — you can't test collapsible icon rail without the toggle strip, and you can't test the rail without collapsible mode.
+
+### Notes
+
+- **New lint warning** (`SidebarProvider.tsx:80`): `react-refresh/only-export-components` for `useSidebar`. This is intentional and matches the established pattern for non-component exports (`cn()`, `buttonVariants()`, `cardVariants()`, `filters` sub-components). Vite's fast refresh handles this gracefully.
+- **No CSS tokens added**: Zero changes to `globals.css`. The 56px/240px widths are hardcoded Tailwind classes. This keeps 3c1 isolated from the theme token system (3c2's scope).
+- **`collapsible="offcanvas"` unchanged from 3a**: The mobile `<Sheet>` sidebar uses `<SidebarRoot collapsible="offcanvas">` which computes `collapsed = false` (offcanvas mode is never icon-collapsed). All labels remain visible at all screen sizes.
+- **`SidebarProvider` renders no DOM**: Pure context wrapper — zero `<div>` or wrapper element. Keeps the Layout tree flat.
+- **3c2 (theme system) and 3c3 (stats primitives) are next** in the chained PR sequence. No files from those scopes were touched. `useTheme.ts` internals remain unchanged (C1 no-op contract preserved).
+
+
+
