@@ -20,12 +20,6 @@ const COLORS = {
   pending: "#eab308",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  completed: "Completados",
-  failed: "Fallidos",
-  running: "En progreso",
-  pending: "Pendientes",
-};
 
 export function BackupStatusChart({ summary }: BackupStatusChartProps) {
   const data = summary
