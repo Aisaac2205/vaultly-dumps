@@ -62,3 +62,6 @@ coverage/
 # Claude
 .claude/settings.local.json
 settings.json
+
+# Subagents
+.atl/
