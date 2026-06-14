@@ -322,27 +322,6 @@ describe("Sidebar — collapsible icon mode", () => {
     expect(document.querySelector("aside")?.className).toContain("w-[240px]");
   });
 
-  it("SidebarRail renders toggle button with correct aria-label", () => {
-    renderWithProvider(<Sidebar user={mockUser} onLogout={mockLogout} collapsible="icon" />, {
-      storedState: "expanded",
-    });
-    expect(screen.getByLabelText("Collapse sidebar")).toBeInTheDocument();
-  });
-
-  it("SidebarRail click toggles state", () => {
-    renderWithProvider(<Sidebar user={mockUser} onLogout={mockLogout} collapsible="icon" />, {
-      storedState: "expanded",
-    });
-
-    const rail = screen.getByLabelText("Collapse sidebar");
-    fireEvent.click(rail);
-
-    // After collapse, the rail label changes
-    expect(screen.getByLabelText("Expand sidebar")).toBeInTheDocument();
-    // And labels disappear
-    expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
-  });
-
   it("collapsed items have aria-label for accessibility", () => {
     renderWithProvider(<Sidebar user={mockUser} onLogout={mockLogout} collapsible="icon" />, {
       storedState: "collapsed",

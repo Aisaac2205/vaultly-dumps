@@ -11,8 +11,6 @@ import {
   FileText,
   Users,
   LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
 } from "lucide-react";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { lazyRoutes, type RouteKey } from "@/shared/lib/lazy-routes";
@@ -170,26 +168,6 @@ function SidebarUser({
   );
 }
 
-/** Thin toggle strip on the right edge of the sidebar. Click toggles collapse. */
-function SidebarRail() {
-  const { state, toggle } = useSidebar();
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={state === "expanded" ? "Collapse sidebar" : "Expand sidebar"}
-      className="absolute right-0 top-0 z-10 flex h-full w-4 items-center justify-center transition-colors hover:bg-sidebar-hover group"
-    >
-      {state === "expanded" ? (
-        <PanelLeftClose className="h-4 w-4 text-sidebar-text/60 transition-colors group-hover:text-sidebar-text" />
-      ) : (
-        <PanelLeftOpen className="h-4 w-4 text-sidebar-text/60 transition-colors group-hover:text-sidebar-text" />
-      )}
-    </button>
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Convenience composition (used by both desktop sidebar and mobile sheet)    */
 /* -------------------------------------------------------------------------- */
@@ -250,7 +228,6 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
     >
       <SidebarRoot collapsible={collapsible}>
         <SidebarContent user={user} onLogout={onLogout} />
-        {collapsible === "icon" && <SidebarRail />}
       </SidebarRoot>
     </aside>
   );
