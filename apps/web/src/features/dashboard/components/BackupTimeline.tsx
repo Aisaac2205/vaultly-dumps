@@ -34,9 +34,16 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
         <ConnectionLabel
           id={job.connectionId}
           name={job.connectionName}
-          showEnv
         />
       ),
+    },
+    {
+      header: "Entorno",
+      accessor: (job) => (
+        <span className="text-muted-foreground font-mono text-xs uppercase">{job.environment}</span>
+      ),
+      className: "hidden sm:table-cell",
+      headerClassName: "hidden sm:table-cell",
     },
     {
       header: "Estado",

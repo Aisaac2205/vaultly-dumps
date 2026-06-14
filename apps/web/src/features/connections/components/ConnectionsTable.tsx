@@ -120,7 +120,7 @@ export default function ConnectionsTable({
               <TableRow key={conn.id}>
                 <TableCell className="font-medium">{conn.name}</TableCell>
                 <TableCell>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-xs uppercase">
+                  <span className="text-muted-foreground font-mono text-xs uppercase">
                     {conn.environment}
                   </span>
                 </TableCell>

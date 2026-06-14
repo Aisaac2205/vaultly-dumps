@@ -3,6 +3,7 @@ import { formatDate } from "../lib/format";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
+import { useConnections } from "@/features/connections/hooks/useConnections";
 import {
   Table,
   TableHeader,
@@ -32,6 +33,10 @@ export default function CronjobsTable({
   onToggle,
   toggleLoading,
 }: CronjobsTableProps) {
+  const { data: connections } = useConnections();
+  const resolveEnv = (connectionId: string): string | undefined =>
+    connections?.find((c) => c.id === connectionId)?.environment;
+
   if (isLoading) {
     return (
       <Table>
@@ -39,6 +44,7 @@ export default function CronjobsTable({
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>Conexión</TableHead>
+            <TableHead>Entorno</TableHead>
             <TableHead className="hidden sm:table-cell">Expresión Cron</TableHead>
             <TableHead className="hidden sm:table-cell">Próxima Ejecución</TableHead>
             <TableHead>Último Estado</TableHead>
@@ -49,6 +55,9 @@ export default function CronjobsTable({
         <TableBody>
           {Array.from({ length: 5 }).map((_, rowIdx) => (
             <TableRow key={rowIdx}>
+              <TableCell>
+                <div className="h-4 animate-pulse rounded bg-muted" />
+              </TableCell>
               <TableCell>
                 <div className="h-4 animate-pulse rounded bg-muted" />
               </TableCell>
@@ -92,6 +101,7 @@ export default function CronjobsTable({
           <TableRow>
             <TableHead>Nombre</TableHead>
             <TableHead>Conexión</TableHead>
+            <TableHead>Entorno</TableHead>
             <TableHead className="hidden sm:table-cell">Expresión Cron</TableHead>
             <TableHead className="hidden sm:table-cell">Próxima Ejecución</TableHead>
             <TableHead>Último Estado</TableHead>
@@ -110,8 +120,16 @@ export default function CronjobsTable({
                   <ConnectionLabel
                     id={cronjob.connectionId}
                     name={cronjob.connectionName}
-                    showEnv
                   />
+                </TableCell>
+                <TableCell>
+                  {resolveEnv(cronjob.connectionId) ? (
+                    <span className="text-muted-foreground font-mono text-xs uppercase">
+                      {resolveEnv(cronjob.connectionId)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell whitespace-nowrap font-mono text-xs">
                   {cronjob.cronExpression}

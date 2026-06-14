@@ -685,3 +685,113 @@ pnpm typecheck → clean (no errors in api or web)
 - **`ref` as prop**: Both components follow React 19 conventions — `ref` is passed as a regular prop (no `forwardRef` needed), though neither Sparkline nor TrendIndicator currently accept a `ref` prop since they don't forward to DOM elements.
 - **Shell + theme system complete**: With 3c1 (icon-rail sidebar), 3c2 (theme system), and 3c3 (stats primitives), the shared UI foundation is complete. Next in sequence: PR 4 (pagination backend), then PRs 5-12 (feature pages).
 
+---
+
+## PR 3c4: feat/ui-design-tokens
+
+**Commits**: 3 (2 impl + 1 test)
+**Date**: 2026-06-13
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (PR 3c4 targets `feat/ui-ux-overhaul`, which targets `main`)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| 3c4-01 | Mute status color tokens to restrained palette | ✅ Done | +12/−4 | `--color-success: #059669`, `--color-warning: #B45309`, `--color-error: #DC2626`, `--color-info: #2563EB`; dark mode overrides |
+| 3c4-02 | Fix BackupAreaChart dark mode — CSS variables | ✅ Done | +3/−3 | `chartConfig` uses `var(--color-chart-*)` not hardcoded hex; dark mode chart lines visible on `#0A0A0A` |
+| 3c4-03 | Remove EnvironmentBadge inline, add Entorno text column | ✅ Done | +32/−13 | ConnectionLabel drops badge + `showEnv` prop; CronjobsTable, AuditTable, BackupTimeline, ConnectionsTable use plain text Entorno column |
+| 3c4-04 | Test coverage for Entorno column and chart dark mode | ✅ Done | +369 | 23 new tests across 4 files |
+
+### Commits
+
+| Hash | Message | Files | + | − |
+|------|---------|-------|---|---|
+| `b9fdc32` | `style: mute status color tokens and make chart theme-aware` | `globals.css`, `BackupAreaChart.tsx` | 15 | 7 |
+| `12c8ab2` | `refactor: replace EnvironmentBadge with separate Entorno text column` | `ConnectionLabel.tsx`, `AuditTable.tsx`, `CronjobsTable.tsx`, `BackupTimeline.tsx`, `ConnectionsTable.tsx` | 32 | 13 |
+| `d5e6cee` | `test: add Entorno column and chart dark mode test coverage` | 4 test files (new) | 369 | 0 |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/shared/styles/globals.css` | Modified | +15, −7 |
+| `apps/web/src/features/dashboard/components/BackupAreaChart.tsx` | Modified | +2, −2 |
+| `apps/web/src/shared/components/ConnectionLabel.tsx` | Modified | +0, −7 |
+| `apps/web/src/features/audit/components/AuditTable.tsx` | Modified | +4, −3 |
+| `apps/web/src/features/cronjobs/components/CronjobsTable.tsx` | Modified | +20, −1 |
+| `apps/web/src/features/dashboard/components/BackupTimeline.tsx` | Modified | +9, −1 |
+| `apps/web/src/features/connections/components/ConnectionsTable.tsx` | Modified | +1, −1 |
+| `apps/web/src/features/audit/components/__tests__/AuditTable.test.tsx` | Created | 109 |
+| `apps/web/src/features/cronjobs/components/__tests__/CronjobsTable.test.tsx` | Created | 109 |
+| `apps/web/src/features/dashboard/components/__tests__/BackupAreaChart.test.tsx` | Created | 40 |
+| `apps/web/src/features/dashboard/components/__tests__/BackupTimeline.test.tsx` | Created | 111 |
+
+**Total functional lines**: ~47 (under the 400-line budget)
+**Total test lines**: ~369 (tests NOT counted toward budget)
+
+### Test Results
+
+```
+✓ src/shared/hooks/__tests__/useTheme.test.ts (12 tests)
+✓ src/shared/ui/card.test.tsx (4 tests)
+✓ src/shared/ui/stat-card.test.tsx (3 tests)
+✓ src/shared/ui/data-table.test.tsx (5 tests)
+✓ src/shared/ui/pagination.test.tsx (6 tests)
+✓ src/shared/ui/button.test.tsx (3 tests)
+✓ src/shared/ui/trend-indicator.test.tsx (8 tests)
+✓ src/shared/ui/sparkline.test.tsx (6 tests)
+✓ src/shared/components/__tests__/Topbar.test.tsx (7 tests)
+✓ src/shared/components/__tests__/Breadcrumbs.test.tsx (6 tests)
+✓ src/shared/components/__tests__/Sidebar.test.tsx (23 tests)
+✓ src/shared/ui/filters.test.tsx (5 tests)
+✓ src/shared/ui/dialog.test.tsx (3 tests)
+✓ src/shared/ui/sheet.test.tsx (4 tests)
+✓ src/shared/ui/motion/FadeIn.test.tsx (2 tests)
+✓ src/shared/ui/motion/Stagger.test.tsx (2 tests)
+✓ src/shared/ui/motion/PressFeedback.test.tsx (2 tests)
+✓ src/features/audit/components/__tests__/AuditTable.test.tsx (6 tests) ← NEW
+✓ src/features/cronjobs/components/__tests__/CronjobsTable.test.tsx (7 tests) ← NEW
+✓ src/features/dashboard/components/__tests__/BackupAreaChart.test.tsx (3 tests) ← NEW
+✓ src/features/dashboard/components/__tests__/BackupTimeline.test.tsx (7 tests) ← NEW
+
+Test Files: 21 passed (21)
+Tests:      124 passed (124)
+```
+
+**Previous total**: 101 tests (17 files)
+**After PR 3c4**: 124 tests (21 files) — net +23 tests
+
+**Breakdown of new tests:**
+- `AuditTable` (6): Entorno header, plain text env, styling, ConnectionLabel, metadata, empty state
+- `CronjobsTable` (7): Entorno column, env resolution, no badge, ConnectionLabel, loading, empty, unknown connection em dash
+- `BackupAreaChart` (3): CSS variable rendering, empty state, time range toggles
+- `BackupTimeline` (7): Entorno column, styling, connection names, status dots, overflow count, empty state, no badge
+
+### Typecheck
+
+```
+pnpm typecheck → clean (no errors in api or web)
+```
+
+### Lint
+
+```
+pnpm lint → 0 errors, 26 warnings (all pre-existing — no new warnings introduced by PR 3c4)
+```
+
+### Deviations from Design/Spec
+
+1. **Status color token values adjusted for actual WCAG contrast**: The spec suggested specific hex values. The implementation uses verified Tailwind color scale values: `#059669` (emerald-700), `#B45309` (amber-700), `#DC2626` (red-700). These meet the "saturation < 80% and restrained" criteria from the design rules.
+2. **`--color-info` mapped to accent**: The spec suggested keeping accent blue for info. Implementation uses `#2563EB` (the locked accent color) for both light mode. Dark mode info uses `#3B82F6` (blue-500, the dark mode accent).
+3. **CronjobsTable resolves environment via `useConnections()`**: The `Cronjob` type doesn't carry `environment` directly, so the table uses the same `useConnections()` hook that `ConnectionLabel` uses to resolve it from `connectionId`. This adds a data-fetching concern to a presentational component but provides the exact UX requested (separate Entorno column).
+4. **BackupTimeline Entorno column hidden on mobile**: Added `hidden sm:table-cell` to the column to avoid horizontal overflow on narrow screens (same pattern as AuditTable).
+
+### Notes
+
+- **EnvironmentBadge preserved**: The `EnvironmentBadge.tsx` component is NOT deleted. It remains available for non-table contexts (e.g., card headers, detail views).
+- **ConnectionLabel `showEnv` prop removed**: The prop and its associated logic are fully removed. All callers were updated to display environment in a separate column instead.
+- **Chart dark mode verified**: The `chartConfig` now uses `var(--color-chart-scheduled)` and `var(--color-chart-manual)`. The `ChartContainer` maps these into `--color-scheduled` and `--color-manual` CSS custom properties used by the recharts `<defs>` gradients and `stroke` attributes. In light mode these resolve to `#6B7280` / `#A1A1AA`; in dark mode to `#9CA3AF` / `#D4D4D8`.
+- **Zero package changes**: No new dependencies added. The `useConnections` hook was already imported by `ConnectionLabel` in the same component tree.
+- **Shell + theme + primitives + design tokens complete**: With 3c1 (icon-rail sidebar), 3c2 (theme system), 3c3 (stats primitives), and 3c4 (design tokens + table column refactor), the entire shared UI foundation is complete. Next in sequence: PR 4 (pagination backend), then PRs 5-12 (feature pages).
+
