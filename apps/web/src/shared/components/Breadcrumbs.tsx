@@ -24,19 +24,17 @@ export function Breadcrumbs({ className }: BreadcrumbsProps) {
   const { pathname } = useLocation();
   const segments = pathname.split("/").filter(Boolean);
 
+  const isRoot = segments.length === 0;
+
   return (
     <nav aria-label="Breadcrumbs" className={cn("flex items-center gap-1 text-sm", className)}>
-      <Link
-        to="/"
-        className={cn(
-          "transition-colors",
-          segments.length === 0
-            ? "font-medium text-foreground"
-            : "text-muted-foreground hover:text-foreground",
-        )}
-      >
-        Dashboard
-      </Link>
+      {isRoot ? (
+        <span className="font-medium text-foreground">Dashboard</span>
+      ) : (
+        <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+          Dashboard
+        </Link>
+      )}
 
       {segments.map((segment, i) => {
         const path = "/" + segments.slice(0, i + 1).join("/");
