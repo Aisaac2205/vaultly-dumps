@@ -4,7 +4,9 @@
   --color-sidebar: #2B2B2B;
   --color-sidebar-text: #FFFFFF;
   --color-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --color-sidebar-active: rgba(255, 255, 255, 0.15);
+  --color-sidebar-active: rgba(255, 255, 255, 0.12);
+  --color-sidebar-border: rgba(255, 255, 255, 0.10);
+  --color-sidebar-indicator: var(--color-accent);
   --color-bg: #F7F7F7;
   --color-bg-subtle: #F7F7F7;
   --color-background: #FFFFFF;
@@ -24,19 +26,32 @@
   --color-popover-foreground: #2B2B2B;
   --color-card: #FFFFFF;
   --color-card-foreground: #2B2B2B;
-  --color-accent: #F5F5F5;
-  --color-accent-foreground: #2B2B2B;
+  --color-accent: #2563EB;
+  --color-accent-hover: #1E5B93;
+  --color-accent-soft: rgba(37, 99, 235, 0.08);
+  --color-accent-foreground: #FFFFFF;
   --color-muted: #F5F5F5;
   --color-muted-foreground: #737373;
   --color-destructive: #EF4444;
   --color-destructive-foreground: #FFFFFF;
-  --color-ring: #2B2B2B;
+  --color-ring: #2563EB;
   --color-input: #E5E5E5;
   --font-sans: "Geist Variable", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
   --radius-sm: 4px;
   --radius-md: 8px;
   --radius-lg: 12px;
+
+  /* Easing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Duration */
+  --duration-fast: 160ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
 }
 
 /* Login page floating animations (ported from Keycloak theme) */
@@ -132,4 +147,28 @@
     display: block;
     max-width: 100%;
   }
+}
+
+/* ── Dark mode slots (no component wiring — ships later) ── */
+[data-theme="dark"] {
+  --color-sidebar: #1A1A1A;
+  --color-sidebar-text: #E5E5E5;
+  --color-sidebar-hover: rgba(255, 255, 255, 0.06);
+  --color-sidebar-active: rgba(255, 255, 255, 0.10);
+  --color-sidebar-border: rgba(255, 255, 255, 0.08);
+  --color-accent: #3B82F6;
+  --color-accent-hover: #2563EB;
+  --color-accent-soft: rgba(59, 130, 246, 0.12);
+  --color-bg: #0A0A0A;
+  --color-bg-subtle: #111111;
+  --color-background: #141414;
+  --color-text-primary: #E5E5E5;
+  --color-text-secondary: #A3A3A3;
+  --color-border: #262626;
+  --color-card: #141414;
+  --color-card-foreground: #E5E5E5;
+  --color-popover: #141414;
+  --color-popover-foreground: #E5E5E5;
+  --color-muted: #1C1C1C;
+  --color-muted-foreground: #A3A3A3;
 }
