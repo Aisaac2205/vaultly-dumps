@@ -11,8 +11,8 @@ import {
   FileText,
   Users,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { lazyRoutes, type RouteKey } from "@/shared/lib/lazy-routes";
@@ -182,9 +182,9 @@ function SidebarRail() {
       className="absolute right-0 top-0 z-10 flex h-full w-4 items-center justify-center transition-colors hover:bg-sidebar-hover group"
     >
       {state === "expanded" ? (
-        <ChevronLeft className="h-3 w-3 text-sidebar-text/40 transition-colors group-hover:text-sidebar-text/70" />
+        <PanelLeftClose className="h-4 w-4 text-sidebar-text/60 transition-colors group-hover:text-sidebar-text" />
       ) : (
-        <ChevronRight className="h-3 w-3 text-sidebar-text/40 transition-colors group-hover:text-sidebar-text/70" />
+        <PanelLeftOpen className="h-4 w-4 text-sidebar-text/60 transition-colors group-hover:text-sidebar-text" />
       )}
     </button>
   );
