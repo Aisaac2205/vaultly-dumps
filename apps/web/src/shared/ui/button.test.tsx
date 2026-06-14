@@ -1,0 +1,19 @@
+import { describe, it, expect, vi, type Mock } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Button } from './button';
+
+describe('Button', () => {
+  it('renders correctly with given text', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument();
+  });
+
+  it('calls onClick handler when clicked', () => {
+    const handler: Mock<(...args: never[]) => void> = vi.fn();
+    render(<Button onClick={handler}>Click me</Button>);
+    
+    fireEvent.click(screen.getByRole('button', { name: 'Click me' }));
+    
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+});
