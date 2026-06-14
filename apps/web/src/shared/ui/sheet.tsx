@@ -3,8 +3,8 @@
 import * as React from "react"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
-
 import { VisuallyHidden } from "radix-ui"
+import { motion, useReducedMotion } from "motion/react"
 
 import { cn } from "@/shared/lib/cn"
 
@@ -36,17 +36,49 @@ function SheetOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+  const reducedMotion = useReducedMotion();
+
   return (
     <DialogPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "fixed inset-0 z-50 bg-black/50 transition-opacity data-[state=closed]:opacity-0",
         className
       )}
       {...props}
-    />
+      asChild
+      forceMount
+    >
+      <motion.div
+        initial={reducedMotion ? {} : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+      />
+    </DialogPrimitive.Overlay>
   )
 }
+
+const SIDE_ANIMATIONS: Record<"top" | "right" | "bottom" | "left", {
+  initial: Record<string, number | string>;
+  exit: Record<string, number | string>;
+}> = {
+  right: {
+    initial: { x: "100%" },
+    exit: { x: "100%" },
+  },
+  left: {
+    initial: { x: "-100%" },
+    exit: { x: "-100%" },
+  },
+  top: {
+    initial: { y: "-100%" },
+    exit: { y: "-100%" },
+  },
+  bottom: {
+    initial: { y: "100%" },
+    exit: { y: "100%" },
+  },
+};
 
 function SheetContent({
   className,
@@ -58,39 +90,58 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
+  const reducedMotion = useReducedMotion();
+  const sideAnim = SIDE_ANIMATIONS[side];
+
+  const contentInitial = reducedMotion
+    ? { opacity: 0 }
+    : { opacity: 0, ...sideAnim.initial };
+
+  const contentAnimate = reducedMotion
+    ? { opacity: 1 }
+    : { opacity: 1, x: 0, y: 0 };
+
   return (
     <SheetPortal>
       <SheetOverlay />
       <DialogPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "fixed z-50 flex flex-col bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-300 data-[state=open]:duration-500",
+          "fixed z-50 flex flex-col bg-background shadow-lg outline-none transition-opacity data-[state=closed]:opacity-0",
           side === "right" &&
-            "inset-y-0 right-0 h-full w-3/4 max-w-sm border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right",
+            "inset-y-0 right-0 h-full w-3/4 max-w-sm border-l",
           side === "left" &&
-            "inset-y-0 left-0 h-full w-3/4 max-w-sm border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left",
+            "inset-y-0 left-0 h-full w-3/4 max-w-sm border-r",
           side === "top" &&
-            "inset-x-0 top-0 h-auto border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+            "inset-x-0 top-0 h-auto border-b",
           side === "bottom" &&
-            "inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+            "inset-x-0 bottom-0 h-auto border-t",
           className
         )}
         {...props}
+        asChild
+        forceMount
         aria-describedby={undefined}
       >
-        <VisuallyHidden.Root>
-          <DialogPrimitive.Title>Navigation</DialogPrimitive.Title>
-        </VisuallyHidden.Root>
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="sheet-close"
-            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
-          >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
+        <motion.div
+          initial={contentInitial}
+          animate={contentAnimate}
+          transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+        >
+          <VisuallyHidden.Root>
+            <DialogPrimitive.Title>Navigation</DialogPrimitive.Title>
+          </VisuallyHidden.Root>
+          {children}
+          {showCloseButton && (
+            <DialogPrimitive.Close
+              data-slot="sheet-close"
+              className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            >
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          )}
+        </motion.div>
       </DialogPrimitive.Content>
     </SheetPortal>
   )
