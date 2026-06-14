@@ -53,9 +53,8 @@ coverage/
 .turbo/
 .eslintcache
 
-# OpenSpec artifacts
+# OpenSpec artifacts (tracked: preflight B1)
 .openspec/
-openspec/
 
 # Misc
 *.pem
@@ -63,3 +62,6 @@ openspec/
 # Claude
 .claude/settings.local.json
 settings.json
+
+# Subagents
+.atl/
