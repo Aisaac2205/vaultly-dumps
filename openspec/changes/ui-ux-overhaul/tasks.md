@@ -216,26 +216,29 @@ Chain strategy: stacked-to-main
 **PR total line estimate:** ~180
 **PR status:** ✅ within 400-line budget
 
-#### T5-01 Refactor Dumps hook
+#### T5-01 Refactor Dumps hook ✅
 **Description:** Adopt server-side pagination in TanStack Query.
 **Files:**
 - `apps/web/src/features/dumps/hooks/useDumps.ts` (modified)
-**Line estimate:** 40
+- `apps/web/src/features/dumps/hooks/useDumps.test.tsx` (created)
+**Line estimate:** 40 (+20 for test)
 **Depends on:** PR 4
 **Acceptance:**
-- Passes page/pageSize to API
+- [x] Passes page/pageSize to API
 
-#### T5-02 Update Dumps UI
+#### T5-02 Update Dumps UI ✅
 **Description:** Adopt Pagination, Filters, FadeIn, Stagger, and new StatCards.
 **Files:**
 - `apps/web/src/features/dumps/components/DumpsStats.tsx` (modified)
 - `apps/web/src/features/dumps/components/DumpsTable.tsx` (modified)
 - `apps/web/src/features/dumps/components/DumpsFilters.tsx` (modified)
 - `apps/web/src/features/dumps/components/DumpActions.tsx` (modified)
+- `apps/web/src/features/dumps/index.tsx` (modified)
+- `apps/web/src/shared/ui/stat-card.tsx` (modified)
 **Line estimate:** 140
 **Depends on:** PR 3, T5-01
 **Acceptance:**
-- UI components use new primitives and compound filters
+- [x] UI components use new primitives and compound filters
 
 ---
 
