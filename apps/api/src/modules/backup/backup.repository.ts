@@ -11,8 +11,24 @@ export class BackupRepository {
     private readonly repository: Repository<BackupJobEntity>,
   ) {}
 
-  findAll(): Promise<BackupJobEntity[]> {
-    return this.repository.find({ order: { createdAt: 'DESC' } });
+  /**
+   * When pagination options are provided, uses findAndCount with skip/take.
+   * When omitted, returns all rows (backward compatibility for non-list endpoints).
+   */
+  async findAll(options?: {
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ data: BackupJobEntity[]; total: number }> {
+    if (options?.page && options?.pageSize) {
+      const [data, total] = await this.repository.findAndCount({
+        order: { createdAt: 'DESC' },
+        take: options.pageSize,
+        skip: (options.page - 1) * options.pageSize,
+      });
+      return { data, total };
+    }
+    const data = await this.repository.find({ order: { createdAt: 'DESC' } });
+    return { data, total: data.length };
   }
 
   findById(id: string): Promise<BackupJobEntity | null> {

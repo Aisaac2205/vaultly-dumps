@@ -628,3 +628,112 @@ pnpm lint → 0 errors, 26 warnings (all pre-existing — no new warnings introd
 - **Zero package changes**: No new dependencies added. The `useConnections` hook was already imported by `ConnectionLabel` in the same component tree.
 - **Shell + theme + primitives + design tokens complete**: With 3c1 (icon-rail sidebar), 3c2 (theme system), 3c3 (stats primitives), and 3c4 (design tokens + table column refactor), the entire shared UI foundation is complete. Next in sequence: PR 4 (pagination backend), then PRs 5-12 (feature pages).
 
+---
+
+## PR 4: feat/ui-pagination-backend
+
+**Commits**: 4 (3 task + 1 chore)
+**Date**: 2026-06-15
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (PR 4 targets `feat/ui-ux-overhaul`, which targets `main`)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T4-00 | Add jest test infrastructure | ✅ Done | ~23 (+1937 lockfile) | `jest`, `ts-jest`, `@types/jest` installed; `jest.config.ts` with ts-jest; smoke test passes; `maxWorkers: 1` + `forceExit` for NestJS TestingModule compat |
+| T4-01 | Generic PaginatedResponseDto | ✅ Done | ~19 (+47 test) | Generic class `<T>` with `data`, `total`, `page`, `pageSize`; test with 2 different types |
+| T4-02 | Backup pagination (DTO + repo + service + controller) | ✅ Done | ~78 (+143 test) | `ListHistoryQueryDto` with validation; `findAll` uses `findAndCount` with skip/take; `getHistory()` returns `PaginatedResponseDto`; backward compat via `listBackups()` destructure |
+| T4-03 | Audit pagination (DTO + repo + service + controller) | ✅ Done | ~106 (+191 test) | `ListAuditLogsQueryDto` merges filters + pagination; removes manual `parseFilters`; `findAll(filters, pagination?)` returns `{ data, total }`; backward compat preserved |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `6bc8f94` | `chore: add jest test infrastructure` | T4-00 |
+| `d3aa578` | `feat: add generic PaginatedResponseDto` | T4-01 |
+| `f9ae320` | `feat: add server-side pagination to backup history endpoint` | T4-02 |
+| *(pending)* | `chore: append PR 4 section to apply progress` | Chore |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/api/package.json` | Modified | +3 (jest, ts-jest, @types/jest devDeps) |
+| `pnpm-lock.yaml` | Modified | +1937 (auto-generated) |
+| `apps/api/jest.config.ts` | Created | 23 |
+| `apps/api/jest-setup.ts` | Created | 1 (`import 'reflect-metadata'`) |
+| `apps/api/src/common/common.spec.ts` | Created | 5 |
+| `apps/api/src/common/dto/paginated-response.dto.ts` | Created | 19 |
+| `apps/api/src/common/dto/paginated-response.dto.spec.ts` | Created | 47 |
+| `apps/api/src/modules/backup/dto/list-history-query.dto.ts` | Created | 17 |
+| `apps/api/src/modules/backup/dto/list-history-query.dto.spec.ts` | Created | 42 |
+| `apps/api/src/modules/backup/dto/index.ts` | Created | 3 |
+| `apps/api/src/modules/backup/backup.repository.ts` | Modified | +20, −4 |
+| `apps/api/src/modules/backup/backup.repository.spec.ts` | Created | 101 |
+| `apps/api/src/modules/backup/backup.service.ts` | Modified | +33, −12 |
+| `apps/api/src/modules/backup/backup.controller.ts` | Modified | +5, −2 |
+| `apps/api/src/modules/maintenance/maintenance.service.ts` | Modified | +1, −1 (destructure `data` from new `findAll`) |
+| `apps/api/src/modules/audit/dto/list-audit-logs-query.dto.ts` | Created | 48 |
+| `apps/api/src/modules/audit/dto/list-audit-logs-query.dto.spec.ts` | Created | 80 |
+| `apps/api/src/modules/audit/dto/index.ts` | Created | 1 |
+| `apps/api/src/modules/audit/dto/.gitkeep` | Deleted | −0 |
+| `apps/api/src/modules/audit/audit.repository.ts` | Modified | +23, −7 |
+| `apps/api/src/modules/audit/audit.repository.spec.ts` | Created | 111 |
+| `apps/api/src/modules/audit/audit.service.ts` | Modified | +28, −5 |
+| `apps/api/src/modules/audit/audit.controller.ts` | Modified | +3, −44 (removed `parseFilters`, replaced with DTO) |
+
+**Total functional lines**: ~221 (excluding tests and lockfile)
+**Total test lines**: ~386 (29 tests, 6 suites)
+
+### Test Results
+
+```
+PASS src/common/common.spec.ts (1 test)
+PASS src/common/dto/paginated-response.dto.spec.ts (3 tests)
+PASS src/modules/backup/dto/list-history-query.dto.spec.ts (5 tests)
+PASS src/modules/backup/backup.repository.spec.ts (6 tests)
+PASS src/modules/audit/dto/list-audit-logs-query.dto.spec.ts (8 tests)
+PASS src/modules/audit/audit.repository.spec.ts (6 tests)
+
+Test Suites: 6 passed (6)
+Tests:      29 passed (29)
+```
+
+### Typecheck
+
+```
+pnpm typecheck → clean (no errors in api or web)
+```
+
+### Lint
+
+```
+ESLint not configured for apps/api. Pre-existing condition — does not block.
+```
+
+### Architecture Decisions
+
+1. **Merged DTO for audit**: `ListAuditLogsQueryDto` consolidates pagination (`page`, `pageSize`) with `AuditFilters` fields (`userId`, `username`, `environment`, `resourceType`, `from`, `to`) into a single class-validator DTO. This eliminates the manual `parseFilters()` method in the controller (37 lines removed) and the unvalidated `AuditFilters` interface as a controller parameter. The `AuditFilters` interface remains in `audit.repository.ts` for backward compatibility with `findAll(filters, pagination?)`.
+
+2. **Repository return type change**: Both `BackupRepository.findAll()` and `AuditRepository.findAll()` now return `{ data: T[], total: number }` instead of `T[]`. When pagination arguments are provided, `findAndCount()` is used; otherwise `find()` is used with `total: data.length`. This ensures backward compatibility — existing callers that don't provide pagination get the same data via destructuring.
+
+3. **`maintenance.service.ts` destructuring**: The maintenance service also calls `backupRepository.findAll()` to inspect job records. Updated to destructure `{ data: jobs }` from the new return type. This was caught by typecheck — exactly the kind of safety TypeScript provides.
+
+4. **`jest-setup.ts` for `reflect-metadata`**: The API's DTOs use `class-validator`/`class-transformer` decorators which require `reflect-metadata`. Since NestJS imports it at bootstrap but jest doesn't, a setup file is needed. This also enables direct DTO validation tests.
+
+5. **`maxWorkers: 1` + `forceExit`**: NestJS `@nestjs/testing`'s `Test.createTestingModule` creates TypeORM connections that can hang in parallel jest workers. Sequential execution (`maxWorkers: 1`) guarantees reliability. `forceExit: true` handles any remaining async handles after all tests complete.
+
+### Deviations from Design/Spec
+
+1. **`from`/`to` type handling in audit**: The design specifies `@IsDateString()` on `from` and `to` in the DTO (keeping them as `string`), with conversion to `Date` happening in the service before passing to the repository. This follows the design exactly but differs from the original controller which converted in `parseFilters()`. The conversion now lives in `AuditService.getLogs()`.
+
+2. **`forceExit: true` in jest config**: Not in the spec but necessary for NestJS TestingModule compatibility. Without it, `pnpm --filter @vaultly-control/api test` hangs after all tests pass because TypeORM connections from `Test.createTestingModule` don't close cleanly.
+
+### Notes
+
+- **No web changes**: This PR only touches `apps/api/`. The pagination contract (`{ data, total, page, pageSize }`) matches the frontend's `Pagination` compound from PR 2b, so frontend PRs 5-6 can consume it directly.
+- **Backward compatibility verified**: `listBackups()` (unpaginated), `maintenance.service.ts`, and `findAll()` with no args all continue to work via destructuring.
+- **`pnpm test` (root)**: Only `apps/api` has tests. The `pnpm test` root command runs `pnpm --parallel -r run test`, which runs api tests only (web has jest but no spec pattern matching). This is a pre-existing condition — not blocking.
+- **Next in sequence**: PR 5 (`feat/ui-dumps`) and PR 6 (`feat/ui-audit`) consume this backend pagination contract.
+

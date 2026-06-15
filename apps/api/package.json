@@ -51,8 +51,11 @@
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.7",
     "@types/express": "^5.0.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.14.1",
     "@types/pg": "^8.20.0",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
