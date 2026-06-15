@@ -14,6 +14,10 @@ const config: Config = {
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
   },
+  // NestJS TestingModule with TypeORM can cause worker hangs in parallel.
+  // maxWorkers: 1 ensures sequential execution for reliability.
+  maxWorkers: 1,
+  forceExit: true,
 };
 
 export default config;
