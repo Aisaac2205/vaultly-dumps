@@ -55,3 +55,11 @@ export interface DumpsFilters {
   from?: string;
   to?: string;
 }
+
+/** Server-paginated response shape matching PR #4 */
+export interface PaginatedDumps {
+  data: BackupJob[];
+  total: number;
+  page: number;
+  pageSize: number;
+}

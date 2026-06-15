@@ -1,108 +1,64 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { BackupJob, DumpsFilters } from "../types";
-import apiClient from "../../../shared/lib/api-client";
+import type { BackupJob, DumpsFilters, PaginatedDumps } from "../types";
+import { dumpsApi, type GetHistoryParams } from "../api/dumps-api";
 
-const DEFAULT_LIMIT = 10;
+interface UseDumpsParams {
+  page: number;
+  pageSize: number;
+  filters: DumpsFilters;
+}
 
 interface UseDumpsReturn {
-  dumps: BackupJob[];
+  data: BackupJob[];
   total: number;
+  page: number;
+  pageSize: number;
   isLoading: boolean;
   error: Error | null;
-  filters: DumpsFilters;
-  applyFilters: (filters: DumpsFilters) => void;
-  resetFilters: () => void;
   refetch: () => Promise<void>;
 }
 
-function hasActiveFilters(filters: DumpsFilters): boolean {
-  return !!(
-    filters.connectionId ||
-    filters.environment ||
-    filters.status ||
-    filters.from ||
-    filters.to
-  );
-}
+export function useDumps({
+  page,
+  pageSize,
+  filters,
+}: UseDumpsParams): UseDumpsReturn {
+  const queryKey = ["dumps", "history", { page, pageSize, filters }] as const;
 
-function filterDumps(data: BackupJob[], filters: DumpsFilters): BackupJob[] {
-  let result = [...data];
+  const queryFn = useCallback((): Promise<PaginatedDumps> => {
+    const params: GetHistoryParams = { page, pageSize };
 
-  if (filters.connectionId) {
-    result = result.filter((d) => d.connectionId === filters.connectionId);
-  }
+    if (
+      filters.connectionId ||
+      filters.environment ||
+      filters.status ||
+      filters.from ||
+      filters.to
+    ) {
+      params.filters = filters;
+    }
 
-  if (filters.environment) {
-    result = result.filter((d) => d.environment === filters.environment);
-  }
+    return dumpsApi.getHistory(params);
+  }, [page, pageSize, filters]);
 
-  if (filters.status) {
-    result = result.filter((d) => d.status === filters.status);
-  }
-
-  if (filters.from) {
-    const fromDate = new Date(filters.from);
-    result = result.filter((d) => new Date(d.createdAt) >= fromDate);
-  }
-
-  if (filters.to) {
-    const toDate = new Date(filters.to);
-    toDate.setHours(23, 59, 59, 999);
-    result = result.filter((d) => new Date(d.createdAt) <= toDate);
-  }
-
-  return result;
-}
-
-async function fetchDumpsHistory(): Promise<BackupJob[]> {
-  const response = await apiClient.get<BackupJob[]>("/backups/history");
-  return Array.isArray(response.data) ? response.data : [];
-}
-
-export function useDumps(): UseDumpsReturn {
-  const [filters, setFilters] = useState<DumpsFilters>({});
-
-  const query = useQuery<BackupJob[], Error>({
-    queryKey: ["dumps", "history"],
-    queryFn: fetchDumpsHistory,
+  const query = useQuery<PaginatedDumps, Error>({
+    queryKey,
+    queryFn,
     staleTime: 30_000,
   });
-
-  const allDumps = query.data ?? [];
-
-  const filtered = useMemo(
-    () => filterDumps(allDumps, filters),
-    [allDumps, filters],
-  );
-
-  const isFiltered = hasActiveFilters(filters);
-  const dumps = isFiltered ? filtered : filtered.slice(0, DEFAULT_LIMIT);
-
-  const applyFilters = useCallback((newFilters: DumpsFilters) => {
-    const cleaned: DumpsFilters = {};
-    if (newFilters.connectionId) cleaned.connectionId = newFilters.connectionId;
-    if (newFilters.environment) cleaned.environment = newFilters.environment;
-    if (newFilters.status) cleaned.status = newFilters.status;
-    if (newFilters.from) cleaned.from = newFilters.from;
-    if (newFilters.to) cleaned.to = newFilters.to;
-    setFilters(cleaned);
-  }, []);
-
-  const resetFilters = useCallback(() => setFilters({}), []);
 
   const refetch = useCallback(async () => {
     await query.refetch();
   }, [query]);
 
   return {
-    dumps,
-    total: filtered.length,
+    data: query.data?.data ?? [],
+    total: query.data?.total ?? 0,
+    page: query.data?.page ?? page,
+    pageSize: query.data?.pageSize ?? pageSize,
     isLoading: query.isLoading,
     error: query.error,
-    filters,
-    applyFilters,
-    resetFilters,
     refetch,
   };
 }
