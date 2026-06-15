@@ -37,7 +37,7 @@ Per-package scripts: `pnpm --filter @vaultly-control/api dev`, etc.
 
 ## Available Skills
 
-Located in `.agents/skills/`. Auto-load based on context.
+Located in `.agents/skills/` and `.claude/skills/`. Auto-load based on context.
 
 | Skill                         | Trigger                                                                                                                                                                             |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -46,12 +46,25 @@ Located in `.agents/skills/`. Auto-load based on context.
 | **typescript-react-reviewer** | Reviewing React/TypeScript code. Detects useEffect abuse, state mutation, missing cleanup, `any` types, React 19 hook mistakes. Priority: Critical → High → Style.                  |
 | **find-skills**               | User asks "how do I do X", "find a skill for", or wants to extend agent capabilities. Uses `npx skills` CLI to search/install from ecosystem.                                       |
 
+### UI/UX Design Skills — **MANDATORY** for any UI/UX work
+
+Loading these skills is **not optional**. Any work that touches components, pages, layouts, navigation, design tokens, color, typography, motion, or accessibility in `apps/web/src/` MUST load and apply all three before writing code:
+
+| Skill                      | Scope                                                                                                                          |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **design-taste-frontend**  | Anti-slop frontend design. Brief inference, dials (variance/motion/density), section rhythm, copy self-audit, anti-default discipline. |
+| **emil-design-eng**       | Animation decision framework, easing curves, button feedback, `@starting-style`, `useReducedMotion`, tooltips, gestures.      |
+| **impeccable**             | Design taste + code quality for production-grade UI. Runs setup context script, then craft/audit/polish sub-commands.            |
+
+**Why mandatory**: these three skills were used to design the entire `ui-ux-overhaul` change (14 PRs, A2 Electric Blue accent, Linear-style sidebar, shadcn-ui foundation). Skipping them on UI work is a Pre-Flight Fail and produces AI-slop output that breaks consistency with the rest of the app.
+
 ### Skill Loading Rules
 
 1. Check file paths being touched — `.ts` in `apps/api/src/` → load `nestjs-best-practices`
 2. `.tsx`/`.ts` in `apps/web/src/` → load `react-dev` (writing) or `typescript-react-reviewer` (reviewing)
-3. User asks for external skill/capability → load `find-skills`
-4. Multiple skills can apply simultaneously
+3. **UI/UX work in `apps/web/src/`** → MUST also load all three design skills (design-taste-frontend, emil-design-eng, impeccable). Non-optional.
+4. User asks for external skill/capability → load `find-skills`
+5. Multiple skills can apply simultaneously
 
 ---
 
