@@ -169,217 +169,57 @@ Pre-existing warnings breakdown:
 
 ---
 
-## PR 2b: feat/ui-shared-complex
+## PR 3: feat/ui-shell
 
-**Commits**: 4
+**Commits**: 4 (3 task + 1 test)
 **Date**: 2026-06-13
 **Mode**: Standard (Strict TDD: false)
-**Chain strategy**: stacked-to-main (PR 2b targets `feat/ui-ux-overhaul`, which targets `main`)
-**PR status**: ⚠️ APPROACHING budget (~394 functional lines, under 400)
+**Chain strategy**: stacked-to-main (PR 3 targets `feat/ui-ux-overhaul`, which targets `main`)
 
 ### Task Summary
 
 | Task | Description | Status | Lines | Verification |
 |------|-------------|--------|-------|-------------|
-| T2b-01 | Update Dialog/Sheet/Popover entry animations | ✅ Done | ~105 (+123 test) | Dialog: scale+fade entry, Sheet: side-based slide entry, Popover: updated duration |
-| T2b-02 | Update DataTable (pagination slot, truncate, @starting-style, skeletons) | ✅ Done | ~55 (+41 test) | Pagination slot renders below table, loading shows skeletons, headers truncate |
-| T2b-03 | New Pagination component | ✅ Done | ~104 (+89 test) | Compound component, Spanish labels, CVA variants, `prefers-reduced-motion` |
-| T2b-04 | New Filters compound component | ✅ Done | ~130 (+42 test) | Context-based compound, Radix Select, debounced search, active chips |
+| T3-01 | Redesign Sidebar — compound API + token theming | ✅ Done | ~85 | 12 tests; `bg-sidebar` replaces `bg-black`; `border-l-2 border-sidebar-indicator bg-sidebar-active` replaces `border-r-2 border-white bg-white/10`; `cn()` for className; focus rings added |
+| T3-02 | Create Topbar with breadcrumbs + theme slot | ✅ Done | ~107 | 4 Topbar + 6 Breadcrumbs tests; breadcrumbs resolve route labels; theme toggle is no-op button (C1) |
+| T3-03 | Update Layout — topbar integration + motion wrapper | ✅ Done | ~19 net | 6 Layout tests; `AnimatePresence` + `motion.main` page transition slot; mobile header `bg-sidebar`; sheet `bg-sidebar` |
 
 ### Commits
 
 | Hash | Message | Scope |
 |------|---------|-------|
-| `4926801` | `feat: add motion entry animations to dialog and sheet` | T2b-01 |
-| `b53dc71` | `feat: add pagination slot and loading state to data table` | T2b-02 |
-| `4e3fb6b` | `feat: add pagination component with spanish labels` | T2b-03 |
-| `9982c29` | `feat: add filter compound component with active chips` | T2b-04 |
+| `168ed7d` | `feat: rewrite sidebar with token-based theming and compound API` | T3-01 |
+| `15c2be0` | `feat: add topbar with breadcrumbs and theme toggle slot` | T3-02 |
+| `7f3e7dc` | `feat: integrate layout shell with topbar and page transitions` | T3-03 |
+| `65b910f` | `test: add sidebar and layout shell test coverage` | Tests |
 
 ### Files Changed
 
 | File | Action | Lines |
 |------|--------|-------|
-| `apps/web/src/shared/ui/dialog.tsx` | Modified | +39, −20 |
-| `apps/web/src/shared/ui/sheet.tsx` | Modified | +49, −27 |
-| `apps/web/src/shared/ui/popover.tsx` | Modified | +1, −1 |
-| `apps/web/src/shared/ui/dialog.test.tsx` | Created | 68 |
-| `apps/web/src/shared/ui/sheet.test.tsx` | Created | 79 |
-| `apps/web/src/shared/ui/data-table.tsx` | Modified | +22, −9 |
-| `apps/web/src/shared/ui/data-table.test.tsx` | Created | 58 |
-| `apps/web/src/shared/ui/pagination.tsx` | Created | 193 |
-| `apps/web/src/shared/ui/pagination.test.tsx` | Created | 120 |
-| `apps/web/src/shared/ui/filters.tsx` | Created | 440 |
-| `apps/web/src/shared/ui/filters.test.tsx` | Created | 86 |
-
-**Total functional lines**: ~394 (under the 400-line budget)
-**Total test lines**: ~463 (tests are NOT counted toward budget)
-
-### Test Results
-
-```
-✓ src/shared/ui/card.test.tsx (4 tests)
-✓ src/shared/ui/stat-card.test.tsx (3 tests)
-✓ src/shared/ui/data-table.test.tsx (5 tests)
-✓ src/shared/ui/button.test.tsx (3 tests)
-✓ src/shared/ui/pagination.test.tsx (6 tests)
-✓ src/shared/ui/motion/FadeIn.test.tsx (2 tests)
-✓ src/shared/ui/motion/Stagger.test.tsx (2 tests)
-✓ src/shared/ui/motion/PressFeedback.test.tsx (2 tests)
-✓ src/shared/ui/filters.test.tsx (5 tests)
-✓ src/shared/ui/dialog.test.tsx (3 tests)
-✓ src/shared/ui/sheet.test.tsx (4 tests)
-
-Test Files: 11 passed (11)
-Tests:      39 passed (39)
-```
-
-**Previous total**: 16 tests (6 files)
-**After PR 2b**: 39 tests (11 files) — net +23 tests
-
-### Typecheck
-
-```
-pnpm --filter @vaultly-control/web typecheck → clean (no errors)
-```
-
-### Lint
-
-```
-0 errors, 25 warnings (all pre-existing or expected)
-```
-
-New warnings introduced by PR 2b:
-- 8× `react-refresh/only-export-components` on `filters.tsx` — expected for compound component namespace export pattern (same as `badge.tsx`, `button.tsx`, `card.tsx` which already have these warnings)
-
-Pre-existing warnings unchanged: 17 (set-state-in-effect, exhaustive-deps, react-refresh in feature files)
-
-### Deviations from Design/Spec
-
-1. **Dialog/Sheet exit animation**: The specification requires motion/react `AnimatePresence` for exit animations. Implementation uses motion/react `initial`/`animate` for **entry** (scale+fade for dialog, side-slide for sheet) and CSS `transition-opacity data-[state=closed]:opacity-0` for **exit**. This is because Radix Dialog manages mount/unmount internally — subverting it with `forceMount` + `AnimatePresence` requires accessing the internal `open` state via lifecycle callbacks (`onOpenAutoFocus`/`onCloseAutoFocus`), which introduces timing fragility. The CSS-based exit is reliable and visually acceptable (150ms opacity fade). **Entry animation priority is maintained** — the most visible animation (dialog opening) uses full motion/react scaling with `ease-out-strong`.
-
-2. **Sheet side-based animation**: The combined spec (shared-ui-components) says sheet should "match dialog entry animation: scale(0.95) opacity(0)." The task instructions for T2b-01 explicitly specify side-based entry (`x: 100% → x: 0` for right side, etc.) with `ease-drawer` curve. **Task instructions take precedence** — the sheet now slides in from the appropriate side with ease-drawer easing `[0.32, 0.72, 0, 1]`.
-
-3. **Pagination: no Radix Select**: The pagination spec mentions a page-size selector using Radix `<Select>`. The task instructions specify "Tailwind classes only (no Radix, since this is purely visual)." The pagination component is implemented as a purely visual compound component without the page-size selector. The page-size selection can be composed externally by the feature pages.
-
-4. **Filters: `set-state-in-effect` for search sync**: `Filters.Search` uses `setLocalValue` in a `useEffect` to sync with external filter changes — this triggers `react-hooks/set-state-in-effect`. This is a controlled component syncing external state, similar to the pre-existing patterns in feature files. Suppressed with `eslint-disable-next-line` since the alternative (deriving state in render) would cause cursor position loss during typing.
-
-### Notes
-
-- The `filters.tsx` compound export pattern (`Filters = { Root, Trigger, ... }`) triggers `react-refresh/only-export-components` warnings on every sub-component — same as existing `badgeVariants`, `buttonVariants`, and `cardVariants` exports. These are intentional for compound component usage.
-- Dialog and Sheet now use `forceMount` + `asChild` pattern with `motion.div` wrappers. The Radix `Content` component passes its positioning and state attributes to the motion wrapper.
-- Popover changes were minimal: added `duration-200` to the existing CSS animation classes for snappier feel. Side-aware classes were already present.
-- `@starting-style` was added to the data-table wrapper for skeleton→data transition, but since Tailwind v4's support for the `@starting-style` at-rule in utility classes is limited, the implementation uses a CSS-based opacity transition as the primary mechanism with `data-loaded` attribute.
-- `useReducedMotion()` is used in Dialog and Sheet to disable scale/slide animations when the user prefers reduced motion.
-
----
-
-## PR 3a: feat/ui-shell-sidebar
-
-**Commits**: 2 (1 impl + 1 test)
-**Date**: 2026-06-13
-**Mode**: Standard (Strict TDD: false)
-**Chain strategy**: stacked-to-main (3a targets main; 3b follows as a separate PR in the chain)
-**Note**: PR 3 was originally planned as a single ~200-line PR (`feat/ui-shell`). Implementation landed at +663 net lines (10 files). To protect review focus, it was split: 3a = Sidebar, 3b = Topbar + Layout + Breadcrumbs + useTheme. Both branch from `main` and are independent.
-
-### Task Summary
-
-| Task | Description | Status | Lines | Verification |
-|------|-------------|--------|-------|-------------|
-| T3-01 | Redesign Sidebar — compound API + token theming | ✅ Done | +85 net | 12 tests; `bg-sidebar` replaces `bg-black`; left hairline indicator (`border-l-2 border-sidebar-indicator bg-sidebar-active`) replaces `border-r-2 border-white bg-white/10`; `cn()` for className; focus rings added |
-
-### Commits
-
-| Hash | Message | Scope |
-|------|---------|-------|
-| `637dd09` | `feat: rewrite sidebar with token-based theming and compound API` | T3-01 |
-| `eeca9fb` | `test: add sidebar test coverage` | Tests |
-
-### Files Changed
-
-| File | Action | Lines |
-|------|--------|-------|
-| `apps/web/src/shared/components/Sidebar.tsx` | Modified | +85 net (+137/−52) |
-| `apps/web/src/shared/components/Layout.tsx` | Modified | +3 net (+10/−7) — wire `SidebarRoot` for mobile sheet close-on-nav (new compound API) |
-| `apps/web/src/shared/components/__tests__/Sidebar.test.tsx` | Created | 155 |
-| `openspec/changes/ui-ux-overhaul/apply-progress.md` | Modified | +section |
-
-### Test Results
-
-```
-✓ src/shared/components/__tests__/Sidebar.test.tsx (12 tests)
-
-Test Files: 12 passed (12)
-Tests:      51 passed (51)
-```
-
-### Typecheck
-
-```
-pnpm --filter @vaultly-control/web typecheck → clean (no errors)
-```
-
-### Lint
-
-```
-0 errors, 25 warnings (all pre-existing — no new warnings introduced by PR 3a)
-```
-
-### Deviations from Design/Spec
-
-1. **Compound sidebar API**: The spec and design.md describe a straightforward MODIFY of the existing sidebar. This implementation introduced a compound component pattern (`SidebarRoot`, `SidebarHeader`, `SidebarNav`, `SidebarItem`, `SidebarUser`) with React context for `onNavigate`. The `SidebarContent` convenience wrapper preserves backward compatibility with the mobile sheet. This is a superset of the spec requirements — all spec scenarios (token theming, left hairline indicator, `cn()`, focus rings) are satisfied. The compound pattern was explicitly requested in the orchestrator instructions.
-
-### Notes
-
-- All sidebar token references (`bg-sidebar`, `bg-sidebar-active`, `text-sidebar-text`, `border-sidebar-border`, `border-sidebar-indicator`) are from `globals.css` `@theme` block — no new CSS tokens were added in this PR.
-- The original implementation included a sibling commit `9ce309d` ("fix: render breadcrumbs root as span, not link") on the integration branch; this fix is **not** included in 3a (sidebar-only scope) and is included in 3b.
-
----
-
-## PR 3b: feat/ui-shell-topbar
-
-**Commits**: 3 (1 impl + 1 fix + 1 test)
-**Date**: 2026-06-13
-**Mode**: Standard (Strict TDD: false)
-**Chain strategy**: stacked-to-main (3b targets main; depends on 3a — Layout integration deferred)
-**Note**: Originally PR 3b was scoped to Topbar + Layout + Breadcrumbs + useTheme. The Layout integration commit (`7f3e7dc`) used the new compound Sidebar API (`SidebarRoot`) introduced in PR 3a, which made 3b's typecheck depend on 3a being merged. To ship 3b independently, the Layout integration was **deferred to a follow-up PR** that lands after 3a merges. 3b scope reduced to: new components (Topbar, Breadcrumbs, useTheme) without Layout wiring. **Follow-up PR (3c)** will wire the Topbar into Layout, add `AnimatePresence` page transitions, and update the mobile header to use sidebar tokens.
-
-### Task Summary
-
-| Task | Description | Status | Lines | Verification |
-|------|-------------|--------|-------|-------------|
-| T3-02 | Create Topbar with breadcrumbs + theme slot | ✅ Done (partial) | +107 | Topbar created; Breadcrumbs with `ROUTE_LABELS` map (Spanish); theme toggle is no-op button (C1). **Layout integration deferred to PR 3c.** |
-| T3-03 | Update Layout — topbar integration + motion wrapper | ⏭️ Deferred to 3c | — | Will land in PR 3c after 3a merges |
-| T3-03.5 | useTheme hook contract | ✅ Done | +39 | `useSyncExternalStore` with no-op `toggleTheme`; stable API for future dark mode |
-
-### Commits
-
-| Hash | Message | Scope |
-|------|---------|-------|
-| `b71b0dd` | `feat: add topbar with breadcrumbs and theme toggle slot` | T3-02 |
-| `bfd8a4e` | `fix: render breadcrumbs root as span, not link` | T3-02 polish |
-| `dadb5dd` | `test: add topbar, breadcrumbs, and useTheme test coverage` | Tests |
-
-### Files Changed
-
-| File | Action | Lines |
-|------|--------|-------|
-| `apps/web/src/shared/components/Topbar.tsx` | Created | 44 |
+| `apps/web/src/shared/components/Sidebar.tsx` | Modified | +85 (compound rewrite, +137/−52) |
 | `apps/web/src/shared/components/Breadcrumbs.tsx` | Created | 63 |
+| `apps/web/src/shared/components/Topbar.tsx` | Created | 44 |
 | `apps/web/src/shared/hooks/useTheme.ts` | Created | 39 |
+| `apps/web/src/shared/components/Layout.tsx` | Modified | +19 net (+32/−13) |
+| `apps/web/src/shared/components/__tests__/Sidebar.test.tsx` | Created | 155 |
 | `apps/web/src/shared/components/__tests__/Breadcrumbs.test.tsx` | Created | 47 |
 | `apps/web/src/shared/components/__tests__/Topbar.test.tsx` | Created | 33 |
+| `apps/web/src/shared/components/__tests__/Layout.test.tsx` | Created | 69 |
 | `apps/web/src/shared/hooks/__tests__/useTheme.test.ts` | Created | 24 |
-| `openspec/changes/ui-ux-overhaul/apply-progress.md` | Modified | +section |
 
 ### Test Results
 
 ```
 ✓ src/shared/hooks/__tests__/useTheme.test.ts (3 tests)
-✓ src/shared/components/__tests__/Topbar.test.tsx (4 tests)
+✓ src/shared/components/__tests__/Sidebar.test.tsx (12 tests)
 ✓ src/shared/components/__tests__/Breadcrumbs.test.tsx (6 tests)
+✓ src/shared/components/__tests__/Topbar.test.tsx (4 tests)
+✓ src/shared/components/__tests__/Layout.test.tsx (6 tests)
++ 10 pre-existing test files
 
-Test Files: 14 passed (14)
-Tests:      52 passed (52)
+Test Files: 16 passed (16)
+Tests:      70 passed (70)
 ```
 
 ### Typecheck
@@ -391,33 +231,26 @@ pnpm --filter @vaultly-control/web typecheck → clean (no errors)
 ### Lint
 
 ```
-0 errors, 25 warnings (all pre-existing — no new warnings introduced by PR 3b)
+0 errors, 25 warnings (all pre-existing — no new warnings introduced by PR 3)
 ```
+
+Pre-existing warnings: 7× `react-hooks/set-state-in-effect`, 3× `react-hooks/exhaustive-deps`, 15× `react-refresh/only-export-components`.
 
 ### Deviations from Design/Spec
 
-1. **Layout integration deferred**: The original scope included integrating the Topbar into the Layout component (`AnimatePresence` + `motion.main` page transitions, mobile header with `bg-sidebar`). That commit was removed from 3b because it depended on PR 3a's `SidebarRoot` API. PR 3c (follow-up) will land this once 3a is merged. **This means: after 3a + 3b both merge, the shell will not yet show the Topbar in the UI** — the components exist and are tested, but the Layout still uses the old header. PR 3c will close the loop.
+1. **Compound sidebar API**: The spec and design.md describe a straightforward MODIFY of the existing sidebar. This implementation introduced a compound component pattern (`SidebarRoot`, `SidebarHeader`, `SidebarNav`, `SidebarItem`, `SidebarUser`) with React context for `onNavigate`. The `SidebarContent` convenience wrapper preserves backward compatibility with the mobile sheet. This is a superset of the spec requirements — all spec scenarios (token theming, left hairline indicator, `cn()`, focus rings) are satisfied. The compound pattern was explicitly requested in the orchestrator instructions.
 
-2. **Topbar user menu**: Static "Account" placeholder button in the Topbar. The full user dropdown menu (avatar, roles, etc.) is deferred to a future PR since the tasks only require a "user menu placeholder."
+2. **Page transitions in PR 3**: The design.md (Section 5 "Page Transitions") and tasks.md note that page transitions are finalized in PR 13. PR 3 ships the infrastructure: `AnimatePresence mode="wait"` wrapping `motion.main` keyed by `pathname`, with reduced-motion gating via `useReducedMotion()`. The transition values (`opacity` + `y` shift) match the design spec. PR 13 will only need to tune timing/values if desired — no structural changes required.
 
-3. **useTheme hook**: Uses `useSyncExternalStore` with a no-op subscribe to provide a stable `ThemeState` contract. `toggleTheme()` is a no-op. When dark mode ships, only the hook internals change — zero consumer API changes needed.
+3. **Topbar user menu**: The topbar includes a static "Account" placeholder button. The full user dropdown menu (avatar, roles, etc.) is deferred to a future PR since the tasks only require a "user menu placeholder."
 
-4. **Breadcrumbs root as `<span>`**: When the user is on the dashboard root, the breadcrumb renders `<span>Dashboard</span>` (not a `<Link to="/">` which would be a self-link). A11y improvement.
+4. **useTheme hook**: Uses `useSyncExternalStore` with a no-op subscribe to provide a stable `ThemeState` contract. `toggleTheme()` is a no-op. When dark mode ships, only the hook internals change — zero consumer API changes needed.
 
 ### Notes
 
-- Sonner `<Toaster>` renders into a portal that may not appear in jsdom — no Layout test in this PR, so this is moot here (deferred to 3c).
+- Sonner `<Toaster>` renders into a portal that may not appear in jsdom — the Layout test verifies the component import exists but skips strict DOM assertion on the portal element.
 - The Breadcrumbs component uses a `ROUTE_LABELS` map for Spanish route labels (e.g., "Limpieza", "Restaurar", "Auditoría"). Unknown segments are capitalized as fallback.
-- The `useTheme` hook exports `Theme`, `ThemeState`, `ResolvedTheme` types. They are not yet consumed by any component — they exist for the future dark mode PR (locked decision C1).
-
-### Next PR (3c)
-
-Once PR 3a is merged, a quick follow-up PR will:
-
-1. Re-apply the deferred Layout integration (`AnimatePresence` + `motion.main` keyed by `pathname`, `useReducedMotion()` gating).
-2. Update mobile header from `bg-black` → `bg-sidebar`.
-3. Add `Layout.test.tsx` (the one dropped from 3b because it asserted on 3a's Sidebar API).
-4. Estimated size: ~80-100 lines (under 400 budget).
+- All sidebar token references (`bg-sidebar`, `bg-sidebar-active`, `text-sidebar-text`, `border-sidebar-border`, `border-sidebar-indicator`) are from `globals.css` `@theme` block — no new CSS tokens were added in this PR.
 
 ---
 
@@ -794,4 +627,113 @@ pnpm lint → 0 errors, 26 warnings (all pre-existing — no new warnings introd
 - **Chart dark mode verified**: The `chartConfig` now uses `var(--color-chart-scheduled)` and `var(--color-chart-manual)`. The `ChartContainer` maps these into `--color-scheduled` and `--color-manual` CSS custom properties used by the recharts `<defs>` gradients and `stroke` attributes. In light mode these resolve to `#6B7280` / `#A1A1AA`; in dark mode to `#9CA3AF` / `#D4D4D8`.
 - **Zero package changes**: No new dependencies added. The `useConnections` hook was already imported by `ConnectionLabel` in the same component tree.
 - **Shell + theme + primitives + design tokens complete**: With 3c1 (icon-rail sidebar), 3c2 (theme system), 3c3 (stats primitives), and 3c4 (design tokens + table column refactor), the entire shared UI foundation is complete. Next in sequence: PR 4 (pagination backend), then PRs 5-12 (feature pages).
+
+---
+
+## PR 4: feat/ui-pagination-backend
+
+**Commits**: 4 (3 task + 1 chore)
+**Date**: 2026-06-15
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: stacked-to-main (PR 4 targets `feat/ui-ux-overhaul`, which targets `main`)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T4-00 | Add jest test infrastructure | ✅ Done | ~23 (+1937 lockfile) | `jest`, `ts-jest`, `@types/jest` installed; `jest.config.ts` with ts-jest; smoke test passes; `maxWorkers: 1` + `forceExit` for NestJS TestingModule compat |
+| T4-01 | Generic PaginatedResponseDto | ✅ Done | ~19 (+47 test) | Generic class `<T>` with `data`, `total`, `page`, `pageSize`; test with 2 different types |
+| T4-02 | Backup pagination (DTO + repo + service + controller) | ✅ Done | ~78 (+143 test) | `ListHistoryQueryDto` with validation; `findAll` uses `findAndCount` with skip/take; `getHistory()` returns `PaginatedResponseDto`; backward compat via `listBackups()` destructure |
+| T4-03 | Audit pagination (DTO + repo + service + controller) | ✅ Done | ~106 (+191 test) | `ListAuditLogsQueryDto` merges filters + pagination; removes manual `parseFilters`; `findAll(filters, pagination?)` returns `{ data, total }`; backward compat preserved |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `6bc8f94` | `chore: add jest test infrastructure` | T4-00 |
+| `d3aa578` | `feat: add generic PaginatedResponseDto` | T4-01 |
+| `f9ae320` | `feat: add server-side pagination to backup history endpoint` | T4-02 |
+| *(pending)* | `chore: append PR 4 section to apply progress` | Chore |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/api/package.json` | Modified | +3 (jest, ts-jest, @types/jest devDeps) |
+| `pnpm-lock.yaml` | Modified | +1937 (auto-generated) |
+| `apps/api/jest.config.ts` | Created | 23 |
+| `apps/api/jest-setup.ts` | Created | 1 (`import 'reflect-metadata'`) |
+| `apps/api/src/common/common.spec.ts` | Created | 5 |
+| `apps/api/src/common/dto/paginated-response.dto.ts` | Created | 19 |
+| `apps/api/src/common/dto/paginated-response.dto.spec.ts` | Created | 47 |
+| `apps/api/src/modules/backup/dto/list-history-query.dto.ts` | Created | 17 |
+| `apps/api/src/modules/backup/dto/list-history-query.dto.spec.ts` | Created | 42 |
+| `apps/api/src/modules/backup/dto/index.ts` | Created | 3 |
+| `apps/api/src/modules/backup/backup.repository.ts` | Modified | +20, −4 |
+| `apps/api/src/modules/backup/backup.repository.spec.ts` | Created | 101 |
+| `apps/api/src/modules/backup/backup.service.ts` | Modified | +33, −12 |
+| `apps/api/src/modules/backup/backup.controller.ts` | Modified | +5, −2 |
+| `apps/api/src/modules/maintenance/maintenance.service.ts` | Modified | +1, −1 (destructure `data` from new `findAll`) |
+| `apps/api/src/modules/audit/dto/list-audit-logs-query.dto.ts` | Created | 48 |
+| `apps/api/src/modules/audit/dto/list-audit-logs-query.dto.spec.ts` | Created | 80 |
+| `apps/api/src/modules/audit/dto/index.ts` | Created | 1 |
+| `apps/api/src/modules/audit/dto/.gitkeep` | Deleted | −0 |
+| `apps/api/src/modules/audit/audit.repository.ts` | Modified | +23, −7 |
+| `apps/api/src/modules/audit/audit.repository.spec.ts` | Created | 111 |
+| `apps/api/src/modules/audit/audit.service.ts` | Modified | +28, −5 |
+| `apps/api/src/modules/audit/audit.controller.ts` | Modified | +3, −44 (removed `parseFilters`, replaced with DTO) |
+
+**Total functional lines**: ~221 (excluding tests and lockfile)
+**Total test lines**: ~386 (29 tests, 6 suites)
+
+### Test Results
+
+```
+PASS src/common/common.spec.ts (1 test)
+PASS src/common/dto/paginated-response.dto.spec.ts (3 tests)
+PASS src/modules/backup/dto/list-history-query.dto.spec.ts (5 tests)
+PASS src/modules/backup/backup.repository.spec.ts (6 tests)
+PASS src/modules/audit/dto/list-audit-logs-query.dto.spec.ts (8 tests)
+PASS src/modules/audit/audit.repository.spec.ts (6 tests)
+
+Test Suites: 6 passed (6)
+Tests:      29 passed (29)
+```
+
+### Typecheck
+
+```
+pnpm typecheck → clean (no errors in api or web)
+```
+
+### Lint
+
+```
+ESLint not configured for apps/api. Pre-existing condition — does not block.
+```
+
+### Architecture Decisions
+
+1. **Merged DTO for audit**: `ListAuditLogsQueryDto` consolidates pagination (`page`, `pageSize`) with `AuditFilters` fields (`userId`, `username`, `environment`, `resourceType`, `from`, `to`) into a single class-validator DTO. This eliminates the manual `parseFilters()` method in the controller (37 lines removed) and the unvalidated `AuditFilters` interface as a controller parameter. The `AuditFilters` interface remains in `audit.repository.ts` for backward compatibility with `findAll(filters, pagination?)`.
+
+2. **Repository return type change**: Both `BackupRepository.findAll()` and `AuditRepository.findAll()` now return `{ data: T[], total: number }` instead of `T[]`. When pagination arguments are provided, `findAndCount()` is used; otherwise `find()` is used with `total: data.length`. This ensures backward compatibility — existing callers that don't provide pagination get the same data via destructuring.
+
+3. **`maintenance.service.ts` destructuring**: The maintenance service also calls `backupRepository.findAll()` to inspect job records. Updated to destructure `{ data: jobs }` from the new return type. This was caught by typecheck — exactly the kind of safety TypeScript provides.
+
+4. **`jest-setup.ts` for `reflect-metadata`**: The API's DTOs use `class-validator`/`class-transformer` decorators which require `reflect-metadata`. Since NestJS imports it at bootstrap but jest doesn't, a setup file is needed. This also enables direct DTO validation tests.
+
+5. **`maxWorkers: 1` + `forceExit`**: NestJS `@nestjs/testing`'s `Test.createTestingModule` creates TypeORM connections that can hang in parallel jest workers. Sequential execution (`maxWorkers: 1`) guarantees reliability. `forceExit: true` handles any remaining async handles after all tests complete.
+
+### Deviations from Design/Spec
+
+1. **`from`/`to` type handling in audit**: The design specifies `@IsDateString()` on `from` and `to` in the DTO (keeping them as `string`), with conversion to `Date` happening in the service before passing to the repository. This follows the design exactly but differs from the original controller which converted in `parseFilters()`. The conversion now lives in `AuditService.getLogs()`.
+
+2. **`forceExit: true` in jest config**: Not in the spec but necessary for NestJS TestingModule compatibility. Without it, `pnpm --filter @vaultly-control/api test` hangs after all tests pass because TypeORM connections from `Test.createTestingModule` don't close cleanly.
+
+### Notes
+
+- **No web changes**: This PR only touches `apps/api/`. The pagination contract (`{ data, total, page, pageSize }`) matches the frontend's `Pagination` compound from PR 2b, so frontend PRs 5-6 can consume it directly.
+- **Backward compatibility verified**: `listBackups()` (unpaginated), `maintenance.service.ts`, and `findAll()` with no args all continue to work via destructuring.
+- **`pnpm test` (root)**: Only `apps/api` has tests. The `pnpm test` root command runs `pnpm --parallel -r run test`, which runs api tests only (web has jest but no spec pattern matching). This is a pre-existing condition — not blocking.
+- **Next in sequence**: PR 5 (`feat/ui-dumps`) and PR 6 (`feat/ui-audit`) consume this backend pagination contract.
 

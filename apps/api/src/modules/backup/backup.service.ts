@@ -10,6 +10,7 @@ import { Readable } from 'stream';
 import { Client } from 'pg';
 import { createConnection as createMysqlConnection, RowDataPacket } from 'mysql2/promise';
 import { CreateBackupDto } from './dto/create-backup.dto';
+import { ListHistoryQueryDto } from './dto/list-history-query.dto';
 import { BackupRepository } from './backup.repository';
 import { R2Service } from './r2.service';
 import { BackupResult } from './interfaces/backup-result.interface';
@@ -29,6 +30,7 @@ import {
   BackupJobEntity,
   STORAGE_KEY_VERSION,
 } from '../../database/entities/backup-job.entity';
+import { PaginatedResponseDto } from '../../common/dto/paginated-response.dto';
 
 @Injectable()
 export class BackupService {
@@ -152,20 +154,41 @@ export class BackupService {
   }
 
   async listBackups(): Promise<BackupJobEntity[]> {
-    return this.backupRepository.findAll();
+    const { data } = await this.backupRepository.findAll();
+    return data;
   }
 
-  async getHistory(): Promise<BackupHistoryItem[]> {
-    const jobs = await this.backupRepository.findAll();
-    if (jobs.length === 0) return [];
+  async getHistory(
+    query?: ListHistoryQueryDto,
+  ): Promise<PaginatedResponseDto<BackupHistoryItem>> {
+    const { data: jobs, total } = await this.backupRepository.findAll({
+      page: query?.page,
+      pageSize: query?.pageSize,
+    });
+
+    if (jobs.length === 0) {
+      return new PaginatedResponseDto<BackupHistoryItem>(
+        [],
+        total,
+        query?.page ?? 1,
+        query?.pageSize ?? 25,
+      );
+    }
 
     const ids = [...new Set(jobs.map((j) => j.connectionId))];
     const nameMap = await this.connectionsService.findByIds(ids);
 
-    return jobs.map((job) => ({
+    const items: BackupHistoryItem[] = jobs.map((job) => ({
       ...job,
       connectionName: nameMap.get(job.connectionId) ?? '(eliminada)',
     }));
+
+    return new PaginatedResponseDto<BackupHistoryItem>(
+      items,
+      total,
+      query?.page ?? 1,
+      query?.pageSize ?? 25,
+    );
   }
 
   async triggerManual(connectionId: string, user: AuthUser): Promise<BackupResult> {

@@ -16,6 +16,7 @@ import { setAuditContext } from '../../common/audit/audit-context';
 import { BackupService } from './backup.service';
 import { CreateBackupDto } from './dto/create-backup.dto';
 import { ListEnrichedDumpsQueryDto } from './dto/list-enriched-dumps.query.dto';
+import { ListHistoryQueryDto } from './dto/list-history-query.dto';
 import { Environment } from '../../database/enums/environment.enum';
 
 @Controller('backups')
@@ -41,8 +42,8 @@ export class BackupController {
 
   // Literal routes must come before parameterized ones (:id)
   @Get('history')
-  getHistory() {
-    return this.service.getHistory();
+  getHistory(@Query() query: ListHistoryQueryDto) {
+    return this.service.getHistory(query);
   }
 
   @Get('r2/enriched')

@@ -20,9 +20,28 @@ export class AuditRepository {
     private readonly repository: Repository<AuditLogEntity>,
   ) {}
 
-  findAll(filters?: AuditFilters): Promise<AuditLogEntity[]> {
+  /**
+   * When pagination is provided, uses findAndCount with skip/take.
+   * When omitted, returns all rows (backward compatibility for non-list endpoints).
+   */
+  async findAll(
+    filters?: AuditFilters,
+    pagination?: { page?: number; pageSize?: number },
+  ): Promise<{ data: AuditLogEntity[]; total: number }> {
     const where = this.buildWhere(filters);
-    return this.repository.find({ where, order: { createdAt: 'DESC' } });
+
+    if (pagination?.page && pagination?.pageSize) {
+      const [data, total] = await this.repository.findAndCount({
+        where,
+        order: { createdAt: 'DESC' },
+        take: pagination.pageSize,
+        skip: (pagination.page - 1) * pagination.pageSize,
+      });
+      return { data, total };
+    }
+
+    const data = await this.repository.find({ where, order: { createdAt: 'DESC' } });
+    return { data, total: data.length };
   }
 
   findById(id: string): Promise<AuditLogEntity | null> {

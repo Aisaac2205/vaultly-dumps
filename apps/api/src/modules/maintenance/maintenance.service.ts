@@ -265,7 +265,7 @@ export class MaintenanceService {
       objects.filter((o) => o.key.endsWith('.manifest.json')).map((o) => o.key),
     );
 
-    const jobs = await this.backupRepository.findAll();
+    const { data: jobs } = await this.backupRepository.findAll();
     const jobFileKeys = new Set(
       jobs
         .map((j) => j.fileKey)
