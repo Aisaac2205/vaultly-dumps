@@ -11,8 +11,6 @@ import {
   FileText,
   Users,
   LogOut,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { lazyRoutes, type RouteKey } from "@/shared/lib/lazy-routes";
@@ -170,26 +168,6 @@ function SidebarUser({
   );
 }
 
-/** Thin toggle strip on the right edge of the sidebar. Click toggles collapse. */
-function SidebarRail() {
-  const { state, toggle } = useSidebar();
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={state === "expanded" ? "Collapse sidebar" : "Expand sidebar"}
-      className="absolute right-0 top-0 z-10 flex h-full w-4 items-center justify-center transition-colors hover:bg-sidebar-hover group"
-    >
-      {state === "expanded" ? (
-        <ChevronLeft className="h-3 w-3 text-sidebar-text/40 transition-colors group-hover:text-sidebar-text/70" />
-      ) : (
-        <ChevronRight className="h-3 w-3 text-sidebar-text/40 transition-colors group-hover:text-sidebar-text/70" />
-      )}
-    </button>
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /*  Convenience composition (used by both desktop sidebar and mobile sheet)    */
 /* -------------------------------------------------------------------------- */
@@ -243,14 +221,12 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 hidden h-screen flex-col bg-sidebar font-medium md:flex",
-        "relative transition-[width] duration-200 ease-out",
+        "fixed left-0 top-0 z-30 hidden h-screen flex-col bg-sidebar font-medium transition-[width] duration-200 ease-out md:flex",
         isCollapsed ? "w-[56px]" : "w-[240px]",
       )}
     >
       <SidebarRoot collapsible={collapsible}>
         <SidebarContent user={user} onLogout={onLogout} />
-        {collapsible === "icon" && <SidebarRail />}
       </SidebarRoot>
     </aside>
   );

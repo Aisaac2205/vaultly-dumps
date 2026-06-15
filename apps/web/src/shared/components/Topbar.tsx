@@ -1,6 +1,7 @@
-import { Sun, Moon, User } from "lucide-react";
+import { Sun, Moon, User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { useTheme } from "@/shared/hooks/useTheme";
+import { useSidebar } from "./SidebarProvider";
 import { cn } from "@/shared/lib/cn";
 
 interface TopbarProps {
@@ -9,6 +10,8 @@ interface TopbarProps {
 
 export function Topbar({ className }: TopbarProps) {
   const { resolvedTheme, toggleTheme } = useTheme();
+  const { state, toggle } = useSidebar();
+  const sidebarExpanded = state === "expanded";
   const ThemeIcon = resolvedTheme === "dark" ? Moon : Sun;
 
   return (
@@ -18,7 +21,21 @@ export function Topbar({ className }: TopbarProps) {
         className,
       )}
     >
-      <Breadcrumbs />
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={sidebarExpanded ? "Colapsar sidebar" : "Expandir sidebar"}
+          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          {sidebarExpanded ? (
+            <PanelLeftClose className="h-4 w-4" />
+          ) : (
+            <PanelLeftOpen className="h-4 w-4" />
+          )}
+        </button>
+        <Breadcrumbs />
+      </div>
 
       <div className="flex items-center gap-2">
         <button

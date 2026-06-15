@@ -34,6 +34,7 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
 
 function LayoutInner({ children, user, onLogout }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeMobileSidebar = () => setSidebarOpen(false);
   const { pathname } = useLocation();
   const reducedMotion = useReducedMotion();
   const { state } = useSidebar();
@@ -51,7 +52,7 @@ function LayoutInner({ children, user, onLogout }: LayoutProps) {
           showCloseButton={false}
           className="w-[240px] bg-sidebar p-0 border-r-0"
         >
-          <SidebarRoot onNavigate={() => setSidebarOpen(false)}>
+          <SidebarRoot onNavigate={closeMobileSidebar}>
             <SidebarContent user={user} onLogout={onLogout} />
           </SidebarRoot>
         </SheetContent>
@@ -73,7 +74,7 @@ function LayoutInner({ children, user, onLogout }: LayoutProps) {
         </span>
       </header>
 
-      {/* Main content area — margin adapts to sidebar width */}
+      {/* Main content area — margin adapts to sidebar width, content fills available space */}
       <div
         className={cn(
           "flex min-h-screen flex-1 flex-col pt-14 md:pt-0 transition-[margin] duration-200 ease-out",
