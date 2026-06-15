@@ -47,11 +47,17 @@ export function DumpActions({ job }: DumpActionsProps) {
         size="sm"
         onClick={() => void handleDownload()}
         disabled={downloading}
-        title="Descargar dump"
+        aria-label="Descargar dump"
       >
         <Download className="h-3.5 w-3.5" />
+        {downloading ? "Descargando..." : null}
       </Button>
-      <Button variant="outline" size="sm" onClick={handleRestore}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleRestore}
+        aria-label="Restaurar backup"
+      >
         Restaurar
       </Button>
     </div>

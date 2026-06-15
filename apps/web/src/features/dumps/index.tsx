@@ -6,27 +6,42 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/shared/ui/pagination";
+import { FadeIn } from "@/shared/ui/motion/FadeIn";
 import { DumpsStats } from "./components/DumpsStats";
 import { DumpsTable } from "./components/DumpsTable";
 import DumpsFilters from "./components/DumpsFilters";
 import type { DumpsFilters as DumpsFiltersType } from "./types";
 
+const DEFAULT_PAGE_SIZE = 25;
+
 export default function Dumps() {
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [filters, setFilters] = useState<DumpsFiltersType>({});
+
   const {
-    dumps,
+    data: dumps,
     total,
-    filters,
     isLoading: dumpsLoading,
     error: dumpsError,
-    applyFilters,
-    resetFilters,
     refetch,
-  } = useDumps();
+  } = useDumps({ page, pageSize, filters });
+
   const { data: connections = [], isLoading: connectionsLoading } =
     useProdConnections();
   const [selectedConnectionId, setSelectedConnectionId] = useState("");
   const [backupError, setBackupError] = useState<string | null>(null);
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const handleCreateBackup = async () => {
     if (!selectedConnectionId) return;
@@ -55,15 +70,21 @@ export default function Dumps() {
   };
 
   const handleApplyFilters = useCallback(
-    (filters: DumpsFiltersType) => {
-      applyFilters(filters);
+    (newFilters: DumpsFiltersType) => {
+      setPage(1); // Reset to first page when filters change
+      setFilters(newFilters);
     },
-    [applyFilters],
+    [],
   );
 
   const handleResetFilters = useCallback(() => {
-    resetFilters();
-  }, [resetFilters]);
+    setPage(1);
+    setFilters({});
+  }, []);
+
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+  }, []);
 
   const isLoading = dumpsLoading || connectionsLoading;
 
@@ -82,7 +103,7 @@ export default function Dumps() {
   }
 
   return (
-    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+    <FadeIn className="space-y-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="Dumps"
         actions={
@@ -130,7 +151,65 @@ export default function Dumps() {
       />
 
       <DumpsStats dumps={dumps} />
-      <DumpsTable dumps={dumps} isLoading={false} total={total} />
-    </div>
+      <DumpsTable
+        dumps={dumps}
+        isLoading={dumpsLoading}
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        pagination={
+          totalPages > 1 ? (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => handlePageChange(Math.max(1, page - 1))}
+                    disabled={page <= 1}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(
+                    (p) =>
+                      p === 1 ||
+                      p === totalPages ||
+                      Math.abs(p - page) <= 1,
+                  )
+                  .map((p, idx, arr) => {
+                    const items: React.ReactNode[] = [];
+                    if (idx > 0 && p - arr[idx - 1] > 1) {
+                      items.push(
+                        <PaginationItem key={`ellipsis-${p}`}>
+                          <span className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground">
+                            ...
+                          </span>
+                        </PaginationItem>,
+                      );
+                    }
+                    items.push(
+                      <PaginationItem key={p}>
+                        <PaginationLink
+                          isActive={p === page}
+                          onClick={() => handlePageChange(p)}
+                        >
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>,
+                    );
+                    return items;
+                  })}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() =>
+                      handlePageChange(Math.min(totalPages, page + 1))
+                    }
+                    disabled={page >= totalPages}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          ) : undefined
+        }
+      />
+    </FadeIn>
   );
 }

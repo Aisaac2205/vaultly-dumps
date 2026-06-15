@@ -1,4 +1,5 @@
 import { StatCard } from "@/shared/ui/stat-card";
+import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { Database, HardDrive, Calendar, Server } from "lucide-react";
 import type { BackupJob } from "../types";
 import { formatSizeMb } from "../lib/format";
@@ -20,7 +21,6 @@ export function DumpsStats({ dumps }: DumpsStatsProps) {
         )
       : null;
 
-  // Most backed up connection
   const connCounts: Record<string, number> = {};
   completed.forEach((d) => {
     connCounts[d.connectionName] = (connCounts[d.connectionName] ?? 0) + 1;
@@ -37,31 +37,39 @@ export function DumpsStats({ dumps }: DumpsStatsProps) {
     : "N/A";
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        label="Total Backups"
-        value={dumps.length}
-        icon={<Database className="h-4 w-4" />}
-        compact
-      />
-      <StatCard
-        label="Espacio Total"
-        value={formatSizeMb(totalSize)}
-        icon={<HardDrive className="h-4 w-4" />}
-        compact
-      />
-      <StatCard
-        label="Último Backup"
-        value={lastBackupLabel}
-        icon={<Calendar className="h-4 w-4" />}
-        compact
-      />
-      <StatCard
-        label="Más Respaldada"
-        value={topConn?.[0] ?? "N/A"}
-        icon={<Server className="h-4 w-4" />}
-        compact
-      />
-    </div>
+    <Stagger className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <StaggerItem>
+        <StatCard
+          variant="outlined"
+          label="Total Backups"
+          value={dumps.length}
+          icon={<Database className="h-4 w-4" />}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          variant="outlined"
+          label="Espacio Total"
+          value={formatSizeMb(totalSize)}
+          icon={<HardDrive className="h-4 w-4" />}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          variant="outlined"
+          label="Último Backup"
+          value={lastBackupLabel}
+          icon={<Calendar className="h-4 w-4" />}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          variant="outlined"
+          label="Más Respaldada"
+          value={topConn?.[0] ?? "N/A"}
+          icon={<Server className="h-4 w-4" />}
+        />
+      </StaggerItem>
+    </Stagger>
   );
 }
