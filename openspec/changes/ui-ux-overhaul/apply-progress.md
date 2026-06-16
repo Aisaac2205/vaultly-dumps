@@ -737,3 +737,55 @@ ESLint not configured for apps/api. Pre-existing condition — does not block.
 - **`pnpm test` (root)**: Only `apps/api` has tests. The `pnpm test` root command runs `pnpm --parallel -r run test`, which runs api tests only (web has jest but no spec pattern matching). This is a pre-existing condition — not blocking.
 - **Next in sequence**: PR 5 (`feat/ui-dumps`) and PR 6 (`feat/ui-audit`) consume this backend pagination contract.
 
+---
+
+## Spec Retroactive Documentation + Forward Spec-First Discipline
+
+(Added post-PR #5 to close the spec gap discovered during the size:exception review of PR #4 and PR #5.)
+
+### dumps-ui/spec.md — Retroactive
+
+PR #5 (`feat/ui-dumps`) shipped without a corresponding `specs/dumps-ui/spec.md`. The subagent worked from `tasks.md` acceptance criteria only. This is the **only retroactive spec** in the change.
+
+**Status**: Dumps UI is fully spec'd as of this commit. The spec (`openspec/changes/ui-ux-overhaul/specs/dumps-ui/spec.md`) describes what PR #5 actually shipped with WHEN...THEN... scenarios for:
+
+- Paginated list (page/pageSize navigation, filter-change reset)
+- Filters compound (single filter, multiple filters, chip removal, clear all)
+- Stats cards (Stagger entry, zero-data state)
+- Dumps table (Entorno column, empty state, loading, error)
+- Backup creation (success, failure)
+
+**Cross-app contract**: References `backup-api/spec.md` (PR #4) for the `PaginatedResponse<BackupJob>` shape.
+
+**Acknowledgement**: This is an anti-pattern (spec written after implementation). Going forward, no more retroactive specs.
+
+### Forward Spec-First Discipline
+
+Per the `T6-00` through `T13-00` tasks added to `tasks.md`, every future PR in this change starts with a "Write X spec" task as the first work-unit, before any implementation task. This guarantees:
+
+- `sdd-verify` always has WHEN...THEN... scenarios to validate against
+- `sdd-archive` can sync the delta spec to the canonical spec store
+- Future changes touching the feature have a reference document
+
+**Tasks added** (one per remaining PR):
+
+| Task | Spec | PR |
+|---|---|---|
+| `T6-00` | `audit-ui/spec.md` | PR 6 |
+| `T7-00` | `connections-ui/spec.md` | PR 7 |
+| `T8-00` | `cronjobs-ui/spec.md` | PR 8 |
+| `T9-00` | `cleanup-ui/spec.md` (preserves `c62bd7e` UX) | PR 9 |
+| `T10-00` | `dashboard-ui/spec.md` (uses Sparkline/TrendIndicator) | PR 10 |
+| `T11-00` | `users-ui/spec.md` | PR 11 |
+| `T12-00` | `login/spec.md` | PR 12 |
+| `T13-00` | `motion-pass/spec.md` (a11y + reduced-motion) | PR 13 |
+
+Each spec is ~80 lines, written in the same format as `backup-api/spec.md` and `audit-api/spec.md` (Purpose, ADDED Requirements, Scenarios, Cross-App Contract, Out of Scope, Deviations).
+
+**PR line estimate updates**: each affected PR's line estimate was bumped by ~80 to account for the new T-XX-00 task. All PRs remain within the 400-line review budget.
+
+### Open Decisions (not blocking this commit)
+
+- **PR #5 size:exception**: PR #5 (`feat/ui-dumps`) shipped at 744 changed lines (475+/269−) vs 400 budget. Decision still pending from user. This commit does not affect that decision.
+- **PR #5 cleanup commit**: A 1-line `eslint-disable-next-line react-refresh/only-export-components` comment was removed by lint --fix in the working tree. Reverted in this commit's preparation; the disable comment remains in the merged PR #5 code. Future lint runs may surface this.
+
