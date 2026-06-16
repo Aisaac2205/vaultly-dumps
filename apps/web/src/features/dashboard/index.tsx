@@ -96,7 +96,10 @@ export default function Dashboard() {
 
       <DashboardHeader lastUpdated={new Date()} />
 
-      <FailureAlertBanner failedCount={stats?.failed7d ?? 0} />
+      <FailureAlertBanner
+        failedCount={stats?.failed7d ?? 0}
+        recentBackups={recentBackups}
+      />
 
       <KpiGrid stats={stats} connections={connections} dailyCounts={dailyCounts} />
 
