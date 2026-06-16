@@ -21,6 +21,42 @@ function parseField(value: string): number | undefined {
   return Number.isInteger(n) && n >= 0 ? n : undefined;
 }
 
+function formatRelative(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
+  if (diffMinutes < 1) return "ahora";
+  if (diffMinutes < 60)
+    return new Intl.RelativeTimeFormat("es", { numeric: "auto" }).format(
+      -diffMinutes,
+      "minute",
+    );
+  if (diffHours < 24)
+    return new Intl.RelativeTimeFormat("es", { numeric: "auto" }).format(
+      -diffHours,
+      "hour",
+    );
+  if (diffDays < 2)
+    return `ayer a las ${new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(date)}`;
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatAbsolute(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
 interface NumberFieldProps {
   id: string;
   label: string;
@@ -164,6 +200,32 @@ export function ManualRetentionSettings() {
               hint="Se eliminan dumps hasta que el total baje de este tope."
             />
           </fieldset>
+        )}
+
+        {data && (
+          <div
+            aria-live="polite"
+            className="space-y-1 border-t pt-4 text-[11px] text-muted-foreground"
+          >
+            {data.updatedAt && (
+              <p>
+                Editado por última vez:{" "}
+                <span title={formatAbsolute(data.updatedAt)}>
+                  {formatRelative(data.updatedAt)}
+                </span>
+              </p>
+            )}
+            <p>
+              Última ejecución del barrido:{" "}
+              {data.lastSweepAt ? (
+                <span title={formatAbsolute(data.lastSweepAt)}>
+                  {formatRelative(data.lastSweepAt)}
+                </span>
+              ) : (
+                "Aún no se ejecutó"
+              )}
+            </p>
+          </div>
         )}
 
         <div className="flex justify-end">

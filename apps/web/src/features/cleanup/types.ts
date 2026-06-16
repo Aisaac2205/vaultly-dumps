@@ -34,6 +34,7 @@ export interface ManualRetentionSettings {
   maxAgeDays: number | null;
   maxTotalSizeMb: number | null;
   updatedAt?: string;
+  lastSweepAt?: string | null;
 }
 
 export interface ManualRetentionUpdate {
