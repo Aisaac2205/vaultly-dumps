@@ -199,11 +199,23 @@ export function CleanupForm() {
               type="button"
               variant="destructive"
               disabled={!hasItems || runCleanup.isPending}
+              aria-describedby={!hasItems ? "cleanup-submit-hint" : undefined}
               onClick={() => setConfirmOpen(true)}
             >
               <Trash2 aria-hidden="true" />
               Eliminar {hasItems ? `${preview?.count}` : ""} dump(s)
             </Button>
+            {!hasItems && (
+              <span id="cleanup-submit-hint" className="sr-only">
+                {!connectionSlug
+                  ? "Seleccioná una conexión y tipo de dump primero"
+                  : !category
+                    ? "Seleccioná un tipo de dump"
+                    : !amountValid
+                      ? "Ingresá una cantidad válida"
+                      : "No hay dumps para eliminar con estos criterios"}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
