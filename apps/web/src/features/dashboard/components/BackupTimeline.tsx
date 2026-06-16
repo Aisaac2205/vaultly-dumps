@@ -4,7 +4,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Clock } from "lucide-react";
-import { shortId, formatDate, formatSize } from "../lib/format";
+import { shortId, formatDate } from "../lib/format";
 import type { BackupJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
 
@@ -20,47 +20,38 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
 
   const columns: Column<BackupJob>[] = [
     {
-      header: "ID",
-      accessor: (job) => (
-        <span className="font-mono text-xs">{shortId(job.id)}</span>
-      ),
-      className: "w-20",
-    },
-    {
       header: "Conexión",
       accessor: (job) => (
-        <ConnectionLabel
-          id={job.connectionId}
-          name={job.connectionName}
-        />
+        <div className="flex flex-col gap-0.5">
+          <ConnectionLabel id={job.connectionId} name={job.connectionName} />
+          <span className="font-mono text-[10px] text-muted-foreground/70">
+            {shortId(job.id)}
+          </span>
+        </div>
       ),
     },
     {
       header: "Entorno",
       accessor: (job) => (
-        <span className="text-muted-foreground font-mono text-xs uppercase">{job.environment}</span>
+        <span className="font-mono text-xs uppercase text-muted-foreground">
+          {job.environment}
+        </span>
       ),
-      className: "hidden sm:table-cell",
-      headerClassName: "hidden sm:table-cell",
+      className: "hidden md:table-cell",
+      headerClassName: "hidden md:table-cell",
     },
     {
       header: "Estado",
       accessor: (job) => <StatusBadge status={job.status} />,
     },
     {
-      header: "Fecha",
+      header: "Cuándo",
       accessor: (job) => (
-        <span className="font-mono text-xs whitespace-nowrap">{formatDate(job.createdAt)}</span>
+        <span className="font-mono text-xs whitespace-nowrap tabular-nums">
+          {formatDate(job.createdAt)}
+        </span>
       ),
-      className: "w-28",
-    },
-    {
-      header: "Tamaño",
-      accessor: (job) =>
-        job.fileSizeMb != null
-          ? formatSize(job.fileSizeMb * 1024 * 1024)
-          : "—",
-      className: "w-20",
+      className: "w-24",
     },
   ];
 
@@ -72,7 +63,7 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
       <CardContent>
         {hasBackups ? (
           <>
-            <DataTable columns={columns} data={visible} className="" />
+            <DataTable columns={columns} data={visible} compact />
             {remaining > 0 && (
               <p className="py-2.5 text-center text-xs text-muted-foreground">
                 +{remaining} más
