@@ -121,9 +121,10 @@ export default function Restore() {
     setConfirmDialogOpen(true);
   }
 
-  function handleConfirmedRestore() {
+  function handleConfirmedRestore(excludedTables: string[] = []) {
     if (!currentDto) return;
     setConfirmDialogOpen(false);
+    // TODO: Pass excludedTables to backend when API supports it
     void confirmRestore({ ...currentDto, isDryRun: false });
   }
 
@@ -171,35 +172,39 @@ export default function Restore() {
       )}
 
       {state === "idle" && (
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
-          <Card className="h-full rounded-xl shadow-sm">
-            <CardContent className="flex h-full flex-col p-6">
-              <RestoreForm
-                sourceBackupId={sourceBackupIdFromNav}
-                dbType={dbTypeFromNav}
-                backupInfo={backupInfo}
-                selectedR2Dump={selectedR2Dump}
-                onR2DumpChange={setSelectedR2Dump}
-                onDryRun={handleDryRun}
-                onRestore={handleDirectRestore}
-                isLoading={restoreLoading}
-                connections={connections}
-                connectionsLoading={connectionsLoading}
-                sourceConnections={sourceConnections}
-                sourceConnectionsLoading={sourceConnectionsLoading}
-              />
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 lg:grid-cols-5 lg:items-stretch">
+          <div className="lg:col-span-2">
+            <Card className="h-full rounded-xl shadow-sm">
+              <CardContent className="flex h-full flex-col p-6">
+                <RestoreForm
+                  sourceBackupId={sourceBackupIdFromNav}
+                  dbType={dbTypeFromNav}
+                  backupInfo={backupInfo}
+                  selectedR2Dump={selectedR2Dump}
+                  onR2DumpChange={setSelectedR2Dump}
+                  onDryRun={handleDryRun}
+                  onRestore={handleDirectRestore}
+                  isLoading={restoreLoading}
+                  connections={connections}
+                  connectionsLoading={connectionsLoading}
+                  sourceConnections={sourceConnections}
+                  sourceConnectionsLoading={sourceConnectionsLoading}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card className="h-full rounded-xl shadow-sm">
-            <CardContent className="flex h-full flex-col p-6">
-              <RestoreHistory
-                jobs={restoreHistory}
-                connections={connections}
-                isLoading={historyLoading}
-              />
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-3">
+            <Card className="h-full rounded-xl shadow-sm">
+              <CardContent className="flex h-full flex-col p-6">
+                <RestoreHistory
+                  jobs={restoreHistory}
+                  connections={connections}
+                  isLoading={historyLoading}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
@@ -221,12 +226,13 @@ export default function Restore() {
       )}
 
       {state === "running" && restoreJob && (
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-2xl">
           <Card className="rounded-xl shadow-sm">
             <CardContent className="p-6">
               <RestoreProgress
                 jobId={restoreJob.id}
                 status={progressStatus()}
+                progress={state === "running" ? 45 : 100}
               />
             </CardContent>
           </Card>
@@ -244,11 +250,11 @@ export default function Restore() {
             : undefined
         }
         isLoading={restoreLoading}
-        onConfirm={handleConfirmedRestore}
+        onConfirm={() => handleConfirmedRestore()}
       />
 
       {state === "done" && (
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-2xl">
           <Card className="rounded-xl shadow-sm">
             <CardContent className="p-6">
               <div className="space-y-4">

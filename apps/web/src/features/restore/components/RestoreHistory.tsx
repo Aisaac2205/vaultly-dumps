@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -63,6 +63,9 @@ const statusConfig: Record<
 const ENV_FILTERS = ["Todos", "dev", "sqa", "prod"] as const;
 const STATUS_FILTERS = ["Todos", "completed", "failed"] as const;
 
+const PAGE_SIZE = 10;
+const MAX_HISTORY = 75;
+
 function formatDuration(
   startedAt: string,
   completedAt: string | null,
@@ -108,7 +111,7 @@ export function RestoreHistory({
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [envOpen, setEnvOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const [showAll, setShowAll] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const hasFilters = envFilter !== "Todos" || statusFilter !== "Todos";
 
@@ -120,8 +123,13 @@ export function RestoreHistory({
     return envMatch && statusMatch;
   });
 
-  const displayJobs = hasFilters || showAll ? filteredJobs : filteredJobs.slice(0, 10);
-  const hasMore = filteredJobs.length > 10 && !showAll && !hasFilters;
+  const cappedJobs = filteredJobs.slice(0, MAX_HISTORY);
+  const displayJobs = hasFilters ? cappedJobs : cappedJobs.slice(0, visibleCount);
+  const hasMore = cappedJobs.length > visibleCount && !hasFilters;
+
+  function loadMore() {
+    setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, MAX_HISTORY));
+  }
 
   if (isLoading) {
     return (
@@ -272,8 +280,8 @@ export function RestoreHistory({
           
           {hasMore && (
             <div className="mt-3 flex justify-center">
-              <Button variant="ghost" size="sm" onClick={() => setShowAll(true)}>
-                Ver más historial
+              <Button variant="ghost" size="sm" onClick={loadMore}>
+                Ver más historial ({cappedJobs.length - visibleCount} restantes)
               </Button>
             </div>
           )}
