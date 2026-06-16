@@ -15,7 +15,17 @@ export default function CleanupPage() {
       />
 
       {/* ── Stats ────────────────────────────────────── */}
-      <StoragePanel />
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold text-text-primary">
+            Almacenamiento
+          </h2>
+          <p className="max-w-2xl text-xs text-muted-foreground">
+            Cuánto espacio ocupan tus dumps en R2, agrupado por conexión.
+          </p>
+        </div>
+        <StoragePanel />
+      </section>
 
       {/* ── Limpieza puntual ─────────────────────────── */}
       <section className="space-y-4">
