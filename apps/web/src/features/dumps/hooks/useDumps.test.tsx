@@ -12,12 +12,17 @@ const mockApiClient = vi.mocked(apiClient);
 const mockDump: BackupJob = {
   id: "1",
   connectionId: "conn-1",
-  environment: "production",
+  connectionName: "Production DB",
+  environment: "prod",
+  dbType: "postgres",
   status: "completed",
+  fileKey: "backups/dump1.sql",
+  fileSizeMb: 1.5,
+  startedAt: "2024-01-15T10:00:00Z",
+  completedAt: "2024-01-15T10:05:00Z",
+  errorMessage: null,
+  triggeredBy: "admin",
   createdAt: "2024-01-15T10:00:00Z",
-  updatedAt: "2024-01-15T10:05:00Z",
-  size: 1024,
-  path: "/backups/dump1.sql",
 };
 
 function createWrapper() {

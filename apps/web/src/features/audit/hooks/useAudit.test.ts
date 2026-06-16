@@ -12,11 +12,12 @@ const mockLog: AuditLog = {
   id: "1",
   userId: "user-1",
   username: "admin",
-  environment: "production",
+  environment: "prod",
   resourceType: "backup",
-  action: "created",
+  resourceId: "b1",
+  action: "backup.created",
   createdAt: "2024-01-15T10:00:00Z",
-  details: { backupId: "b1" },
+  metadata: { backupId: "b1" },
 };
 
 describe("useAudit", () => {
