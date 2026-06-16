@@ -143,6 +143,7 @@ export class MaintenanceService {
         if (!this.hasCriterion(policy)) return;
 
         const connections = await this.connectionsService.findAll();
+        let processedCount = 0;
         for (const connection of connections) {
           try {
             const result = await this.applyRetention(
@@ -150,6 +151,7 @@ export class MaintenanceService {
               BackupCategory.MANUAL,
               policy,
             );
+            processedCount++;
             if (result.deleted > 0) {
               this.logger.log(
                 `Manual sweep "${connection.slug}": pruned ${result.deleted} (${result.freedMb} MB)`,
@@ -161,6 +163,10 @@ export class MaintenanceService {
               `Manual sweep failed for "${connection.slug}": ${message}`,
             );
           }
+        }
+        if (processedCount > 0) {
+          settings.lastSweepAt = new Date();
+          await this.manualRetentionRepo.save(settings);
         }
       } finally {
         await this.dataSource.query('SELECT pg_advisory_unlock($1)', [
