@@ -55,21 +55,32 @@ function filterDumps(data: BackupJob[], filters: DumpsFilters): BackupJob[] {
   return result;
 }
 
-async function fetchDumpsHistory(): Promise<BackupJob[]> {
-  const response = await apiClient.get<BackupJob[]>("/backups/history");
-  return Array.isArray(response.data) ? response.data : [];
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+async function fetchDumpsHistory(): Promise<{ data: BackupJob[]; total: number }> {
+  const response = await apiClient.get<PaginatedResponse<BackupJob>>("/backups/history");
+  return {
+    data: response.data.data,
+    total: response.data.total,
+  };
 }
 
 export function useDumps(): UseDumpsReturn {
   const [filters, setFilters] = useState<DumpsFilters>({});
 
-  const query = useQuery<BackupJob[], Error>({
+  const query = useQuery<{ data: BackupJob[]; total: number }, Error>({
     queryKey: ["dumps", "history"],
     queryFn: fetchDumpsHistory,
     staleTime: 30_000,
   });
 
-  const allDumps = query.data ?? [];
+  const allDumps = query.data?.data ?? [];
+  const serverTotal = query.data?.total ?? 0;
 
   const filtered = useMemo(
     () => filterDumps(allDumps, filters),
@@ -97,7 +108,7 @@ export function useDumps(): UseDumpsReturn {
 
   return {
     dumps,
-    total: filtered.length,
+    total: isFiltered ? filtered.length : serverTotal,
     isLoading: query.isLoading,
     error: query.error,
     filters,
