@@ -1,7 +1,16 @@
+import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, ShieldAlert } from "lucide-react";
+import { Loader2, ShieldAlert, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import { useReconcilePreview, useRunReconcile } from "../hooks/useMaintenance";
 
 interface RowProps {
@@ -26,6 +35,7 @@ function Row({ label, value, muted = false }: RowProps) {
 export function ReconcilePanel() {
   const { data, isLoading } = useReconcilePreview();
   const run = useRunReconcile();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -46,16 +56,10 @@ export function ReconcilePanel() {
   const restorable = data.orphanDumps.filter((d) => d.hasManifest).length;
   const toClean = stale + manifests + junkDumps;
 
-  function handleRun() {
-    if (
-      !window.confirm(
-        `¿Limpiar ${toClean} resto(s)? Los dumps que se pueden restaurar no se tocan.`,
-      )
-    ) {
-      return;
-    }
+  function handleConfirm() {
     run.mutate(undefined, {
       onSuccess: (result) => {
+        setConfirmOpen(false);
         const summary = `${result.dbRowsDeleted} registros · ${result.manifestsDeleted} metadatos · ${result.dumpsDeleted} dumps incompletos`;
         if (result.errors.length > 0) {
           toast.warning(`${summary} · ${result.errors.length} con error`);
@@ -74,7 +78,7 @@ export function ReconcilePanel() {
         <div>
           <div className="flex items-center gap-2">
             <ShieldAlert
-              className="size-4 text-muted-foreground/70"
+              className="size-4 text-muted-foreground"
               aria-hidden="true"
             />
             <h3 className="text-sm font-semibold text-text-primary">
@@ -84,7 +88,7 @@ export function ReconcilePanel() {
           <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
             A veces el Almacenamiento R2 y la Base de Datos se desincronizan.
             Esto detecta y limpia los restos.{" "}
-            <span className="text-text-secondary">
+            <span className="text-muted-foreground">
               Lo que se puede restaurar nunca se toca.
             </span>
           </p>
@@ -111,12 +115,48 @@ export function ReconcilePanel() {
             type="button"
             variant="destructive"
             disabled={toClean === 0 || run.isPending}
-            onClick={handleRun}
+            onClick={() => setConfirmOpen(true)}
           >
             {run.isPending ? "Limpiando..." : "Limpiar restos"}
           </Button>
         </div>
       </CardContent>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-error" aria-hidden="true" />
+              Limpiar restos
+            </DialogTitle>
+            <DialogDescription>
+              Vas a limpiar <strong>{toClean}</strong> resto(s) de la base y R2:
+              registros huérfanos, metadatos sueltos y dumps incompletos.{" "}
+              <strong>Los dumps restaurables no se tocan.</strong> Esta acción es{" "}
+              <strong>irreversible</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={run.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirm}
+              disabled={run.isPending}
+            >
+              {run.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              Limpiar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

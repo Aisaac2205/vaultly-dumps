@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/dialog";
 import { useDbHygienePreview, useRunDbHygiene } from "../hooks/useMaintenance";
 
 const inputClass =
@@ -9,6 +18,7 @@ const inputClass =
 
 export function DbHygienePanel() {
   const [days, setDays] = useState("30");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const daysNum = Number(days);
   const valid =
     days.trim() !== "" && Number.isInteger(daysNum) && daysNum >= 1;
@@ -18,16 +28,16 @@ export function DbHygienePanel() {
 
   const count = preview?.failedCount ?? 0;
 
-  function handleRun() {
+  function handleConfirm() {
     if (!valid) return;
-    if (!window.confirm(`¿Borrar ${count} registro(s) de backups fallidos?`)) {
-      return;
-    }
     run.mutate(daysNum, {
-      onSuccess: (result) =>
-        toast.success(`${result.deleted} registro(s) fallido(s) borrado(s)`),
-      onError: (error) =>
-        toast.error(error.message || "No se pudo limpiar la base"),
+      onSuccess: (result) => {
+        setConfirmOpen(false);
+        toast.success(`${result.deleted} registro(s) fallido(s) borrado(s)`);
+      },
+      onError: (error) => {
+        toast.error(error.message || "No se pudo limpiar la base");
+      },
     });
   }
 
@@ -41,7 +51,7 @@ export function DbHygienePanel() {
           <p className="text-xs text-muted-foreground">
             Cada intento que falla deja un registro en la base. Borrá los más
             viejos que los días indicados para que no se acumulen.{" "}
-            <span className="text-text-secondary">Tus dumps no se tocan.</span>
+            <span className="text-muted-foreground">Tus dumps no se tocan.</span>
           </p>
         </div>
 
@@ -78,12 +88,48 @@ export function DbHygienePanel() {
             variant="destructive"
             className="ml-auto"
             disabled={!valid || count === 0 || run.isPending}
-            onClick={handleRun}
+            onClick={() => setConfirmOpen(true)}
           >
+            <Trash2 aria-hidden="true" className="size-4" />
             {run.isPending ? "Borrando..." : "Borrar"}
           </Button>
         </div>
       </CardContent>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="size-5 text-error" aria-hidden="true" />
+              Borrar registros fallidos
+            </DialogTitle>
+            <DialogDescription>
+              Vas a borrar <strong>{count}</strong> registro(s) de backups
+              fallidos con más de {valid ? daysNum : "?"} día(s). Esta acción es{" "}
+              <strong>irreversible</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              disabled={run.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirm}
+              disabled={run.isPending}
+            >
+              {run.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              Borrar definitivamente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
