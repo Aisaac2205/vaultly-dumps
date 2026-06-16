@@ -7,7 +7,6 @@ import { KpiGrid } from "./components/KpiGrid";
 import { SystemHealthCard } from "./components/SystemHealthCard";
 import { BackupTimeline } from "./components/BackupTimeline";
 import { RestoreTimeline } from "./components/RestoreTimeline";
-import { FailureAlertBanner } from "./components/FailureAlertBanner";
 import { BackupAreaChart } from "./components/BackupAreaChart";
 import { UpcomingCronjobsCard } from "./components/UpcomingCronjobsCard";
 import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
@@ -95,11 +94,6 @@ export default function Dashboard() {
       </div>
 
       <DashboardHeader lastUpdated={new Date()} />
-
-      <FailureAlertBanner
-        failedCount={stats?.failed7d ?? 0}
-        recentBackups={recentBackups}
-      />
 
       <KpiGrid stats={stats} connections={connections} dailyCounts={dailyCounts} />
 
