@@ -99,11 +99,11 @@ export default function Dashboard() {
 
       <BackupAreaChart data={dailyCounts} />
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-5 lg:items-stretch">
-        <div className="flex flex-col lg:col-span-3">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-5 lg:items-start">
+        <div className="lg:col-span-3">
           <BackupTimeline backups={recentBackups} />
         </div>
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="flex flex-col gap-4 sm:gap-6 lg:col-span-2">
           <RestoreTimeline restores={recentRestores} />
           <SystemHealthCard dumps={dumps} connections={connections} />
           <UpcomingCronjobsCard cronjobs={cronjobs} />

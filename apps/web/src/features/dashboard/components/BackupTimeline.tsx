@@ -1,6 +1,9 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { DataTable } from "@/shared/ui/data-table";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import { StatusBadge } from "@/shared/ui/status-badge";
+import { Clock } from "lucide-react";
 import { shortId, formatDate, formatSize } from "../lib/format";
 import type { BackupJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
@@ -13,6 +16,7 @@ interface BackupTimelineProps {
 export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) {
   const visible = maxItems > 0 ? backups.slice(0, maxItems) : backups;
   const remaining = maxItems > 0 ? Math.max(0, backups.length - maxItems) : 0;
+  const hasBackups = backups.length > 0;
 
   const columns: Column<BackupJob>[] = [
     {
@@ -61,21 +65,28 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
   ];
 
   return (
-    <div className="flex h-full flex-col">
-      <h2 className="mb-3 text-base font-semibold">Últimos Backups</h2>
-      <div className="flex-1 rounded-lg bg-card shadow-sm overflow-hidden">
-        <DataTable
-          columns={columns}
-          data={visible}
-          emptyMessage="No hay backups recientes"
-          className=""
-        />
-        {remaining > 0 && (
-          <p className="py-2.5 text-center text-xs text-muted-foreground">
-            +{remaining} más
-          </p>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Últimos Backups</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {hasBackups ? (
+          <>
+            <DataTable columns={columns} data={visible} className="" />
+            {remaining > 0 && (
+              <p className="py-2.5 text-center text-xs text-muted-foreground">
+                +{remaining} más
+              </p>
+            )}
+          </>
+        ) : (
+          <EmptyState
+            icon={<Clock className="h-8 w-8" />}
+            title="Sin backups recientes"
+            description="No se ejecutaron backups en los últimos días."
+          />
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

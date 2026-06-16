@@ -31,7 +31,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Calendar className="h-4 w-4" aria-hidden="true" />
-          Próximos Cronjobs
+          Próximas Ejecuciones
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -41,7 +41,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
             className="flex flex-col items-center gap-2 py-4 text-center text-sm text-muted-foreground"
           >
             <Clock className="h-8 w-8" aria-hidden="true" />
-            <p>No hay cronjobs activos</p>
+            <p>No hay ejecuciones programadas</p>
           </div>
         ) : (
           <ul className="space-y-2">

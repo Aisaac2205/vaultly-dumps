@@ -1,5 +1,8 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { DataTable } from "@/shared/ui/data-table";
 import { StatusBadge } from "@/shared/ui/status-badge";
+import { RotateCcw } from "lucide-react";
 import { shortId, formatDate } from "../lib/format";
 import type { RestoreJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
@@ -13,6 +16,7 @@ interface RestoreTimelineProps {
 export function RestoreTimeline({ restores }: RestoreTimelineProps) {
   const visible = restores.slice(0, MAX_ITEMS);
   const remaining = Math.max(0, restores.length - MAX_ITEMS);
+  const hasRestores = restores.length > 0;
 
   const columns: Column<RestoreJob>[] = [
     {
@@ -47,19 +51,28 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
   ];
 
   return (
-    <div>
-      <h2 className="mb-3 text-base font-semibold">Últimos Restores</h2>
-      <DataTable
-        columns={columns}
-        data={visible}
-        emptyMessage="No hay restores recientes"
-        compact
-      />
-      {remaining > 0 && (
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          +{remaining} más
-        </p>
-      )}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Últimos Restores</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {hasRestores ? (
+          <>
+            <DataTable columns={columns} data={visible} compact />
+            {remaining > 0 && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                +{remaining} más
+              </p>
+            )}
+          </>
+        ) : (
+          <EmptyState
+            icon={<RotateCcw className="h-8 w-8" />}
+            title="Sin restores recientes"
+            description="No se ejecutaron restores en los últimos días."
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }
