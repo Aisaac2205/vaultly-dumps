@@ -44,13 +44,19 @@ export function useAudit(): UseAuditReturn {
       if (activeFilters.from) params.from = activeFilters.from;
       if (activeFilters.to) params.to = activeFilters.to;
 
-      const response = await apiClient.get<AuditLog[]>("/audit", { params });
+      const response = await apiClient.get<{
+        data: AuditLog[];
+        total: number;
+        page: number;
+        pageSize: number;
+      }>("/audit", { params });
 
-      const allLogs = Array.isArray(response.data) ? response.data : [];
+      const allLogs = response.data.data;
       const isFiltered = hasActiveFilters(activeFilters);
+      const serverTotal = response.data.total;
 
       setLogs(isFiltered ? allLogs : allLogs.slice(0, DEFAULT_LIMIT));
-      setTotal(allLogs.length);
+      setTotal(isFiltered ? allLogs.length : serverTotal);
     } catch (err) {
       setError(err instanceof Error ? err : new Error("Error al cargar los registros de auditoría"));
     } finally {
