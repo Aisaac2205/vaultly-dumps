@@ -316,27 +316,34 @@ Chain strategy: stacked-to-main
 **PR total line estimate:** ~180 (includes T8-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
 
-#### T8-00 Write cronjobs-ui spec
+#### [x] T8-00 Write cronjobs-ui spec
 **Description:** Create `openspec/changes/ui-ux-overhaul/specs/cronjobs-ui/spec.md` documenting Cronjobs UI behavior and scenarios.
 **Files:**
-- `openspec/changes/ui-ux-overhaul/specs/cronjobs-ui/spec.md` (+)
+- `openspec/changes/ui-ux-overhaul/specs/cronjobs-ui/spec.md` (+) ✅ Created
 **Line estimate:** 80
 **Depends on:** none
 **Acceptance:**
-- Spec has 4+ scenarios covering: cronjob list, enable/disable toggle, manual trigger, run history
-- Cross-app contract with `jobs` module API referenced
-- Toggle/switch motion from emil-design-eng referenced (instant feedback, no transition)
-- Status indicator (active/paused/failed) pattern documented
-- Filter by environment (Entorno) documented
+- [x] Spec has 4+ scenarios covering: cronjob list, enable/disable toggle, manual trigger, run history
+- [x] Cross-app contract with `jobs` module API referenced
+- [x] Toggle/switch motion from emil-design-eng referenced (instant feedback, no transition)
+- [x] Status indicator (active/paused/failed) pattern documented
+- [x] Filter by environment (Entorno) documented
 
-#### T8-01 Update Cronjobs UI
+#### [x] T8-01 Update Cronjobs UI
 **Description:** Apply new primitives to Cronjobs.
 **Files:**
-- `apps/web/src/features/cronjobs/components/*` (modified)
+- `apps/web/src/features/cronjobs/components/*` (modified) ✅ Updated
+- `apps/web/src/features/cronjobs/index.tsx` (modified) ✅ Updated
 **Line estimate:** 100
 **Depends on:** PR 3
 **Acceptance:**
-- Visual polish applied
+- [x] CronjobsStats: Stagger + StaggerItem, variant="outlined" replacing compact
+- [x] CronjobFilters: Filters compound (Search, Select, ActiveChips) replacing custom form
+- [x] CronjobsTable: DataTable replacing custom Table, composed empty state with Clock icon
+- [x] index.tsx: FadeIn wrapper, p-4 sm:p-6 lg:p-8 responsive padding
+- [x] Toggle switch: instant feedback (active:scale-[0.97]), no enter/exit animation
+- [x] All 137 tests passing (7/7 CronjobsTable tests)
+- [x] Typecheck passing (tsc --noEmit)
 
 ---
 

@@ -1,4 +1,5 @@
 import { StatCard } from "@/shared/ui/stat-card";
+import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { Clock, Play, CheckCircle2, Calendar } from "lucide-react";
 import type { Cronjob } from "../types";
 import { nextRunParts } from "../lib/format";
@@ -54,46 +55,54 @@ export function CronjobsStats({
   };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        label="Total cronjobs"
-        value={total}
-        icon={<Clock className="h-4 w-4" />}
-        loading={loading}
-        compact
-      />
-      <StatCard
-        label="Activos"
-        value={active}
-        icon={<Play className="h-4 w-4" />}
-        loading={loading}
-        compact
-      />
-      <StatCard
-        label="Estado principal"
-        value={
-          topStatus ? (
-            <ValueWithUnit
-              value={String(topStatus[1])}
-              unit={STATUS_LABELS[topStatus[0]] ?? topStatus[0]}
-            />
-          ) : total > 0 ? (
-            "—"
-          ) : (
-            "N/A"
-          )
-        }
-        icon={<CheckCircle2 className="h-4 w-4" />}
-        loading={loading}
-        compact
-      />
-      <StatCard
-        label="Próxima ejecución"
-        value={<ValueWithUnit value={nextRun.value} unit={nextRun.unit} />}
-        icon={<Calendar className="h-4 w-4" />}
-        loading={loading}
-        compact
-      />
-    </div>
+    <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <StaggerItem>
+        <StatCard
+          variant="outlined"
+          label="Total cronjobs"
+          value={total}
+          icon={<Clock className="h-4 w-4" />}
+          loading={loading}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          variant="outlined"
+          label="Activos"
+          value={active}
+          icon={<Play className="h-4 w-4" />}
+          loading={loading}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          variant="outlined"
+          label="Estado principal"
+          value={
+            topStatus ? (
+              <ValueWithUnit
+                value={String(topStatus[1])}
+                unit={STATUS_LABELS[topStatus[0]] ?? topStatus[0]}
+              />
+            ) : total > 0 ? (
+              "—"
+            ) : (
+              "N/A"
+            )
+          }
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          loading={loading}
+        />
+      </StaggerItem>
+      <StaggerItem>
+        <StatCard
+          variant="outlined"
+          label="Próxima ejecución"
+          value={<ValueWithUnit value={nextRun.value} unit={nextRun.unit} />}
+          icon={<Calendar className="h-4 w-4" />}
+          loading={loading}
+        />
+      </StaggerItem>
+    </Stagger>
   );
 }

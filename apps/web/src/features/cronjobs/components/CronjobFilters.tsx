@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { Filters } from "@/shared/ui/filters";
 import type { Cronjob, JobStatus } from "../types";
 
 export interface CronjobFiltersState {
@@ -12,7 +13,7 @@ interface CronjobFiltersProps {
   onChange: (filters: CronjobFiltersState) => void;
 }
 
-const STATUS_OPTIONS: { value: string; label: string }[] = [
+const STATUS_OPTIONS = [
   { value: "", label: "Todos los estados" },
   { value: "pending", label: "Pendiente" },
   { value: "running", label: "En progreso" },
@@ -20,72 +21,68 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "failed", label: "Fallido" },
 ];
 
-const ACTIVE_OPTIONS: { value: string; label: string }[] = [
+const ACTIVE_OPTIONS = [
   { value: "", label: "Todos" },
   { value: "active", label: "Activos" },
   { value: "inactive", label: "Inactivos" },
 ];
 
+function filtersToRecord(f: CronjobFiltersState): Record<string, string> {
+  const r: Record<string, string> = {};
+  if (f.search) r.search = f.search;
+  if (f.status) r.status = f.status;
+  if (f.active) r.active = f.active;
+  return r;
+}
+
+function recordToFilters(r: Record<string, string>): CronjobFiltersState {
+  return {
+    search: r.search ?? "",
+    status: r.status ?? "",
+    active: r.active ?? "",
+  };
+}
+
 export function CronjobFilters({
   filters,
   onChange,
 }: CronjobFiltersProps) {
-  const [searchInput, setSearchInput] = useState(filters.search);
-
-  // Debounce search by 300ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onChange({ ...filters, search: searchInput });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Sync external filter changes to searchInput
-  useEffect(() => {
-    setSearchInput(filters.search);
-  }, [filters.search]);
-
-  const inputClass =
-    "rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+  const handleFiltersChange = useCallback(
+    (next: Record<string, string>) => {
+      onChange(recordToFilters(next));
+    },
+    [onChange],
+  );
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-      <input
-        type="text"
-        placeholder="Buscar por nombre o conexión..."
-        className={`w-full sm:min-w-[220px] sm:w-auto sm:flex-1 ${inputClass}`}
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-      />
-
-      <select
-        className={inputClass}
-        value={filters.status}
-        onChange={(e) =>
-          onChange({ ...filters, status: e.target.value })
-        }
-      >
-        {STATUS_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className={inputClass}
-        value={filters.active}
-        onChange={(e) =>
-          onChange({ ...filters, active: e.target.value })
-        }
-      >
-        {ACTIVE_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    </div>
+    <Filters.Root
+      filters={filtersToRecord(filters)}
+      onFiltersChange={handleFiltersChange}
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <Filters.Trigger />
+        <Filters.ActiveChips className="flex-1" />
+      </div>
+      <Filters.Popover>
+        <Filters.Search
+          filterKey="search"
+          label="Buscar"
+          placeholder="Nombre o conexión..."
+        />
+        <Filters.Select
+          filterKey="status"
+          label="Estado"
+          options={STATUS_OPTIONS}
+          placeholder="Todos los estados"
+        />
+        <Filters.Select
+          filterKey="active"
+          label="Activo"
+          options={ACTIVE_OPTIONS}
+          placeholder="Todos"
+        />
+      </Filters.Popover>
+    </Filters.Root>
   );
 }
 
