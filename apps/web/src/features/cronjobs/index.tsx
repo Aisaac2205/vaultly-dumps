@@ -20,6 +20,7 @@ import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
+import { FadeIn } from "@/shared/ui/motion/FadeIn";
 import { Clock, Plus } from "lucide-react";
 import type { Cronjob, CreateCronjobDto, UpdateCronjobDto } from "./types";
 
@@ -130,7 +131,7 @@ export default function Cronjobs() {
 
   if (isQueryLoading) {
     return (
-      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+      <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
         <div className="h-8 w-24 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -138,7 +139,7 @@ export default function Cronjobs() {
           ))}
         </div>
         <TableSkeleton rows={5} columns={7} />
-      </div>
+      </FadeIn>
     );
   }
 
@@ -146,7 +147,7 @@ export default function Cronjobs() {
 
   if (queryError) {
     return (
-      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+      <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader title="Cronjobs" />
         <Alert variant="destructive">
           <AlertDescription>
@@ -156,7 +157,7 @@ export default function Cronjobs() {
               : "Error desconocido"}
           </AlertDescription>
         </Alert>
-      </div>
+      </FadeIn>
     );
   }
 
@@ -164,7 +165,7 @@ export default function Cronjobs() {
 
   if (cronjobs.length === 0 && !showForm) {
     return (
-      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+      <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader
           title="Cronjobs"
         />
@@ -179,7 +180,7 @@ export default function Cronjobs() {
             </Button>
           }
         />
-      </div>
+      </FadeIn>
     );
   }
 
@@ -192,7 +193,7 @@ export default function Cronjobs() {
     toggleMutation.error;
 
   return (
-    <div className="space-y-8 p-8">
+    <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="Cronjobs"
         actions={
@@ -243,6 +244,6 @@ export default function Cronjobs() {
         onToggle={(id) => void handleToggle(id)}
         toggleLoading={toggleLoading}
       />
-    </div>
+    </FadeIn>
   );
 }
