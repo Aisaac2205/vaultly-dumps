@@ -63,7 +63,7 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
   return (
     <div className="flex h-full flex-col">
       <h2 className="mb-3 text-base font-semibold">Últimos Backups</h2>
-      <div className="flex-1 rounded-xl bg-card shadow-sm overflow-hidden">
+      <div className="flex-1 rounded-lg bg-card shadow-sm overflow-hidden">
         <DataTable
           columns={columns}
           data={visible}

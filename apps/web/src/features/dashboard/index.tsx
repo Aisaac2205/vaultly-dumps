@@ -54,7 +54,12 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
+      <div
+        className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6"
+        role="status"
+        aria-busy="true"
+        aria-label="Cargando dashboard"
+      >
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
