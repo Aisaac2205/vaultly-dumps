@@ -29,6 +29,7 @@ interface NumberFieldProps {
   min: number;
   placeholder: string;
   disabled: boolean;
+  hint: string;
 }
 
 function NumberField({
@@ -39,7 +40,9 @@ function NumberField({
   min,
   placeholder,
   disabled,
+  hint,
 }: NumberFieldProps) {
+  const hintId = `${id}-hint`;
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-xs font-medium text-muted-foreground">
@@ -54,7 +57,11 @@ function NumberField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        aria-describedby={hintId}
       />
+      <p id={hintId} className="text-[11px] text-muted-foreground">
+        {hint}
+      </p>
     </div>
   );
 }
@@ -103,15 +110,18 @@ export function ManualRetentionSettings() {
           </p>
         </div>
 
-        <label className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2">
           <input
+            id="mr-enabled"
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
             disabled={isLoading}
           />
-          Activar limpieza automática de dumps manuales
-        </label>
+          <label htmlFor="mr-enabled" className="text-sm">
+            Activar limpieza automática de dumps manuales
+          </label>
+        </div>
 
         {enabled && (
           <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -124,6 +134,7 @@ export function ManualRetentionSettings() {
               min={0}
               placeholder="Ej. 10"
               disabled={isLoading}
+              hint="Cantidad de dumps a conservar. 0 = sin límite."
             />
             <NumberField
               id="mr-max-age"
@@ -133,6 +144,7 @@ export function ManualRetentionSettings() {
               min={1}
               placeholder="Ej. 30"
               disabled={isLoading}
+              hint="Se eliminan los dumps con más días que este valor."
             />
             <NumberField
               id="mr-max-size"
@@ -142,6 +154,7 @@ export function ManualRetentionSettings() {
               min={1}
               placeholder="Ej. 2000"
               disabled={isLoading}
+              hint="Se eliminan dumps hasta que el total baje de este tope."
             />
           </fieldset>
         )}

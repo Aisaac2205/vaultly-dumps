@@ -60,7 +60,11 @@ export function DbHygienePanel() {
               min={1}
               value={days}
               onChange={(e) => setDays(e.target.value)}
+              aria-describedby="db-hygiene-days-hint"
             />
+            <p id="db-hygiene-days-hint" className="text-[11px] text-muted-foreground">
+              Se borrarán los registros de backups fallidos con más días que este valor.
+            </p>
           </div>
           <p aria-live="polite" className="text-sm text-muted-foreground">
             {!valid
