@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useState } from "react";
+import { Filters, type FilterOption } from "@/shared/ui/filters";
 import type { Connection } from "../types";
 
 export interface ConnectionFiltersState {
@@ -13,71 +14,87 @@ interface ConnectionFiltersProps {
   onChange: (filters: ConnectionFiltersState) => void;
 }
 
+// ─── Filter Options ───────────────────────────────────────
+
+const ENVIRONMENT_OPTIONS: FilterOption[] = [
+  { value: "dev", label: "dev" },
+  { value: "sqa", label: "sqa" },
+  { value: "prod", label: "prod" },
+];
+
+const DB_TYPE_OPTIONS: FilterOption[] = [
+  { value: "postgres", label: "PostgreSQL" },
+  { value: "mysql", label: "MySQL" },
+];
+
+const STATUS_OPTIONS: FilterOption[] = [
+  { value: "active", label: "Activas" },
+  { value: "inactive", label: "Inactivas" },
+];
+
+// ─── State Mappers ────────────────────────────────────────
+
+function toRecord(f: ConnectionFiltersState): Record<string, string> {
+  const r: Record<string, string> = {};
+  if (f.search) r.search = f.search;
+  if (f.environment) r.environment = f.environment;
+  if (f.dbType) r.dbType = f.dbType;
+  if (f.status) r.status = f.status;
+  return r;
+}
+
+function fromRecord(r: Record<string, string>): ConnectionFiltersState {
+  return {
+    search: r.search ?? "",
+    environment: r.environment ?? "",
+    dbType: r.dbType ?? "",
+    status: r.status ?? "",
+  };
+}
+
+// ─── Component ────────────────────────────────────────────
+
 export function ConnectionFilters({
   filters,
   onChange,
 }: ConnectionFiltersProps) {
-  const [searchInput, setSearchInput] = useState(filters.search);
-
-  // Debounce search by 300ms
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onChange({ ...filters, search: searchInput });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Sync external filter changes to searchInput
-  useEffect(() => {
-    setSearchInput(filters.search);
-  }, [filters.search]);
-
-  const inputClass =
-    "rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+  const handleChange = (recordFilters: Record<string, string>) => {
+    onChange(fromRecord(recordFilters));
+  };
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-      <input
-        type="text"
-        placeholder="Buscar por nombre, host o BD..."
-        className={`w-full sm:min-w-[220px] sm:w-auto sm:flex-1 ${inputClass}`}
-        value={searchInput}
-        onChange={(e) => setSearchInput(e.target.value)}
-      />
-
-      <select
-        className={inputClass}
-        value={filters.environment}
-        onChange={(e) =>
-          onChange({ ...filters, environment: e.target.value })
-        }
-      >
-        <option value="">Todos los ambientes</option>
-        <option value="dev">dev</option>
-        <option value="sqa">sqa</option>
-        <option value="prod">prod</option>
-      </select>
-
-      <select
-        className={inputClass}
-        value={filters.dbType}
-        onChange={(e) => onChange({ ...filters, dbType: e.target.value })}
-      >
-        <option value="">Todos los tipos</option>
-        <option value="postgres">PostgreSQL</option>
-        <option value="mysql">MySQL</option>
-      </select>
-
-      <select
-        className={inputClass}
-        value={filters.status}
-        onChange={(e) => onChange({ ...filters, status: e.target.value })}
-      >
-        <option value="">Todos los estados</option>
-        <option value="active">Activas</option>
-        <option value="inactive">Inactivas</option>
-      </select>
-    </div>
+    <Filters.Root
+      filters={toRecord(filters)}
+      onFiltersChange={handleChange}
+    >
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="w-full sm:min-w-[220px] sm:w-auto sm:flex-1">
+          <Filters.Search
+            filterKey="search"
+            placeholder="Buscar por nombre, host o BD..."
+          />
+        </div>
+        <Filters.Select
+          filterKey="environment"
+          label="Ambiente"
+          options={ENVIRONMENT_OPTIONS}
+          placeholder="Todos los ambientes"
+        />
+        <Filters.Select
+          filterKey="dbType"
+          label="Tipo de BD"
+          options={DB_TYPE_OPTIONS}
+          placeholder="Todos los tipos"
+        />
+        <Filters.Select
+          filterKey="status"
+          label="Estado"
+          options={STATUS_OPTIONS}
+          placeholder="Todos los estados"
+        />
+      </div>
+      <Filters.ActiveChips className="mt-2" />
+    </Filters.Root>
   );
 }
 

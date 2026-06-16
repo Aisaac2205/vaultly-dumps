@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/shared/ui/card";
+import { Card, CardContent, type CardProps } from "@/shared/ui/card";
 import { Badge, BadgeDot } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { type ReactNode } from "react";
@@ -11,6 +11,7 @@ interface StatCardProps {
   statusColor?: string;
   loading?: boolean;
   compact?: boolean;
+  variant?: CardProps["variant"];
 }
 
 export function StatCard({
@@ -21,10 +22,11 @@ export function StatCard({
   statusColor,
   loading,
   compact = false,
+  variant,
 }: StatCardProps) {
   if (loading) {
     return (
-      <Card>
+      <Card variant={variant}>
         <CardContent className="p-6">
           <Skeleton className="mb-3.5 h-3.5 w-24" />
           <Skeleton className={compact ? "h-7 w-16" : "h-9 w-24"} />
@@ -34,7 +36,7 @@ export function StatCard({
   }
 
   return (
-    <Card>
+    <Card variant={variant}>
       <CardContent className="p-6">
         <div className="flex items-center gap-2">
           {icon && <span className="text-muted-foreground">{icon}</span>}
