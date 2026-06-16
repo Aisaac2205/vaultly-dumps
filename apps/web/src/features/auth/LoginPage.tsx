@@ -4,6 +4,7 @@ import { Shield, Clock, Cloud, Monitor, Mail, Eye, EyeOff, Lock, Database, HardD
 import { authClient } from "@/shared/lib/auth-client";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { Button } from "@/shared/ui/button";
+import { FadeIn } from "@/shared/ui/motion/FadeIn";
 
 function ShowcasePanel() {
   return (
@@ -160,7 +161,7 @@ export default function LoginPage() {
         </div>
 
         {/* Form — nudged up to align with showcase card */}
-        <div className="mx-auto flex w-full max-w-[460px] flex-1 flex-col justify-center pb-32">
+        <FadeIn className="mx-auto flex w-full max-w-[460px] flex-1 flex-col justify-center pb-32">
           <h1 className="mb-3 text-4xl font-bold tracking-tight text-[#111]">
             Bienvenido de nuevo
           </h1>
@@ -168,9 +169,9 @@ export default function LoginPage() {
             Iniciá sesión para gestionar backups, restores y conexiones.
           </p>
 
-          <form onSubmit={(e) => void handleSubmit(e)}>
+          <form onSubmit={(e) => void handleSubmit(e)} aria-live="polite">
             {error && (
-              <div className="mb-6 rounded-lg border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#dc2626]">
+              <div id="login-error" role="alert" className="mb-6 rounded-lg border border-[#fecaca] bg-[#fef2f2] px-4 py-3 text-sm text-[#dc2626]">
                 {error}
               </div>
             )}
@@ -190,6 +191,8 @@ export default function LoginPage() {
                   placeholder="nombre@empresa.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "login-error" : undefined}
                   className="w-full rounded-lg border border-[#d0d0d0] bg-[#fafafa] px-4 py-3.5 pr-12 text-base text-[#111] outline-none transition-all placeholder:text-[#999] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(0,0,0,0.06)]"
                   autoComplete="email"
                   autoFocus
@@ -215,6 +218,8 @@ export default function LoginPage() {
                   placeholder="Ingresá tu contraseña"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? "login-error" : undefined}
                   className="w-full rounded-lg border border-[#d0d0d0] bg-[#fafafa] px-4 py-3.5 pr-12 text-base text-[#111] outline-none transition-all placeholder:text-[#999] focus:border-[#111] focus:shadow-[0_0_0_3px_rgba(0,0,0,0.06)]"
                   autoComplete="current-password"
                 />
@@ -241,7 +246,7 @@ export default function LoginPage() {
               {loading ? "Ingresando..." : "Iniciar sesión"}
             </Button>
           </form>
-        </div>
+        </FadeIn>
 
         {/* Footer */}
         <p className="text-sm text-[#999]">
