@@ -18,6 +18,7 @@ import { RestoreHistory } from "./components/RestoreHistory";
 import { ConfirmRestoreDialog } from "./components/ConfirmRestoreDialog";
 import { formatDate } from "@/features/dumps/lib/format";
 import { PageHeader } from "@/shared/ui/page-header";
+import { FadeIn } from "@/shared/ui/motion/FadeIn";
 import type { RestoreDto } from "./types";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 
@@ -148,12 +149,20 @@ export default function Restore() {
     return "running";
   }
 
+  const subtitle =
+    state === "idle"
+      ? "Restaurá una base de datos desde Producción a entornos de Desarrollo o QA de forma segura."
+      : state === "dry-run"
+      ? "Revisá los cambios y confirmá para restaurar el dump en el destino."
+      : state === "running"
+      ? "Restaurando base de datos..."
+      : state === "done" && finalStatus === "completed"
+      ? "Restore completado exitosamente."
+      : "El restore falló. Revisá los detalles e intentá de nuevo.";
+
   return (
-    <div className="space-y-5 p-4 sm:p-6 lg:p-8">
-      <PageHeader
-        title="Restaurar"
-        subtitle={state === "dry-run" ? "Revisa los cambios y confirma para restaurar el dump en el destino." : undefined}
-      />
+    <FadeIn className="space-y-6 p-4 sm:p-6 lg:p-8">
+      <PageHeader title="Restaurar" subtitle={subtitle} />
 
       {displayError && (
         <Alert variant="destructive" className="rounded-xl">
@@ -162,39 +171,43 @@ export default function Restore() {
       )}
 
       {state === "idle" && (
-        <div className="grid gap-5 lg:grid-cols-5 lg:items-stretch">
-          <div className="lg:col-span-2">
-            <Card className="h-full rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-              <CardContent className="flex h-full flex-col p-5">
-                <RestoreForm
-                  sourceBackupId={sourceBackupIdFromNav}
-                  dbType={dbTypeFromNav}
-                  backupInfo={backupInfo}
-                  selectedR2Dump={selectedR2Dump}
-                  onR2DumpChange={setSelectedR2Dump}
-                  onDryRun={handleDryRun}
-                  onRestore={handleDirectRestore}
-                  isLoading={restoreLoading}
-                  connections={connections}
-                  connectionsLoading={connectionsLoading}
-                  sourceConnections={sourceConnections}
-                  sourceConnectionsLoading={sourceConnectionsLoading}
-                />
-              </CardContent>
-            </Card>
-          </div>
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+          <Card className="h-full rounded-xl shadow-sm">
+            <CardContent className="flex h-full flex-col p-6">
+              <RestoreForm
+                sourceBackupId={sourceBackupIdFromNav}
+                dbType={dbTypeFromNav}
+                backupInfo={backupInfo}
+                selectedR2Dump={selectedR2Dump}
+                onR2DumpChange={setSelectedR2Dump}
+                onDryRun={handleDryRun}
+                onRestore={handleDirectRestore}
+                isLoading={restoreLoading}
+                connections={connections}
+                connectionsLoading={connectionsLoading}
+                sourceConnections={sourceConnections}
+                sourceConnectionsLoading={sourceConnectionsLoading}
+              />
+            </CardContent>
+          </Card>
 
-          <div className="lg:col-span-3">
-            <RestoreHistory jobs={restoreHistory} connections={connections} isLoading={historyLoading} />
-          </div>
+          <Card className="h-full rounded-xl shadow-sm">
+            <CardContent className="flex h-full flex-col p-6">
+              <RestoreHistory
+                jobs={restoreHistory}
+                connections={connections}
+                isLoading={historyLoading}
+              />
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {state === "dry-run" && dryRunResult && (
         <div ref={dryRunResultRef} className="flex min-h-[calc(100vh-12rem)] flex-col items-center justify-center scroll-mt-6">
           <div className="w-full max-w-6xl">
-            <Card className="rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] animate-in fade-in-0 slide-in-from-top-2 duration-300">
-              <CardContent className="p-5 sm:p-6">
+            <Card className="rounded-xl shadow-sm animate-in fade-in-0 slide-in-from-top-2 duration-300">
+              <CardContent className="p-6">
                 <DryRunResult
                   result={dryRunResult}
                   onConfirm={handleConfirm}
@@ -209,8 +222,8 @@ export default function Restore() {
 
       {state === "running" && restoreJob && (
         <div className="mx-auto max-w-lg">
-          <Card className="rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            <CardContent className="p-5">
+          <Card className="rounded-xl shadow-sm">
+            <CardContent className="p-6">
               <RestoreProgress
                 jobId={restoreJob.id}
                 status={progressStatus()}
@@ -236,8 +249,8 @@ export default function Restore() {
 
       {state === "done" && (
         <div className="mx-auto max-w-lg">
-          <Card className="rounded-3xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            <CardContent className="p-5">
+          <Card className="rounded-xl shadow-sm">
+            <CardContent className="p-6">
               <div className="space-y-4">
                 {finalStatus === "completed" ? (
                   <Alert className="rounded-xl border-green-500/30 bg-green-500/5 text-green-700 dark:text-green-400">
@@ -246,10 +259,7 @@ export default function Restore() {
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <Alert
-                    variant="destructive"
-                    className="rounded-xl"
-                  >
+                  <Alert variant="destructive" className="rounded-xl">
                     <AlertDescription>El restore falló</AlertDescription>
                   </Alert>
                 )}
@@ -268,6 +278,6 @@ export default function Restore() {
           </Card>
         </div>
       )}
-    </div>
+    </FadeIn>
   );
 }

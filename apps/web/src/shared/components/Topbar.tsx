@@ -1,7 +1,7 @@
-import { Sun, Moon, User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Breadcrumbs } from "./Breadcrumbs";
-import { useTheme } from "@/shared/hooks/useTheme";
 import { useSidebar } from "./SidebarProvider";
+import { AnimatedThemeToggler } from "@/shared/ui/animated-theme-toggler";
 import { cn } from "@/shared/lib/cn";
 
 interface TopbarProps {
@@ -9,10 +9,8 @@ interface TopbarProps {
 }
 
 export function Topbar({ className }: TopbarProps) {
-  const { resolvedTheme, toggleTheme } = useTheme();
   const { state, toggle } = useSidebar();
   const sidebarExpanded = state === "expanded";
-  const ThemeIcon = resolvedTheme === "dark" ? Moon : Sun;
 
   return (
     <header
@@ -38,14 +36,7 @@ export function Topbar({ className }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          aria-label="Toggle theme"
-        >
-          <ThemeIcon className="h-4 w-4" />
-        </button>
+        <AnimatedThemeToggler />
 
         {/* User menu placeholder */}
         <button
