@@ -15,6 +15,7 @@ import {
   ConnectionFilters,
   useConnectionFilters,
 } from "./components/ConnectionFilters";
+import { FadeIn } from "@/shared/ui/motion/FadeIn";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
@@ -222,7 +223,7 @@ export default function Connections() {
     createMutation.error ?? updateMutation.error ?? deleteMutation.error;
 
   return (
-    <div className="space-y-8 p-8">
+    <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="Conexiones"
         actions={
@@ -270,6 +271,6 @@ export default function Connections() {
         testResults={testResults}
         testLoading={testLoading}
       />
-    </div>
+    </FadeIn>
   );
 }

@@ -13,8 +13,7 @@ interface StatCardProps {
   statusColor?: string;
   loading?: boolean;
   compact?: boolean;
-  /** Passed through to the underlying Card. Defaults to "default". */
-  variant?: CardVariant;
+  variant?: CardProps["variant"];
 }
 
 export function StatCard({
