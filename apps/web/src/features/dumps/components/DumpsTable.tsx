@@ -1,5 +1,6 @@
 import { DataTable, type Column } from "@/shared/ui/data-table";
 import { StatusBadge } from "@/shared/ui/status-badge";
+import { Database } from "lucide-react";
 import type { BackupJob } from "../types";
 import { DumpActions } from "./DumpActions";
 import { formatSize, formatDate } from "../lib/format";
@@ -117,6 +118,20 @@ const columns: Column<BackupJob>[] = [
   },
 ];
 
+function DumpsEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <Database className="h-8 w-8 mb-3 text-muted-foreground/50" />
+      <p className="text-sm font-medium text-foreground">
+        No hay dumps que coincidan con los filtros
+      </p>
+      <p className="text-xs mt-1">
+        Ajustá los filtros o limpiá la búsqueda
+      </p>
+    </div>
+  );
+}
+
 export function DumpsTable({
   dumps,
   isLoading,
@@ -135,13 +150,17 @@ export function DumpsTable({
           ? `Mostrando ${start}–${end} de ${total} ${total === 1 ? "registro" : "registros"}`
           : "Sin registros"}
       </p>
-      <DataTable
-        columns={columns}
-        data={dumps}
-        loading={isLoading}
-        emptyMessage="No hay backups registrados"
-        pagination={pagination}
-      />
+      {dumps.length === 0 && !isLoading ? (
+        <DumpsEmptyState />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={dumps}
+          loading={isLoading}
+          emptyMessage="No hay backups registrados"
+          pagination={pagination}
+        />
+      )}
     </div>
   );
 }
