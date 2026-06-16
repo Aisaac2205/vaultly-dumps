@@ -1,17 +1,17 @@
+import { useRef, useEffect } from "react";
 import { useDashboard, useConnectionStats, useStorageStats } from "./hooks";
 import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "./api/dashboard-api";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { KpiGrid } from "./components/KpiGrid";
-import { ConnectionHealthCard } from "./components/ConnectionHealthCard";
-import { StorageCard } from "./components/StorageCard";
+import { SystemHealthCard } from "./components/SystemHealthCard";
 import { BackupTimeline } from "./components/BackupTimeline";
 import { RestoreTimeline } from "./components/RestoreTimeline";
-import { FailureAlertBanner } from "./components/FailureAlertBanner";
 import { BackupAreaChart } from "./components/BackupAreaChart";
 import { UpcomingCronjobsCard } from "./components/UpcomingCronjobsCard";
 import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
+import { FadeIn } from "@/shared/ui/motion/FadeIn";
 
 export default function Dashboard() {
   const {
@@ -42,12 +42,23 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   });
 
+  const refreshCycle = useRef(0);
+
+  useEffect(() => {
+    refreshCycle.current += 1;
+  }, [stats, dailyCounts, recentBackups, recentRestores, connections, dumps, cronjobs]);
+
   const isLoading =
     dashboardLoading || connectionsLoading || storageLoading || cronjobsLoading || statsLoading || dailyCountsLoading;
 
   if (isLoading) {
     return (
-      <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
+      <div
+        className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6"
+        role="status"
+        aria-busy="true"
+        aria-label="Cargando dashboard"
+      >
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -73,26 +84,31 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
+    <FadeIn className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        Dashboard actualizado (ciclo {refreshCycle.current})
+      </div>
+
       <DashboardHeader lastUpdated={new Date()} />
 
-      <FailureAlertBanner failedCount={stats?.failed7d ?? 0} />
-
-      <KpiGrid stats={stats} connections={connections} />
+      <KpiGrid stats={stats} connections={connections} dailyCounts={dailyCounts} />
 
       <BackupAreaChart data={dailyCounts} />
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-5 lg:items-stretch">
-        <div className="flex flex-col lg:col-span-3">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-5 lg:items-start">
+        <div className="lg:col-span-3">
           <BackupTimeline backups={recentBackups} />
         </div>
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="flex flex-col gap-4 sm:gap-6 lg:col-span-2">
           <RestoreTimeline restores={recentRestores} />
-          <StorageCard dumps={dumps} />
-          <ConnectionHealthCard connections={connections} />
+          <SystemHealthCard dumps={dumps} connections={connections} />
           <UpcomingCronjobsCard cronjobs={cronjobs} />
         </div>
       </div>
-    </div>
+    </FadeIn>
   );
 }

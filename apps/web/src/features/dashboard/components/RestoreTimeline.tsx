@@ -1,16 +1,13 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { DataTable } from "@/shared/ui/data-table";
+import { StatusBadge } from "@/shared/ui/status-badge";
+import { RotateCcw } from "lucide-react";
 import { shortId, formatDate } from "../lib/format";
 import type { RestoreJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
 
 const MAX_ITEMS = 7;
-
-const STATUS_COLORS: Record<RestoreJob["status"], string> = {
-  completed: "bg-success",
-  failed: "bg-destructive",
-  running: "bg-warning",
-  pending: "bg-muted-foreground",
-};
 
 interface RestoreTimelineProps {
   restores: RestoreJob[];
@@ -19,6 +16,7 @@ interface RestoreTimelineProps {
 export function RestoreTimeline({ restores }: RestoreTimelineProps) {
   const visible = restores.slice(0, MAX_ITEMS);
   const remaining = Math.max(0, restores.length - MAX_ITEMS);
+  const hasRestores = restores.length > 0;
 
   const columns: Column<RestoreJob>[] = [
     {
@@ -41,14 +39,7 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
     },
     {
       header: "Estado",
-      accessor: (job) => (
-        <span
-          className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_COLORS[job.status]}`}
-          title={job.status}
-        />
-      ),
-      className: "w-8 text-center",
-      headerClassName: "text-center",
+      accessor: (job) => <StatusBadge status={job.status} />,
     },
     {
       header: "Fecha",
@@ -60,19 +51,28 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
   ];
 
   return (
-    <div>
-      <h3 className="mb-3 text-base font-semibold">Últimos Restores</h3>
-      <DataTable
-        columns={columns}
-        data={visible}
-        emptyMessage="No hay restores recientes"
-        compact
-      />
-      {remaining > 0 && (
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          +{remaining} más
-        </p>
-      )}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Últimos Restores</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {hasRestores ? (
+          <>
+            <DataTable columns={columns} data={visible} compact />
+            {remaining > 0 && (
+              <p className="mt-2 text-center text-xs text-muted-foreground">
+                +{remaining} más
+              </p>
+            )}
+          </>
+        ) : (
+          <EmptyState
+            icon={<RotateCcw className="h-8 w-8" />}
+            title="Sin restores recientes"
+            description="No se ejecutaron restores en los últimos días."
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }

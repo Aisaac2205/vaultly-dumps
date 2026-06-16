@@ -44,8 +44,12 @@ export interface CronjobEntity {
   id: string;
   name: string;
   isActive: boolean;
-  schedule: string;
+  cronExpression: string;
   connectionId: string;
+  connectionName: string | null;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
+  lastStatus: "pending" | "running" | "completed" | "failed" | null;
 }
 
 export interface HealthStatus {

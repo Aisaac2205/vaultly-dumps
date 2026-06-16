@@ -106,6 +106,6 @@ describe("BackupTimeline", () => {
 
   it("renders empty state when no backups", () => {
     renderTimeline([]);
-    expect(screen.getByText(/No hay backups/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sin backups recientes/i)).toBeInTheDocument();
   });
 });

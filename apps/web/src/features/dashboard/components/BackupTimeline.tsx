@@ -1,15 +1,12 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { DataTable } from "@/shared/ui/data-table";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
-import { shortId, formatDate, formatSize } from "../lib/format";
+import { StatusBadge } from "@/shared/ui/status-badge";
+import { Clock } from "lucide-react";
+import { shortId, formatDate } from "../lib/format";
 import type { BackupJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
-
-const STATUS_COLORS: Record<BackupJob["status"], string> = {
-  completed: "bg-success",
-  failed: "bg-destructive",
-  running: "bg-warning",
-  pending: "bg-muted-foreground",
-};
 
 interface BackupTimelineProps {
   backups: BackupJob[];
@@ -19,76 +16,68 @@ interface BackupTimelineProps {
 export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) {
   const visible = maxItems > 0 ? backups.slice(0, maxItems) : backups;
   const remaining = maxItems > 0 ? Math.max(0, backups.length - maxItems) : 0;
+  const hasBackups = backups.length > 0;
 
   const columns: Column<BackupJob>[] = [
     {
-      header: "ID",
-      accessor: (job) => (
-        <span className="font-mono text-xs">{shortId(job.id)}</span>
-      ),
-      className: "w-20",
-    },
-    {
       header: "Conexión",
       accessor: (job) => (
-        <ConnectionLabel
-          id={job.connectionId}
-          name={job.connectionName}
-        />
+        <div className="flex flex-col gap-0.5">
+          <ConnectionLabel id={job.connectionId} name={job.connectionName} />
+          <span className="font-mono text-[10px] text-muted-foreground/70">
+            {shortId(job.id)}
+          </span>
+        </div>
       ),
     },
     {
       header: "Entorno",
       accessor: (job) => (
-        <span className="text-muted-foreground font-mono text-xs uppercase">{job.environment}</span>
+        <span className="font-mono text-xs uppercase text-muted-foreground">
+          {job.environment}
+        </span>
       ),
-      className: "hidden sm:table-cell",
-      headerClassName: "hidden sm:table-cell",
+      className: "hidden md:table-cell",
+      headerClassName: "hidden md:table-cell",
     },
     {
       header: "Estado",
-      accessor: (job) => (
-        <span
-          className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_COLORS[job.status]}`}
-          title={job.status}
-        />
-      ),
-      className: "w-8 text-center",
-      headerClassName: "text-center",
+      accessor: (job) => <StatusBadge status={job.status} />,
     },
     {
-      header: "Fecha",
+      header: "Cuándo",
       accessor: (job) => (
-        <span className="font-mono text-xs whitespace-nowrap">{formatDate(job.createdAt)}</span>
+        <span className="font-mono text-xs whitespace-nowrap tabular-nums">
+          {formatDate(job.createdAt)}
+        </span>
       ),
-      className: "w-28",
-    },
-    {
-      header: "Tamaño",
-      accessor: (job) =>
-        job.fileSizeMb != null
-          ? formatSize(job.fileSizeMb * 1024 * 1024)
-          : "—",
-      className: "w-20",
+      className: "w-24",
     },
   ];
 
   return (
-    <div className="flex h-full flex-col">
-      <h3 className="mb-3 text-base font-semibold">Últimos Backups</h3>
-      <div className="flex-1 rounded-xl bg-card shadow-sm overflow-hidden">
-        <DataTable
-          columns={columns}
-          data={visible}
-          emptyMessage="No hay backups recientes"
-          className=""
-        />
-        {remaining > 0 && (
-          <p className="py-2.5 text-center text-xs text-muted-foreground">
-            +{remaining} más
-          </p>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Últimos Backups</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {hasBackups ? (
+          <>
+            <DataTable columns={columns} data={visible} compact />
+            {remaining > 0 && (
+              <p className="py-2.5 text-center text-xs text-muted-foreground">
+                +{remaining} más
+              </p>
+            )}
+          </>
+        ) : (
+          <EmptyState
+            icon={<Clock className="h-8 w-8" />}
+            title="Sin backups recientes"
+            description="No se ejecutaron backups en los últimos días."
+          />
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

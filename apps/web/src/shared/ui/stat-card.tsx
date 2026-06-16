@@ -10,6 +10,12 @@ interface StatCardProps {
   value: ReactNode;
   icon?: ReactNode;
   trend?: { value: number; positive: boolean };
+  /**
+   * Optional content rendered to the right of the value+trend group.
+   * Useful for inline decorations like a Sparkline that should sit
+   * horizontally next to the metric without changing card height.
+   */
+  aside?: ReactNode;
   statusColor?: string;
   loading?: boolean;
   compact?: boolean;
@@ -21,6 +27,7 @@ export function StatCard({
   value,
   icon,
   trend,
+  aside,
   statusColor,
   loading,
   compact = false,
@@ -59,6 +66,7 @@ export function StatCard({
               {trend.positive ? "↑" : "↓"} {trend.value}%
             </Badge>
           )}
+          {aside && <div className="ml-auto shrink-0">{aside}</div>}
         </div>
       </CardContent>
     </Card>

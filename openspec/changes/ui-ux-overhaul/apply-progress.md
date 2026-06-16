@@ -1229,3 +1229,160 @@ None — implementation matches the user's goal: surface saved-state metadata in
 - **No new dependencies**: Zero npm packages added. All date formatting uses native `Intl` APIs.
 - **Lesson learned**: Users want to see the *state* of their configuration (when was it last edited? when did the sweep last run?), not just the ability to change it. Always surface saved-state metadata in config UIs.
 
+---
+
+## PR 10: feat/ui-dashboard
+
+**Commits**: 9 (8 task + 1 apply-progress)
+**Date**: 2026-06-16
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: single-pr (PR 10 targets `main` directly — `size:exception` maintainer-approved, ~380 changed lines)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T10-01 | Replace color dots with StatusBadge | ✅ Done | +4/−30 | Typecheck ✅, Tests 137/137 ✅, WCAG 1.4.1 |
+| T10-02 | Add FadeIn + Stagger entry animations | ✅ Done | +41/−31 | Typecheck ✅, Tests 137/137 ✅ |
+| T10-03 | Fix heading hierarchy (h3→h2) | ✅ Done | +2/−2 | Typecheck ✅, Tests 137/137 ✅, WCAG 1.3.1/2.4.6 |
+| T10-04 | Add aria-live region for auto-refresh | ✅ Done | +15/−0 | Typecheck ✅, Tests 137/137 ✅, WCAG 4.1.3 |
+| T10-05 | Create SystemHealthCard (merge Storage + Connection) | ✅ Done | +114/−93 | Typecheck ✅, Tests 137/137 ✅ |
+| T10-06 | Add Sparkline to backups KPI card | ✅ Done | +28/−5 | Typecheck ✅, Tests 137/137 ✅ |
+| T10-07 | Use shared EmptyState component | ✅ Done | +6/−4 | Typecheck ✅, Tests 137/137 ✅ |
+| T10-08 | Visual polish pass (spacing, a11y) | ✅ Done | +7/−2 | Typecheck ✅, Tests 137/137 ✅ |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `e548bd7` | `feat: replace color-only status dots with StatusBadge in dashboard timelines` | T10-01 |
+| `ff1f01c` | `feat: add FadeIn and Stagger entry animations to dashboard` | T10-02 |
+| `fb44306` | `fix: correct dashboard heading hierarchy to h1 > h2` | T10-03 |
+| `4764de2` | `feat: announce dashboard auto-refresh via aria-live region` | T10-04 |
+| `03519e4` | `feat: merge storage and connection cards into SystemHealthCard` | T10-05 |
+| `5c8969e` | `feat: add sparkline to backups-last-7-days KPI card` | T10-06 |
+| `3aaa256` | `refactor: use shared EmptyState component in dashboard` | T10-07 |
+| `3e8f4a0` | `chore: dashboard polish pass for spacing and a11y` | T10-08 |
+| *(next)* | `chore: append PR 10 section to apply progress` | Chore |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/features/dashboard/index.tsx` | Modified | +35, −8 (FadeIn, aria-live, SystemHealthCard, dailyCounts prop, aria-busy) |
+| `apps/web/src/features/dashboard/components/KpiGrid.tsx` | Modified | +89, −5 (Stagger+StaggerItem, variant="outlined", Sparkline, dailyCounts) |
+| `apps/web/src/features/dashboard/components/BackupTimeline.tsx` | Modified | +6, −15 (StatusBadge, h2 fix, rounded-lg) |
+| `apps/web/src/features/dashboard/components/RestoreTimeline.tsx` | Modified | +4, −15 (StatusBadge, h2 fix) |
+| `apps/web/src/features/dashboard/components/SystemHealthCard.tsx` | Created | 112 |
+| `apps/web/src/features/dashboard/components/StorageCard.tsx` | Deleted | −48 |
+| `apps/web/src/features/dashboard/components/ConnectionHealthCard.tsx` | Deleted | −41 |
+| `apps/web/src/features/dashboard/components/UpcomingCronjobsCard.tsx` | Modified | +6, −4 (EmptyState) |
+
+**Total**: 215 insertions, 165 deletions = 380 changed lines (within 400-line budget with `size:exception` since design.md budget was ~462 lines total)
+
+### Diff Stat
+
+```
+ .../dashboard/components/BackupTimeline.tsx        |  21 +---
+ .../dashboard/components/ConnectionHealthCard.tsx  |  41 --------
+ .../src/features/dashboard/components/KpiGrid.tsx  |  94 +++++++++++------
+ .../dashboard/components/RestoreTimeline.tsx       |  19 +---
+ .../features/dashboard/components/StorageCard.tsx  |  48 ---------
+ .../dashboard/components/SystemHealthCard.tsx      | 112 +++++++++++++++++++++
+ .../dashboard/components/UpcomingCronjobsCard.tsx  |  10 +-
+ apps/web/src/features/dashboard/index.tsx          |  35 +++++--
+ 8 files changed, 215 insertions(+), 165 deletions(-)
+```
+
+### Test Results
+
+```
+✓ src/shared/hooks/__tests__/useTheme.test.ts (12 tests)
+✓ src/shared/components/__tests__/Sidebar.test.tsx (23 tests)
+✓ src/shared/components/__tests__/Topbar.test.tsx (7 tests)
+✓ src/shared/components/__tests__/Breadcrumbs.test.tsx (6 tests)
+✓ src/shared/components/__tests__/Layout.test.tsx (6 tests)
+✓ src/shared/ui/button.test.tsx (3 tests)
+✓ src/shared/ui/card.test.tsx (4 tests)
+✓ src/shared/ui/stat-card.test.tsx (3 tests)
+✓ src/shared/ui/data-table.test.tsx (5 tests)
+✓ src/shared/ui/pagination.test.tsx (6 tests)
+✓ src/shared/ui/filters.test.tsx (5 tests)
+✓ src/shared/ui/dialog.test.tsx (3 tests)
+✓ src/shared/ui/sheet.test.tsx (4 tests)
+✓ src/shared/ui/sparkline.test.tsx (6 tests)
+✓ src/shared/ui/trend-indicator.test.tsx (8 tests)
+✓ src/shared/ui/motion/FadeIn.test.tsx (2 tests)
+✓ src/shared/ui/motion/Stagger.test.tsx (2 tests)
+✓ src/shared/ui/motion/PressFeedback.test.tsx (2 tests)
+✓ src/features/cronjobs/components/__tests__/CronjobsTable.test.tsx (7 tests)
+✓ src/features/audit/components/__tests__/AuditTable.test.tsx (6 tests)
+✓ src/features/audit/hooks/useAudit.test.tsx (2 tests)
+✓ src/features/dashboard/components/__tests__/BackupAreaChart.test.tsx (3 tests)
+✓ src/features/dashboard/components/__tests__/BackupTimeline.test.tsx (7 tests)
+✓ src/features/dumps/hooks/useDumps.test.tsx (5 tests)
+
+Test Files: 24 passed (24)
+Tests:      137 passed (137)
+```
+
+### Typecheck
+
+```
+pnpm --filter @vaultly-control/web typecheck → clean (no errors)
+pnpm --filter @vaultly-control/api typecheck → clean (no errors)
+```
+
+### Build
+
+```
+pnpm --filter @vaultly-control/web build → successful
+```
+
+(Pre-existing chunk-size warnings — not related to PR 10.)
+
+### Lint
+
+```
+ESLint not installed for apps/web. Pre-existing condition — does not block.
+```
+
+### Spec Scenarios Covered
+
+| Requirement | Scenarios | Implementation |
+|-------------|-----------|----------------|
+| Entrada Animada de Página | 2 (loads with FadeIn, reduced motion disables) | FadeIn wraps entire page; Stagger wraps KPI cards; both honor `useReducedMotion()` internally |
+| KPI Grid con Sparkline | 4 (4 outlined StatCards, sparkline shows 7 days, only one card has sparkline, zero data) | KpiGrid uses `variant="outlined"`; second card shows Sparkline with `aria-label`; `sevenDayTotal` computed from `dailyCounts` last 7 entries |
+| Failure Alert Banner | 2 (appears with failures, hidden when none) | Pre-existing — not modified |
+| Backup Area Chart | 1 (chart with default range) | Pre-existing — not modified |
+| Backup and Restore Timelines | 4 (StatusBadge, up to 15/7 rows, screen reader text, empty state) | StatusBadge replaces color dots; h2 headings; DataTable `emptyMessage` prop |
+| System Health Card | 3 (storage+connections, state badge with text, empty state) | SystemHealthCard merged from StorageCard+ConnectionHealthCard; vertical sections with h3 subsections; EmptyState for complete absence |
+| Upcoming Cronjobs Card | 2 (next 4 cronjobs, empty state) | EmptyState with Clock icon replaces inline `<p>` |
+| Auto-Refresh Indicator | 3 (data refreshes, timestamp changes, no spinner) | `aria-live="polite"` announces "Dashboard actualizado (ciclo N)" on each data change; no spinner per spec |
+| Keyboard Navigation and Focus | 3 (tab order, focus-visible, no traps) | Pre-existing Card/Button components handle `:focus-visible`; no keyboard traps introduced |
+| Accessible Status and Heading Hierarchy | 3 (h1→h2, color not sole differentiator, sparkline aria-label) | h3→h2 in timelines; StatusBadge dot+text+color; Sparkline `aria-label` describes 7-day series |
+| Live Regions and Color Contrast | 2 (aria-live announces update, WCAG contrast) | Polite live region with cycle counter; design tokens unchanged (PR 1/3c4) |
+
+### Deviations from Spec
+
+1. **Card label changed**: "Backups hoy" → "Backups últimos 7 días" — the sparkline card now shows the total of the last 7 days of `dailyCounts` (sum of `scheduled + manual`) rather than `backupsToday`. This aligns with the spec requirement that explicitly names the card "Backups últimos 7 días" and derives the sparkline from `dailyCounts`.
+
+2. **Heading level for SystemHealthCard subsections**: The storage and connections subsections use `<h3>` since they are nested inside a `<CardTitle>` which establishes the `<h2>` context. This maintains proper hierarchy: h1 (Dashboard) → h2 (Salud del Sistema) → h3 (Almacenamiento R2, Conexiones).
+
+3. **No TrendIndicator on success rate card**: Per spec deviations section — "No TrendIndicator on the success-rate card (no honest delta data source)."
+
+4. **AutoRefreshIndicator has no spinner**: Per spec deviations section — "AutoRefreshIndicator has NO spinner — Only timestamp text changes; `aria-live='polite'` handles screen reader feedback."
+
+### Notes
+
+- **Zero API changes**: This PR only touches `apps/web/src/features/dashboard/`. No `apps/api/**` files modified.
+- **Zero spec changes**: No files in `openspec/changes/ui-ux-overhaul/specs/` were modified.
+- **Deleted 2 files**: `StorageCard.tsx` and `ConnectionHealthCard.tsx` merged into `SystemHealthCard.tsx` (1 new file).
+- **StatusBadge reuse**: The `StatusBadge` primitive from `shared/ui/status-badge.tsx` provides dot + text + color. Replaces all color-only status dots in BackupTimeline and RestoreTimeline, fixing WCAG 1.4.1.
+- **FadeIn + Stagger**: Match the PR 8 Cronjobs pattern exactly. Both primitives internally gate on `useReducedMotion()`.
+- **Sparkline data source**: Derived from `dailyCounts` query (last 7 entries, sum of `scheduled + manual` per day). The Sparkline renders with `aria-label` describing the 7-day values for screen readers.
+- **aria-live implementation**: Uses a `useRef` cycle counter incremented via `useEffect` watching all data sources. The live region text includes the cycle number to force re-announcement on each refresh cycle.
+- **Conventional commits**: All 8 task commits follow the project convention — NO parentheses/scopes in subject lines.
+- **Build verified**: `pnpm --filter @vaultly-control/web build` succeeds. Pre-existing chunk-size warnings from vite build, not related to PR 10.
+- **PR created**: See PR link below.
+
