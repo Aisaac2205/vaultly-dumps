@@ -1,29 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { PaginatedDumps } from "../types";
 import { useDumps } from "./useDumps";
-import type { BackupJob } from "../types";
-import apiClient from "../../../shared/lib/api-client";
 
-vi.mock("../../../shared/lib/api-client");
+const mockGetHistory = vi.fn();
 
-const mockApiClient = vi.mocked(apiClient);
-
-const mockDump: BackupJob = {
-  id: "1",
-  connectionId: "conn-1",
-  connectionName: "Production DB",
-  environment: "prod",
-  dbType: "postgres",
-  status: "completed",
-  fileKey: "backups/dump1.sql",
-  fileSizeMb: 1.5,
-  startedAt: "2024-01-15T10:00:00Z",
-  completedAt: "2024-01-15T10:05:00Z",
-  errorMessage: null,
-  triggeredBy: "admin",
-  createdAt: "2024-01-15T10:00:00Z",
-};
+vi.mock("../api/dumps-api", () => ({
+  dumpsApi: {
+    getHistory: (...args: unknown[]) => mockGetHistory(...args),
+    triggerBackup: vi.fn(),
+    getDownloadUrl: vi.fn(),
+    getConnections: vi.fn(),
+  },
+}));
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -31,64 +21,127 @@ function createWrapper() {
       queries: { retry: false },
     },
   });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  // eslint-disable-next-line react-refresh/only-export-components
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+  };
 }
 
 describe("useDumps", () => {
   beforeEach(() => {
-    mockApiClient.get.mockClear();
-  });
-
-  afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should extract data from PaginatedResponseDto wrapper", async () => {
-    // Simula la respuesta real del backend: { data: [...], total: N, page: 1, pageSize: 10 }
-    mockApiClient.get.mockResolvedValueOnce({
-      data: {
-        data: [mockDump],
-        total: 1,
-        page: 1,
-        pageSize: 10,
-      },
-    });
+  it("calls getHistory with page and pageSize", async () => {
+    const mockData: PaginatedDumps = {
+      data: [{ id: "j-1", connectionId: "c-1", connectionName: "DB Prod", environment: "prod", dbType: "postgres", status: "completed", fileKey: "dump.sql", fileSizeMb: 42, startedAt: "2026-01-01T00:00:00Z", completedAt: "2026-01-01T00:05:00Z", errorMessage: null, triggeredBy: "manual", createdAt: "2026-01-01T00:00:00Z" }],
+      total: 50,
+      page: 1,
+      pageSize: 25,
+    };
+    mockGetHistory.mockResolvedValueOnce(mockData);
 
-    const { result } = renderHook(() => useDumps(), {
-      wrapper: createWrapper(),
-    });
+    const { result } = renderHook(
+      () => useDumps({ page: 1, pageSize: 25, filters: {} }),
+      { wrapper: createWrapper() },
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.error).toBeNull();
-    expect(result.current.dumps).toHaveLength(1);
-    expect(result.current.total).toBe(1);
-    expect(result.current.dumps[0].id).toBe("1");
+    expect(mockGetHistory).toHaveBeenCalledWith({ page: 1, pageSize: 25 });
+    expect(result.current.data).toEqual(mockData.data);
+    expect(result.current.total).toBe(50);
+    expect(result.current.page).toBe(1);
+    expect(result.current.pageSize).toBe(25);
   });
 
-  it("should handle empty paginated response", async () => {
-    mockApiClient.get.mockResolvedValueOnce({
-      data: {
-        data: [],
-        total: 0,
-        page: 1,
-        pageSize: 10,
-      },
+  it("passes filters to getHistory when active", async () => {
+    const mockData: PaginatedDumps = { data: [], total: 0, page: 1, pageSize: 10 };
+    mockGetHistory.mockResolvedValueOnce(mockData);
+
+    renderHook(
+      () =>
+        useDumps({
+          page: 2,
+          pageSize: 10,
+          filters: { status: "completed", environment: "prod" },
+        }),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(mockGetHistory).toHaveBeenCalled();
     });
 
-    const { result } = renderHook(() => useDumps(), {
-      wrapper: createWrapper(),
+    expect(mockGetHistory).toHaveBeenCalledWith({
+      page: 2,
+      pageSize: 10,
+      filters: { status: "completed", environment: "prod" },
     });
+  });
+
+  it("omits filters param when all filters are empty", async () => {
+    const mockData: PaginatedDumps = { data: [], total: 0, page: 3, pageSize: 50 };
+    mockGetHistory.mockResolvedValueOnce(mockData);
+
+    renderHook(
+      () => useDumps({ page: 3, pageSize: 50, filters: {} }),
+      { wrapper: createWrapper() },
+    );
+
+    await waitFor(() => {
+      expect(mockGetHistory).toHaveBeenCalled();
+    });
+
+    expect(mockGetHistory).toHaveBeenCalledWith({ page: 3, pageSize: 50 });
+  });
+
+  it("returns empty data when response has no records", async () => {
+    const emptyData: PaginatedDumps = { data: [], total: 0, page: 1, pageSize: 25 };
+    mockGetHistory.mockResolvedValueOnce(emptyData);
+
+    const { result } = renderHook(
+      () => useDumps({ page: 1, pageSize: 25, filters: {} }),
+      { wrapper: createWrapper() },
+    );
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(result.current.dumps).toHaveLength(0);
+    expect(result.current.data).toEqual([]);
     expect(result.current.total).toBe(0);
+    expect(result.current.error).toBeNull();
+  });
+
+  it("includes filters in queryKey for cache isolation", async () => {
+    const mockData: PaginatedDumps = { data: [], total: 0, page: 1, pageSize: 25 };
+    mockGetHistory.mockResolvedValue(mockData);
+
+    const { rerender } = renderHook(
+      ({ page, pageSize, filters }: { page: number; pageSize: number; filters: Record<string, string> }) =>
+        useDumps({ page, pageSize, filters }),
+      {
+        wrapper: createWrapper(),
+        initialProps: { page: 1, pageSize: 25, filters: {} },
+      },
+    );
+
+    await waitFor(() => {
+      expect(mockGetHistory).toHaveBeenCalledTimes(1);
+    });
+
+    // Change filters — should trigger a new query
+    rerender({ page: 1, pageSize: 25, filters: { status: "failed" } });
+
+    await waitFor(() => {
+      expect(mockGetHistory).toHaveBeenCalledTimes(2);
+    });
   });
 });

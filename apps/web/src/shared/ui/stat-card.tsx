@@ -3,6 +3,8 @@ import { Badge, BadgeDot } from "@/shared/ui/badge";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { type ReactNode } from "react";
 
+type CardVariant = NonNullable<CardProps["variant"]>;
+
 interface StatCardProps {
   label: string;
   value: ReactNode;

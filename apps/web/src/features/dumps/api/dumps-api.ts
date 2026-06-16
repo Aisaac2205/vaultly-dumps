@@ -1,10 +1,24 @@
 import apiClient from "@/shared/lib/api-client";
-import type { BackupJob, Connection, EnrichedR2Object } from "../types";
+import type { BackupJob, Connection, EnrichedR2Object, PaginatedDumps, DumpsFilters } from "../types";
 import type { BackupCategory } from "@/types/backup.types";
 
+export interface GetHistoryParams {
+  page?: number;
+  pageSize?: number;
+  filters?: DumpsFilters;
+}
+
 export const dumpsApi = {
-  getHistory: () =>
-    apiClient.get<BackupJob[]>("/backups/history").then((r) => r.data),
+  getHistory: (params?: GetHistoryParams) =>
+    apiClient
+      .get<PaginatedDumps>("/backups/history", {
+        params: {
+          page: params?.page ?? 1,
+          pageSize: params?.pageSize ?? 25,
+          ...params?.filters,
+        },
+      })
+      .then((r) => r.data),
 
   getBackupById: (id: string) =>
     apiClient.get<BackupJob>(`/backups/${id}`).then((r) => r.data),
