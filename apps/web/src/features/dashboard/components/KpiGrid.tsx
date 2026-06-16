@@ -40,18 +40,16 @@ export function KpiGrid({ stats, connections, dailyCounts }: KpiGridProps) {
       <StaggerItem>
         <StatCard
           label="Backups últimos 7 días"
-          value={
-            <span className="flex flex-col gap-1">
-              <span>{sevenDayTotal}</span>
-              {sevenDaySeries.length >= 2 && (
-                <Sparkline
-                  data={sevenDaySeries}
-                  width={80}
-                  height={24}
-                  aria-label={sparklineLabel}
-                />
-              )}
-            </span>
+          value={sevenDayTotal}
+          aside={
+            sevenDaySeries.length >= 2 ? (
+              <Sparkline
+                data={sevenDaySeries}
+                width={80}
+                height={24}
+                aria-label={sparklineLabel}
+              />
+            ) : undefined
           }
           icon={<CalendarCheck className="h-4 w-4" />}
           variant="outlined"
