@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import { EmptyState } from "@/shared/ui/empty-state";
 import { Clock, Calendar } from "lucide-react";
 import type { CronjobEntity } from "../types";
 
@@ -20,10 +21,11 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
       </CardHeader>
       <CardContent>
         {upcoming.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-4 text-center text-sm text-muted-foreground">
-            <Clock className="h-8 w-8" />
-            <p>No hay cronjobs activos</p>
-          </div>
+          <EmptyState
+            icon={<Clock className="h-8 w-8" />}
+            title="No hay cronjobs activos"
+            description="No se encontraron cronjobs programados próximamente."
+          />
         ) : (
           <div className="space-y-2">
             {upcoming.map((cj) => (
