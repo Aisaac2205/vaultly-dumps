@@ -240,8 +240,21 @@ Chain strategy: stacked-to-main
 ---
 
 ### PR 6: feat/ui-audit
-**PR total line estimate:** ~190
+**PR total line estimate:** ~270 (includes T6-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
+
+#### T6-00 Write audit-ui spec
+**Description:** Create `openspec/changes/ui-ux-overhaul/specs/audit-ui/spec.md` documenting Audit UI behavior, scenarios, and cross-app contract with audit-api.
+**Files:**
+- `openspec/changes/ui-ux-overhaul/specs/audit-ui/spec.md` (+)
+**Line estimate:** 80
+**Depends on:** none
+**Acceptance:**
+- Spec has 4+ scenarios (WHEN...THEN...) covering: paginated audit list, filter combinations, empty state, error handling
+- Cross-app contract with `audit-api` referenced (paginated response shape from PR #4)
+- TanStack Query migration documented (replacing the prior `useEffect` + `fetch` pattern)
+- Filters compound pattern from PR 2b referenced
+- Pagination compound from PR 2b referenced
 
 #### T6-01 Migrate Audit to TanStack Query
 **Description:** Rewrite `useAudit.ts` from plain `useEffect` to `useQuery` with pagination.
@@ -266,8 +279,21 @@ Chain strategy: stacked-to-main
 ---
 
 ### PR 7: feat/ui-connections
-**PR total line estimate:** ~150
+**PR total line estimate:** ~230 (includes T7-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
+
+#### T7-00 Write connections-ui spec
+**Description:** Create `openspec/changes/ui-ux-overhaul/specs/connections-ui/spec.md` documenting Connections UI behavior, scenarios, and cross-app contract.
+**Files:**
+- `openspec/changes/ui-ux-overhaul/specs/connections-ui/spec.md` (+)
+**Line estimate:** 80
+**Depends on:** none
+**Acceptance:**
+- Spec has 4+ scenarios covering: connection list, create form, edit form, credential rotation, delete with confirmation
+- Cross-app contract with `connections` module API referenced (enums from `apps/api/src/database/enums/`)
+- Form UX pattern documented (label-above-input, error-below, helper text)
+- Entorno column from PR 3c4 referenced for tables
+- Drawer/modal patterns from PR 2b referenced
 
 #### T7-01 Update Connections UI
 **Description:** Apply new primitives (Cards, Buttons, motion) to Connections.
@@ -284,8 +310,21 @@ Chain strategy: stacked-to-main
 ---
 
 ### PR 8: feat/ui-cronjobs
-**PR total line estimate:** ~100
+**PR total line estimate:** ~180 (includes T8-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
+
+#### T8-00 Write cronjobs-ui spec
+**Description:** Create `openspec/changes/ui-ux-overhaul/specs/cronjobs-ui/spec.md` documenting Cronjobs UI behavior and scenarios.
+**Files:**
+- `openspec/changes/ui-ux-overhaul/specs/cronjobs-ui/spec.md` (+)
+**Line estimate:** 80
+**Depends on:** none
+**Acceptance:**
+- Spec has 4+ scenarios covering: cronjob list, enable/disable toggle, manual trigger, run history
+- Cross-app contract with `jobs` module API referenced
+- Toggle/switch motion from emil-design-eng referenced (instant feedback, no transition)
+- Status indicator (active/paused/failed) pattern documented
+- Filter by environment (Entorno) documented
 
 #### T8-01 Update Cronjobs UI
 **Description:** Apply new primitives to Cronjobs.
@@ -299,8 +338,21 @@ Chain strategy: stacked-to-main
 ---
 
 ### PR 9: feat/ui-cleanup
-**PR total line estimate:** ~100
+**PR total line estimate:** ~180 (includes T9-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
+
+#### T9-00 Write cleanup-ui spec
+**Description:** Create `openspec/changes/ui-ux-overhaul/specs/cleanup-ui/spec.md` documenting Cleanup UI behavior and scenarios, preserving the prior humanized UX (commit `c62bd7e`).
+**Files:**
+- `openspec/changes/ui-ux-overhaul/specs/cleanup-ui/spec.md` (+)
+**Line estimate:** 80
+**Depends on:** none
+**Acceptance:**
+- Spec has 4+ scenarios covering: cleanup rules list, dry-run preview, apply with confirmation, history
+- **MUST preserve** the humanized UX from commit `c62bd7e` (cited explicitly in the spec)
+- Cross-app contract with `maintenance` module API referenced
+- Destructive action confirmation pattern documented (modal with typed-confirm or hold-to-confirm)
+- Toast feedback pattern from emil-design-eng referenced
 
 #### T9-01 Update Cleanup UI
 **Description:** Apply new primitives to Cleanup while preserving UX.
@@ -314,8 +366,21 @@ Chain strategy: stacked-to-main
 ---
 
 ### PR 10: feat/ui-dashboard
-**PR total line estimate:** ~150
+**PR total line estimate:** ~230 (includes T10-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
+
+#### T10-00 Write dashboard-ui spec
+**Description:** Create `openspec/changes/ui-ux-overhaul/specs/dashboard-ui/spec.md` documenting Dashboard behavior and scenarios. The dashboard is the only place where Sparkline and TrendIndicator from PR 3c3 are used.
+**Files:**
+- `openspec/changes/ui-ux-overhaul/specs/dashboard-ui/spec.md` (+)
+**Line estimate:** 80
+**Depends on:** none
+**Acceptance:**
+- Spec has 4+ scenarios covering: stats overview, time-series chart (Sparkline), trend comparison (TrendIndicator), drill-down to feature pages
+- Sparkline/TrendIndicator from PR 3c3 referenced as the canonical implementation
+- Chart dark-mode pattern from PR 3c4 referenced (CSS variables for chart colors)
+- Stagger entry animation from PR 1 referenced (no scroll-triggered choreography)
+- Backward navigation patterns documented
 
 #### T10-01 Update Dashboard UI
 **Description:** Apply new primitives and stagger animations to dashboard cards.
@@ -329,8 +394,22 @@ Chain strategy: stacked-to-main
 ---
 
 ### PR 11: feat/ui-users
-**PR total line estimate:** ~200
+**PR total line estimate:** ~280 (includes T11-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
+
+#### T11-00 Write users-ui spec
+**Description:** Create `openspec/changes/ui-ux-overhaul/specs/users-ui/spec.md` documenting Users UI behavior and scenarios.
+**Files:**
+- `openspec/changes/ui-ux-overhaul/specs/users-ui/spec.md` (+)
+**Line estimate:** 80
+**Depends on:** none
+**Acceptance:**
+- Spec has 4+ scenarios covering: user list with filters, create user, edit user, change password, role assignment
+- Better Auth contract referenced (the API source of truth for user/role enums)
+- Dialog/sheet patterns from PR 2b referenced (motion entry animations)
+- Filters compound pattern from PR 2b referenced (this PR adds filters to users)
+- Password input UX (show/hide toggle) documented
+- Destructive action confirmation (delete user) documented
 
 #### T11-01 Update Users UI & Add Filters
 **Description:** Apply new primitives and add filter compound component.
@@ -348,8 +427,22 @@ Chain strategy: stacked-to-main
 ---
 
 ### PR 12: feat/ui-login-polish
-**PR total line estimate:** ~80
+**PR total line estimate:** ~160 (includes T12-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
+
+#### T12-00 Write login spec
+**Description:** Create `openspec/changes/ui-ux-overhaul/specs/login/spec.md` documenting LoginPage behavior and visual consistency requirements.
+**Files:**
+- `openspec/changes/ui-ux-overhaul/specs/login/spec.md` (+)
+**Line estimate:** 80
+**Depends on:** none
+**Acceptance:**
+- Spec has 4+ scenarios covering: empty form, validation errors, successful login, failed login
+- Better Auth login API contract referenced
+- Token storage pattern documented (httpOnly cookie + localStorage strategy)
+- Visual consistency with the rest of the app documented (uses same Button, Card, tokens)
+- No 3rd-party login providers in scope (out of scope explicitly)
+- Accessibility: keyboard nav, focus management, screen reader labels
 
 #### T12-01 Polish LoginPage
 **Description:** Replace inline styles with CSS tokens and use standard Button. Add entrance animation.
@@ -363,8 +456,21 @@ Chain strategy: stacked-to-main
 ---
 
 ### PR 13: feat/ui-motion-pass
-**PR total line estimate:** ~30
+**PR total line estimate:** ~110 (includes T13-00 spec, ~80 lines)
 **PR status:** ✅ within 400-line budget
+
+#### T13-00 Write motion-pass spec
+**Description:** Create `openspec/changes/ui-ux-overhaul/specs/motion-pass/spec.md` documenting the final motion pass, a11y audit, and reduced-motion verification scope.
+**Files:**
+- `openspec/changes/ui-ux-overhaul/specs/motion-pass/spec.md` (+)
+**Line estimate:** 80
+**Depends on:** none
+**Acceptance:**
+- Spec has 4+ scenarios covering: page transition timing, reduced-motion compliance, focus management on route change, motion regression detection
+- The page transition configuration documented (start/end states, easing, duration)
+- `prefers-reduced-motion` overrides enumerated per component
+- A11y audit checklist: keyboard nav, focus visible, screen reader labels, color contrast
+- Out of scope explicitly: motion on initial load, scroll-triggered animations (per design-taste-frontend dial config)
 
 #### T13-01 Finalize Page Transitions
 **Description:** Complete the `AnimatePresence` page transition configuration in Layout.
