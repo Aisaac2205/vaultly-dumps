@@ -87,7 +87,7 @@ function SidebarHeader({ children }: { children: ReactNode }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-3 border-b border-sidebar-border transition-all duration-200",
+        "flex items-center gap-3 transition-all duration-200",
         collapsed ? "justify-center px-2 py-5" : "px-4 py-5",
       )}
     >
@@ -148,8 +148,8 @@ function SidebarUser({
   return (
     <div className="flex flex-col gap-2 border-t border-sidebar-border p-4">
       {!collapsed && user && (
-        <span className="truncate font-mono text-xs text-sidebar-text/60">
-          {user.email}
+        <span className="truncate text-xs text-sidebar-text/60">
+          {user.name}
         </span>
       )}
       <button

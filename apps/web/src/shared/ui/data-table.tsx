@@ -11,7 +11,7 @@ import { type ReactNode } from "react";
 import { cn } from "@/shared/lib/cn";
 
 export interface Column<T> {
-  header: string;
+  header: ReactNode;
   accessor: (item: T) => ReactNode;
   className?: string;
   headerClassName?: string;

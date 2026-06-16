@@ -1,17 +1,51 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/shared/lib/auth-client";
 import { toast } from "sonner";
-import type { User } from "../types";
+import type { User, UserRole } from "../types";
 
-export function useUsers() {
-  return useQuery<User[]>({
-    queryKey: ["users"],
+export interface UseUsersFilters {
+  /** Free-text search applied server-side via Better Auth `searchValue`. */
+  search?: string;
+  /** Role filter applied client-side. */
+  role?: "" | UserRole;
+}
+
+export interface UsersResult {
+  users: User[];
+  total: number;
+}
+
+const USERS_QUERY_KEY = ["users"] as const;
+
+function filtersKey(filters: UseUsersFilters) {
+  return [...USERS_QUERY_KEY, filters] as const;
+}
+
+export function useUsers(filters: UseUsersFilters = {}) {
+  return useQuery<UsersResult>({
+    queryKey: filtersKey(filters),
     queryFn: async () => {
-      const { data, error } = await authClient.admin.listUsers({
-        query: { limit: 100 },
-      });
+      const query: Parameters<typeof authClient.admin.listUsers>[0]["query"] = {
+        limit: 100,
+        sortBy: "createdAt",
+        sortDirection: "desc",
+      };
+      if (filters.search && filters.search.trim()) {
+        query.searchValue = filters.search.trim();
+        query.searchField = "name";
+        query.searchOperator = "contains";
+      }
+
+      const { data, error } = await authClient.admin.listUsers({ query });
       if (error) throw new Error(error.message);
-      return (data?.users ?? []) as unknown as User[];
+      const all = (data?.users ?? []) as unknown as User[];
+
+      const filtered =
+        filters.role === "admin" || filters.role === "user"
+          ? all.filter((u) => u.role === filters.role)
+          : all;
+
+      return { users: filtered, total: data?.total ?? filtered.length };
     },
   });
 }
@@ -23,14 +57,14 @@ export function useCreateUser() {
       email: string;
       password: string;
       name: string;
-      role: "user" | "admin";
+      role: UserRole;
     }) => {
       const { error } = await authClient.admin.createUser(body);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success("Usuario creado");
-      void queryClient.invalidateQueries({ queryKey: ["users"] });
+      void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -44,14 +78,14 @@ export function useToggleRole() {
       role,
     }: {
       userId: string;
-      role: "admin" | "user";
+      role: UserRole;
     }) => {
       const { error } = await authClient.admin.setRole({ userId, role });
       if (error) throw new Error(error.message);
     },
     onSuccess: (_data, variables) => {
       toast.success(`Rol cambiado a ${variables.role}`);
-      void queryClient.invalidateQueries({ queryKey: ["users"] });
+      void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -66,7 +100,7 @@ export function useDeleteUser() {
     },
     onSuccess: () => {
       toast.success("Usuario eliminado");
-      void queryClient.invalidateQueries({ queryKey: ["users"] });
+      void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -87,7 +121,7 @@ export function useUpdateUser() {
     },
     onSuccess: () => {
       toast.success("Usuario actualizado");
-      void queryClient.invalidateQueries({ queryKey: ["users"] });
+      void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -111,7 +145,7 @@ export function useChangePassword() {
     },
     onSuccess: () => {
       toast.success("Contraseña actualizada");
-      void queryClient.invalidateQueries({ queryKey: ["users"] });
+      void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
   });
