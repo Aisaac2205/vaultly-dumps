@@ -1,16 +1,10 @@
 import { DataTable } from "@/shared/ui/data-table";
+import { StatusBadge } from "@/shared/ui/status-badge";
 import { shortId, formatDate } from "../lib/format";
 import type { RestoreJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
 
 const MAX_ITEMS = 7;
-
-const STATUS_COLORS: Record<RestoreJob["status"], string> = {
-  completed: "bg-success",
-  failed: "bg-destructive",
-  running: "bg-warning",
-  pending: "bg-muted-foreground",
-};
 
 interface RestoreTimelineProps {
   restores: RestoreJob[];
@@ -41,14 +35,7 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
     },
     {
       header: "Estado",
-      accessor: (job) => (
-        <span
-          className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_COLORS[job.status]}`}
-          title={job.status}
-        />
-      ),
-      className: "w-8 text-center",
-      headerClassName: "text-center",
+      accessor: (job) => <StatusBadge status={job.status} />,
     },
     {
       header: "Fecha",

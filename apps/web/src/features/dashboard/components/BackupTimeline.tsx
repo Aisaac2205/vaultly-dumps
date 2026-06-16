@@ -1,15 +1,9 @@
 import { DataTable } from "@/shared/ui/data-table";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
+import { StatusBadge } from "@/shared/ui/status-badge";
 import { shortId, formatDate, formatSize } from "../lib/format";
 import type { BackupJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
-
-const STATUS_COLORS: Record<BackupJob["status"], string> = {
-  completed: "bg-success",
-  failed: "bg-destructive",
-  running: "bg-warning",
-  pending: "bg-muted-foreground",
-};
 
 interface BackupTimelineProps {
   backups: BackupJob[];
@@ -47,14 +41,7 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
     },
     {
       header: "Estado",
-      accessor: (job) => (
-        <span
-          className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_COLORS[job.status]}`}
-          title={job.status}
-        />
-      ),
-      className: "w-8 text-center",
-      headerClassName: "text-center",
+      accessor: (job) => <StatusBadge status={job.status} />,
     },
     {
       header: "Fecha",
