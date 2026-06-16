@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import { useDashboard, useConnectionStats, useStorageStats } from "./hooks";
 import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "./api/dashboard-api";
@@ -43,6 +44,12 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   });
 
+  const refreshCycle = useRef(0);
+
+  useEffect(() => {
+    refreshCycle.current += 1;
+  }, [stats, dailyCounts, recentBackups, recentRestores, connections, dumps, cronjobs]);
+
   const isLoading =
     dashboardLoading || connectionsLoading || storageLoading || cronjobsLoading || statsLoading || dailyCountsLoading;
 
@@ -75,6 +82,14 @@ export default function Dashboard() {
 
   return (
     <FadeIn className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        Dashboard actualizado (ciclo {refreshCycle.current})
+      </div>
+
       <DashboardHeader lastUpdated={new Date()} />
 
       <FailureAlertBanner failedCount={stats?.failed7d ?? 0} />
