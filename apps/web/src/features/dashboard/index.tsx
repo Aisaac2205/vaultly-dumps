@@ -12,6 +12,7 @@ import { BackupAreaChart } from "./components/BackupAreaChart";
 import { UpcomingCronjobsCard } from "./components/UpcomingCronjobsCard";
 import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
+import { FadeIn } from "@/shared/ui/motion/FadeIn";
 
 export default function Dashboard() {
   const {
@@ -73,7 +74,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
+    <FadeIn className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
       <DashboardHeader lastUpdated={new Date()} />
 
       <FailureAlertBanner failedCount={stats?.failed7d ?? 0} />
@@ -93,6 +94,6 @@ export default function Dashboard() {
           <UpcomingCronjobsCard cronjobs={cronjobs} />
         </div>
       </div>
-    </div>
+    </FadeIn>
   );
 }
