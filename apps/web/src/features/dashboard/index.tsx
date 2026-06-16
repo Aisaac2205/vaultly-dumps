@@ -93,7 +93,7 @@ export default function Dashboard() {
 
       <FailureAlertBanner failedCount={stats?.failed7d ?? 0} />
 
-      <KpiGrid stats={stats} connections={connections} />
+      <KpiGrid stats={stats} connections={connections} dailyCounts={dailyCounts} />
 
       <BackupAreaChart data={dailyCounts} />
 
