@@ -1172,3 +1172,60 @@ pnpm --filter @vaultly-control/web build → successful (pre-existing chunk size
 - **Conventional commits**: All 8 commits follow English conventional commit style matching the existing project conventions (`feat(cleanup-ui): ...`).
 - **Next in sequence**: PR 10 (`feat/ui-dashboard`)
 
+---
+
+## PR 9b: Add retention visibility (state metadata)
+
+**Commits**: 3
+**Date**: 2026-06-16
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: Additional commits on existing PR 9 branch `feat/ui-cleanup` (PR #24, OPEN)
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `cf19f8d` | `feat(api): track last manual retention sweep run time` | Backend: add `lastSweepAt` column + migration + sweep writes timestamp |
+| `be813d8` | `feat(cleanup-ui): show updatedAt and lastSweepAt in ManualRetentionSettings` | Frontend: metadata footer with `Intl.RelativeTimeFormat` relative times + `aria-live="polite"` |
+| `a635c67` | `feat(cleanup-ui): show enabled state banner and clarify retention section subtitle` | Frontend: `role="status"` banner when enabled + clearer subtitle copy |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/api/src/database/entities/manual-retention-setting.entity.ts` | Modified | +3 (added `lastSweepAt` column) |
+| `apps/api/src/database/migrations/1778716800012-add-last-sweep-at-to-manual-retention-settings.ts` | Created | 28 |
+| `apps/api/src/modules/maintenance/maintenance.service.ts` | Modified | +6 (write `lastSweepAt` after sweep) |
+| `apps/web/src/features/cleanup/types.ts` | Modified | +1 (`lastSweepAt` field) |
+| `apps/web/src/features/cleanup/components/ManualRetentionSettings.tsx` | Modified | +62 (helpers + metadata footer + enabled banner) |
+| `apps/web/src/features/cleanup/index.tsx` | Modified | +3, −3 (subtitle copy) |
+
+### Test Results
+
+```
+API:  6 suites, 29 tests passed
+Web:  24 test files, 137 tests passed
+Typecheck: clean (api + web)
+Build:   successful
+```
+
+### Validation
+
+| Command | Result |
+|---------|--------|
+| `pnpm typecheck` | ✅ clean |
+| `pnpm test` | ✅ 29 api + 137 web = 166 total |
+| `pnpm --filter @vaultly-control/web build` | ✅ successful |
+
+### Deviations from Design
+
+None — implementation matches the user's goal: surface saved-state metadata in the config UI.
+
+### Notes
+
+- **Migration**: `1778716800012` adds `last_sweep_at TIMESTAMP NULL` to `manual_retention_settings`. Run with `pnpm --filter @vaultly-control/api migration:run`.
+- **Banner when disabled**: No hint shown — the checkbox state already communicates this visually.
+- **Relative time format**: Uses `Intl.RelativeTimeFormat("es")` for "hace X minutos/horas", "ayer a las HH:MM" for 24-48h, and `Intl.DateTimeFormat("es-AR")` for older dates.
+- **No new dependencies**: Zero npm packages added. All date formatting uses native `Intl` APIs.
+- **Lesson learned**: Users want to see the *state* of their configuration (when was it last edited? when did the sweep last run?), not just the ability to change it. Always surface saved-state metadata in config UIs.
+
