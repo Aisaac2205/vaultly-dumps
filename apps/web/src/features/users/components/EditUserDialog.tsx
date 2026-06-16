@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Pencil } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { Input } from "@/shared/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -23,22 +25,27 @@ export function EditUserDialog({ userId, currentName }: EditUserDialogProps) {
 
   const mutation = useUpdateUser();
 
-  function handleOpenChange(value: boolean) {
-    setOpen(value);
-    if (value) setName(currentName);
+  function handleOpenChange(next: boolean) {
+    setOpen(next);
+    if (next) setName(currentName);
   }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" title="Editar usuario">
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Editar nombre"
+          aria-label={`Editar nombre de ${currentName}`}
+        >
           <Pencil className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Editar usuario</DialogTitle>
-          <p className="text-sm text-muted-foreground">{currentName}</p>
+          <DialogDescription>{currentName}</DialogDescription>
         </DialogHeader>
         <form
           onSubmit={(e) => {
@@ -51,15 +58,18 @@ export function EditUserDialog({ userId, currentName }: EditUserDialogProps) {
           className="space-y-4"
         >
           <div className="space-y-1.5">
-            <label htmlFor="eu-name" className="text-sm font-medium text-muted-foreground">
+            <label
+              htmlFor="eu-name"
+              className="text-sm font-medium text-foreground"
+            >
               Nombre
             </label>
-            <input
+            <Input
               id="eu-name"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-white/20"
+              autoComplete="name"
             />
           </div>
           <DialogFooter>
@@ -68,8 +78,11 @@ export function EditUserDialog({ userId, currentName }: EditUserDialogProps) {
                 Cancelar
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={mutation.isPending || name === currentName}>
-              {mutation.isPending ? "Guardando..." : "Guardar"}
+            <Button
+              type="submit"
+              disabled={mutation.isPending || name.trim() === currentName.trim()}
+            >
+              {mutation.isPending ? "Guardando…" : "Guardar"}
             </Button>
           </DialogFooter>
         </form>
