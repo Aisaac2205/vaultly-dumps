@@ -1,7 +1,5 @@
-import { useState, useCallback, type FormEvent } from "react";
-import { Search, X } from "lucide-react";
-import { Button } from "@/shared/ui/button";
-import { Card, CardContent } from "@/shared/ui/card";
+import { useCallback, useMemo } from "react";
+import { Filters } from "@/shared/ui/filters";
 import type { AuditFilters } from "../types";
 
 interface AuditFiltersProps {
@@ -10,130 +8,88 @@ interface AuditFiltersProps {
   onReset: () => void;
 }
 
-export default function AuditFilters({ filters, onApply, onReset }: AuditFiltersProps) {
-  const [username, setUsername] = useState(filters.username ?? "");
-  const [environment, setEnvironment] = useState(filters.environment ?? "");
-  const [resourceType, setResourceType] = useState(filters.resourceType ?? "");
-  const [from, setFrom] = useState(filters.from ?? "");
-  const [to, setTo] = useState(filters.to ?? "");
+const ENV_OPTIONS = [
+  { value: "prod", label: "prod" },
+  { value: "dev", label: "dev" },
+  { value: "sqa", label: "sqa" },
+];
 
-  const handleSubmit = useCallback(
-    (e: FormEvent) => {
-      e.preventDefault();
-      onApply({
-        username: username || undefined,
-        environment: environment || undefined,
-        resourceType: resourceType || undefined,
-        from: from || undefined,
-        to: to || undefined,
-      });
+const RESOURCE_OPTIONS = [
+  { value: "backup", label: "backup" },
+  { value: "restore", label: "restore" },
+  { value: "connection", label: "connection" },
+  { value: "cronjob", label: "cronjob" },
+];
+
+function filtersToRecord(f: AuditFilters): Record<string, string> {
+  const r: Record<string, string> = {};
+  if (f.userId) r.userId = f.userId;
+  if (f.username) r.username = f.username;
+  if (f.environment) r.environment = f.environment;
+  if (f.resourceType) r.resourceType = f.resourceType;
+  if (f.from) r.from = f.from;
+  if (f.to) r.to = f.to;
+  return r;
+}
+
+function recordToFilters(r: Record<string, string>): AuditFilters {
+  return {
+    userId: r.userId || undefined,
+    username: r.username || undefined,
+    environment: r.environment || undefined,
+    resourceType: r.resourceType || undefined,
+    from: r.from || undefined,
+    to: r.to || undefined,
+  };
+}
+
+export default function AuditFilters({
+  filters,
+  onApply,
+  onReset,
+}: AuditFiltersProps) {
+  const handleFiltersChange = useCallback(
+    (next: Record<string, string>) => {
+      const converted = recordToFilters(next);
+      if (Object.keys(next).length === 0) {
+        onReset();
+      } else {
+        onApply(converted);
+      }
     },
-    [username, environment, resourceType, from, to, onApply],
+    [onApply, onReset],
   );
 
-  const handleReset = useCallback(() => {
-    setUsername("");
-    setEnvironment("");
-    setResourceType("");
-    setFrom("");
-    setTo("");
-    onReset();
-  }, [onReset]);
-
-  const inputBase =
-    "flex h-9 w-full min-w-[160px] rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="audit-username" className="text-xs font-medium text-muted-foreground">
-              Usuario
-            </label>
-            <input
-              id="audit-username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="nombre.usuario"
-              className={inputBase}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="audit-env" className="text-xs font-medium text-muted-foreground">
-              Ambiente
-            </label>
-            <select
-              id="audit-env"
-              value={environment}
-              onChange={(e) => setEnvironment(e.target.value)}
-              className={inputBase}
-            >
-              <option value="">Todos</option>
-              <option value="prod">prod</option>
-              <option value="dev">dev</option>
-              <option value="sqa">sqa</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="audit-resource" className="text-xs font-medium text-muted-foreground">
-              Recurso
-            </label>
-            <select
-              id="audit-resource"
-              value={resourceType}
-              onChange={(e) => setResourceType(e.target.value)}
-              className={inputBase}
-            >
-              <option value="">Todos</option>
-              <option value="backup">backup</option>
-              <option value="restore">restore</option>
-              <option value="connection">connection</option>
-              <option value="cronjob">cronjob</option>
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="audit-from" className="text-xs font-medium text-muted-foreground">
-              Desde
-            </label>
-            <input
-              id="audit-from"
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-              className={inputBase}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="audit-to" className="text-xs font-medium text-muted-foreground">
-              Hasta
-            </label>
-            <input
-              id="audit-to"
-              type="date"
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-              className={inputBase}
-            />
-          </div>
-
-          <div className="flex gap-2 sm:ml-auto">
-            <Button type="submit" variant="default" size="sm">
-              <Search className="h-4 w-4" />
-              Aplicar
-            </Button>
-            <Button type="button" variant="outline" size="sm" onClick={handleReset}>
-              <X className="h-4 w-4" />
-              Limpiar
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <Filters.Root
+      filters={filtersToRecord(filters)}
+      onFiltersChange={handleFiltersChange}
+    >
+      <div className="flex flex-wrap items-center gap-3">
+        <Filters.Trigger />
+        <Filters.ActiveChips className="flex-1" />
+      </div>
+      <Filters.Popover>
+        <Filters.Search
+          filterKey="username"
+          label="Usuario"
+          placeholder="nombre.usuario"
+        />
+        <Filters.Select
+          filterKey="environment"
+          label="Ambiente"
+          options={ENV_OPTIONS}
+          placeholder="Todos"
+        />
+        <Filters.Select
+          filterKey="resourceType"
+          label="Recurso"
+          options={RESOURCE_OPTIONS}
+          placeholder="Todos"
+        />
+        <Filters.DateRange filterKey="from" label="Desde" />
+        <Filters.DateRange filterKey="to" label="Hasta" />
+      </Filters.Popover>
+    </Filters.Root>
   );
 }

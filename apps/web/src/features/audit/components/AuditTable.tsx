@@ -1,6 +1,14 @@
 import { DataTable, type Column } from "@/shared/ui/data-table";
-
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/shared/ui/pagination";
 import {
   Database,
   Trash2,
@@ -12,6 +20,7 @@ import {
   Clock,
   FileText,
   ChevronRight,
+  ClipboardList,
 } from "lucide-react";
 import type { AuditLog } from "../types";
 
@@ -19,6 +28,9 @@ interface AuditTableProps {
   logs: AuditLog[];
   isLoading: boolean;
   total: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
 }
 
 function formatDate(iso: string): string {
@@ -123,6 +135,104 @@ function MetadataCell({ metadata }: { metadata?: Record<string, unknown> }) {
   );
 }
 
+function AuditPagination({
+  page,
+  pageSize,
+  total,
+  onPageChange,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+  onPageChange: (page: number) => void;
+}) {
+  const totalPages = Math.ceil(total / pageSize);
+  const startItem = (page - 1) * pageSize + 1;
+  const endItem = Math.min(page * pageSize, total);
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (page <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (page >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = page - 1; i <= page + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+    return pages;
+  };
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-between px-4 py-3">
+      <p className="text-sm text-muted-foreground">
+        Mostrando {startItem}–{endItem} de {total}
+      </p>
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={page === 1}
+            />
+          </PaginationItem>
+          {getPageNumbers().map((p, i) =>
+            p === "..." ? (
+              <PaginationItem key={`ellipsis-${i}`}>
+                <PaginationEllipsis />
+              </PaginationItem>
+            ) : (
+              <PaginationItem key={p}>
+                <PaginationLink
+                  isActive={page === p}
+                  onClick={() => onPageChange(p as number)}
+                >
+                  {p}
+                </PaginationLink>
+              </PaginationItem>
+            ),
+          )}
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    </div>
+  );
+}
+
+function AuditEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <ClipboardList className="h-8 w-8 mb-3 text-muted-foreground/50" />
+      <p className="text-sm font-medium text-foreground">
+        No hay registros de auditoría
+      </p>
+      <p className="text-xs mt-1">
+        Ajustá los filtros o limpiá la búsqueda
+      </p>
+    </div>
+  );
+}
+
 const columns: Column<AuditLog>[] = [
   {
     header: "Fecha",
@@ -149,7 +259,7 @@ const columns: Column<AuditLog>[] = [
   {
     header: "Entorno",
     accessor: (log) => (
-      <span className="text-muted-foreground font-mono text-xs uppercase">{log.environment}</span>
+      <span className="font-mono text-xs text-muted-foreground uppercase">{log.environment}</span>
     ),
     className: "hidden sm:table-cell",
     headerClassName: "hidden sm:table-cell",
@@ -162,18 +272,34 @@ const columns: Column<AuditLog>[] = [
   },
 ];
 
-export default function AuditTable({ logs, isLoading, total }: AuditTableProps) {
+export default function AuditTable({
+  logs,
+  isLoading,
+  total,
+  page,
+  pageSize,
+  onPageChange,
+}: AuditTableProps) {
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">
-        Mostrando {total} {total === 1 ? "registro" : "registros"}
-      </p>
-      <DataTable
-        columns={columns}
-        data={logs}
-        loading={isLoading}
-        emptyMessage="No hay registros de auditoría"
-      />
+      {logs.length === 0 && !isLoading ? (
+        <AuditEmptyState />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={logs}
+          loading={isLoading}
+          emptyMessage="No hay registros de auditoría"
+          pagination={
+            <AuditPagination
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={onPageChange}
+            />
+          }
+        />
+      )}
     </div>
   );
 }

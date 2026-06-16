@@ -1,94 +1,103 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { AuditLog, AuditFilters } from "../types";
 import apiClient from "../../../shared/lib/api-client";
 
-const DEFAULT_LIMIT = 10;
+const DEFAULT_PAGE_SIZE = 25;
+
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
 
 interface UseAuditReturn {
   logs: AuditLog[];
   total: number;
+  page: number;
+  pageSize: number;
   isLoading: boolean;
   error: Error | null;
+  filters: AuditFilters;
+  setPage: (page: number) => void;
+  setPageSize: (pageSize: number) => void;
   applyFilters: (filters: AuditFilters) => void;
   resetFilters: () => void;
+  refetch: () => Promise<void>;
 }
 
-function hasActiveFilters(filters: AuditFilters): boolean {
-  return !!(
-    filters.userId ||
-    filters.username ||
-    filters.environment ||
-    filters.resourceType ||
-    filters.from ||
-    filters.to
-  );
+async function fetchAuditLogs(
+  page: number,
+  pageSize: number,
+  filters: AuditFilters,
+): Promise<{ data: AuditLog[]; total: number }> {
+  const params: Record<string, string | number> = {
+    page,
+    pageSize,
+  };
+
+  if (filters.userId) params.userId = filters.userId;
+  if (filters.username) params.username = filters.username;
+  if (filters.environment) params.environment = filters.environment;
+  if (filters.resourceType) params.resourceType = filters.resourceType;
+  if (filters.from) params.from = filters.from;
+  if (filters.to) params.to = filters.to;
+
+  const response = await apiClient.get<PaginatedResponse<AuditLog>>("/audit", {
+    params,
+  });
+
+  return {
+    data: response.data.data,
+    total: response.data.total,
+  };
 }
 
 export function useAudit(): UseAuditReturn {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [total, setTotal] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [filters, setFilters] = useState<AuditFilters>({});
 
-  const fetchLogs = useCallback(async (activeFilters: AuditFilters) => {
-    setIsLoading(true);
-    setError(null);
+  const query = useQuery<{ data: AuditLog[]; total: number }, Error>({
+    queryKey: ["audit", "logs", page, pageSize, filters],
+    queryFn: () => fetchAuditLogs(page, pageSize, filters),
+    staleTime: 30_000,
+  });
 
-    try {
-      const params: Record<string, string> = {};
-      if (activeFilters.userId) params.userId = activeFilters.userId;
-      if (activeFilters.username) params.username = activeFilters.username;
-      if (activeFilters.environment) params.environment = activeFilters.environment;
-      if (activeFilters.resourceType) params.resourceType = activeFilters.resourceType;
-      if (activeFilters.from) params.from = activeFilters.from;
-      if (activeFilters.to) params.to = activeFilters.to;
-
-      const response = await apiClient.get<{
-        data: AuditLog[];
-        total: number;
-        page: number;
-        pageSize: number;
-      }>("/audit", { params });
-
-      const allLogs = response.data.data;
-      const isFiltered = hasActiveFilters(activeFilters);
-      const serverTotal = response.data.total;
-
-      setLogs(isFiltered ? allLogs : allLogs.slice(0, DEFAULT_LIMIT));
-      setTotal(isFiltered ? allLogs.length : serverTotal);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error("Error al cargar los registros de auditoría"));
-    } finally {
-      setIsLoading(false);
-    }
+  const applyFilters = useCallback((newFilters: AuditFilters) => {
+    setPage(1);
+    const cleaned: AuditFilters = {};
+    if (newFilters.userId) cleaned.userId = newFilters.userId;
+    if (newFilters.username) cleaned.username = newFilters.username;
+    if (newFilters.environment) cleaned.environment = newFilters.environment;
+    if (newFilters.resourceType) cleaned.resourceType = newFilters.resourceType;
+    if (newFilters.from) cleaned.from = newFilters.from;
+    if (newFilters.to) cleaned.to = newFilters.to;
+    setFilters(cleaned);
   }, []);
-
-  useEffect(() => {
-    fetchLogs(filters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const applyFilters = useCallback(
-    (newFilters: AuditFilters) => {
-      const cleaned: AuditFilters = {};
-      if (newFilters.userId) cleaned.userId = newFilters.userId;
-      if (newFilters.username) cleaned.username = newFilters.username;
-      if (newFilters.environment) cleaned.environment = newFilters.environment;
-      if (newFilters.resourceType) cleaned.resourceType = newFilters.resourceType;
-      if (newFilters.from) cleaned.from = newFilters.from;
-      if (newFilters.to) cleaned.to = newFilters.to;
-
-      setFilters(cleaned);
-      fetchLogs(cleaned);
-    },
-    [fetchLogs],
-  );
 
   const resetFilters = useCallback(() => {
+    setPage(1);
     setFilters({});
-    fetchLogs({});
-  }, [fetchLogs]);
+  }, []);
 
-  return { logs, total, isLoading, error, applyFilters, resetFilters };
+  const refetch = useCallback(async () => {
+    await query.refetch();
+  }, [query]);
+
+  return {
+    logs: query.data?.data ?? [],
+    total: query.data?.total ?? 0,
+    page,
+    pageSize,
+    isLoading: query.isLoading,
+    error: query.error,
+    filters,
+    setPage,
+    setPageSize,
+    applyFilters,
+    resetFilters,
+    refetch,
+  };
 }
