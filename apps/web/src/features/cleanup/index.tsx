@@ -48,9 +48,8 @@ export default function CleanupPage() {
             Limpieza automática
           </h2>
           <p className="max-w-2xl text-xs text-muted-foreground">
-            Configurala una vez y se ocupa sola. Los backups programados los
-            limpia su cronjob (en Cronjobs → Retención); los manuales, esta
-            política.
+            Esta es tu política global de retención manual. Aplicá cambios
+            abajo para actualizarla.
           </p>
         </div>
         <ManualRetentionSettings />

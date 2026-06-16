@@ -146,6 +146,16 @@ export function ManualRetentionSettings() {
           </p>
         </div>
 
+        {enabled && (
+          <div
+            role="status"
+            className="rounded-md border border-accent/25 bg-accent/5 px-3 py-2 text-xs text-accent-foreground"
+          >
+            Limpieza automática ACTIVADA — se ejecuta todos los días a las
+            03:00.
+          </div>
+        )}
+
         {isError && (
           <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
             Error al cargar retención:{" "}
