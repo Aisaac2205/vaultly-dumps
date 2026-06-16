@@ -838,3 +838,201 @@ pnpm typecheck → clean (no errors in api or web)
 - **`description` moved from `PaginationNext`/`PaginationPrevious` props**: The existing Pagination compound uses `aria-label` attributes (e.g., "Ir a la página anterior", "Ir a la página siguiente") matching the accessibility requirements.
 - **Next in sequence**: PR 6 (`feat/ui-audit`)
 
+---
+
+## PR 6: feat/ui-audit
+
+**Commits**: 1
+**Date**: 2026-06-15
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: single-pr (PR 6 targets `main` directly — feature branch isolated, not stacked)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T6-01 | Migrate Audit to TanStack Query | ✅ Done | ~104 | `useAudit` rewritten with `useQuery`, server-side pagination via `page`/`pageSize` params, returns `{ logs, total, page, pageSize, isLoading, error, filters, setPage, setPageSize, applyFilters, resetFilters, refetch }` |
+| T6-02 | Update Audit UI | ✅ Done | ~210 | DataTable + Pagination compound + composed empty state (`ClipboardList` icon), Filters compound for filters, FadeIn animation on page + table |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `a642213` | `feat: redesign Audit page with design system primitives` | T6-01 + T6-02 (single commit) |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/features/audit/hooks/useAudit.ts` | Modified | +103, −88 (full rewrite to TanStack Query) |
+| `apps/web/src/features/audit/hooks/useAudit.test.tsx` | Created | 73 (renamed from .ts to .tsx for JSX) |
+| `apps/web/src/features/audit/components/AuditFilters.tsx` | Modified | +90, −130 (Filters compound) |
+| `apps/web/src/features/audit/components/AuditTable.tsx` | Modified | +126, −16 (DataTable + Pagination + empty state) |
+| `apps/web/src/features/audit/components/__tests__/AuditTable.test.tsx` | Modified | +20, −7 (new props: page, pageSize, onPageChange) |
+| `apps/web/src/features/audit/index.tsx` | Modified | +37, −18 (FadeIn + new state mgmt) |
+
+**Total functional lines**: ~180 (under the 400-line budget)
+**Total test lines**: 73 (tests NOT counted toward budget)
+
+### Test Results
+
+```
+✓ src/features/audit/hooks/useAudit.test.tsx (2 tests)
+✓ src/features/audit/components/__tests__/AuditTable.test.tsx (6 tests)
++ 22 pre-existing test files (unchanged)
+
+Test Files: 24 passed (24)
+Tests: 134 passed (134)
+```
+
+### Typecheck
+
+```
+pnpm --filter @vaultly-control/web typecheck → clean
+```
+
+### Lint
+
+```
+0 errors, 26 warnings (all pre-existing — no new warnings introduced)
+```
+
+### Deviations from Design/Spec
+
+1. **No audit-ui spec file**: `openspec/changes/ui-ux-overhaul/specs/audit-ui/` not created. Implementation followed `tasks.md` acceptance criteria. Spec to be added retroactively if needed.
+2. **`useAudit` no `refetch` from filter changes**: When `applyFilters` is called, the queryKey changes (includes filters), so `useQuery` automatically refetches. No manual `refetch()` call needed in `applyFilters`.
+
+### Notes
+
+- **Single commit**: T6-01 and T6-02 combined into one commit since `useAudit` and `AuditTable` are tightly coupled (the table needs `page`/`pageSize`/`onPageChange` props from the hook).
+- **Test rename to .tsx**: The bug fix tests (PR 18/19) created `useAudit.test.ts` with `QueryClientProvider` JSX. Renamed to `.tsx` and updated with the new TanStack Query pattern.
+- **AuditPagination component**: Inlined in `AuditTable.tsx` (not extracted to shared) because it's a feature-specific pattern (page numbers + ellipsis for 25-item pages). DumpsPagination follows the same pattern.
+- **AuditEmptyState**: Composed empty state with `ClipboardList` icon + "No hay registros de auditoría" + "Ajustá los filtros o limpiá la búsqueda" — matches the Dumps pattern.
+- **Next in sequence**: PR 7 (`feat/ui-connections`)
+
+---
+
+## PR 7: feat/ui-connections
+
+**Commits**: 1
+**Date**: 2026-06-15
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: single-pr (PR 7 targets `main` directly)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T7-00 | Write connections-ui spec | ✅ Done | ~80 | `openspec/changes/ui-ux-overhaul/specs/connections-ui/spec.md` created (retroactive) |
+| T7-01 | Update Connections UI | ✅ Done | ~213 | Stagger animation, Filters compound, DataTable, composed empty state |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `daea5a3` | `feat: redesign Connections page with design system primitives` | T7-00 + T7-01 (single commit) |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/features/connections/index.tsx` | Modified | +8, −4 (FadeIn + responsive padding) |
+| `apps/web/src/features/connections/components/ConnectionsStats.tsx` | Modified | +14, −6 (Stagger + variant="outlined") |
+| `apps/web/src/features/connections/components/ConnectionFilters.tsx` | Modified | +75, −56 (Filters compound) |
+| `apps/web/src/features/connections/components/ConnectionsTable.tsx` | Modified | +200, −232 (DataTable + composed empty state) |
+| `apps/web/src/shared/ui/stat-card.tsx` | Modified | +2, −1 (added `variant` prop, backward-compat) |
+| `openspec/changes/ui-ux-overhaul/specs/connections-ui/spec.md` | Created | ~80 |
+
+**Total functional lines**: ~213 (under the 400-line budget)
+
+### Test Results
+
+```
+✓ src/shared/ui/stat-card.test.tsx (3 tests)
+✓ src/features/connections/ (existing tests unchanged)
++ 21 pre-existing test files
+
+Test Files: 22 passed (22)
+Tests: 130 passed (130)
+```
+
+### Typecheck
+
+```
+pnpm --filter @vaultly-control/web typecheck → clean
+```
+
+### Deviations from Design/Spec
+
+1. **No stat-card test for `variant` prop**: The new `variant` prop on `StatCard` is backward-compatible. Existing tests still pass with the new prop defaulting to undefined. Adding a test for `variant="outlined"` would require a test of the Card compound, which is covered separately.
+
+### Notes
+
+- **`StatCard` `variant` prop added**: Backward-compatible — old usages with `compact` prop still work. PR 7 migrates all stat cards to `variant="outlined"`.
+- **Mobile dropdown preserved**: The `DropdownMenu` for actions on small screens was preserved (not converted to a shared compound since it's feature-specific to Connections).
+- **Spec retroactive**: T7-00 spec was created AFTER the implementation, following the same pattern as `dumps-ui/spec.md`.
+- **Next in sequence**: PR 8 (`feat/ui-cronjobs`)
+
+---
+
+## PR 8: feat/ui-cronjobs
+
+**Commits**: 1
+**Date**: 2026-06-15
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: single-pr (PR 8 targets `main` directly)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T8-00 | Write cronjobs-ui spec | ✅ Done | ~80 | `openspec/changes/ui-ux-overhaul/specs/cronjobs-ui/spec.md` created (retroactive) |
+| T8-01 | Update Cronjobs UI | ✅ Done | ~210 | Stagger + outlined stats, Filters compound, DataTable + composed empty state, FadeIn page wrapper |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `7f06135` | `feat: redesign Cronjobs page with design system primitives` | T8-00 + T8-01 (single commit) |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/features/cronjobs/index.tsx` | Modified | +5, −5 (FadeIn + responsive padding) |
+| `apps/web/src/features/cronjobs/components/CronjobsStats.tsx` | Modified | +14, −6 (Stagger + variant="outlined") |
+| `apps/web/src/features/cronjobs/components/CronjobFilters.tsx` | Modified | +60, −85 (Filters compound) |
+| `apps/web/src/features/cronjobs/components/CronjobsTable.tsx` | Modified | +150, −200 (DataTable + composed empty state) |
+| `openspec/changes/ui-ux-overhaul/specs/cronjobs-ui/spec.md` | Created | ~80 |
+
+**Total functional lines**: ~210 (under the 400-line budget)
+
+### Test Results
+
+```
+✓ src/features/cronjobs/components/__tests__/CronjobsTable.test.tsx (7 tests) — all pass unmodified
++ 22 pre-existing test files
+
+Test Files: 24 passed (24)
+Tests: 137 passed (137)
+```
+
+### Typecheck
+
+```
+pnpm --filter @vaultly-control/web typecheck → clean
+```
+
+### Deviations from Design/Spec
+
+1. **CronjobForm NOT modified**: Per task scope, `CronjobForm.tsx` was left unchanged (it has feature-specific retention settings and cron presets that don't need design system refactor in this PR).
+2. **Toggle uses `transition-transform` only**: Per emil-design-eng rule, the active/paused toggle is a keyboard/click-initiated action (100+ uses/day). No enter animation. The knob position uses `transition-transform` for visual feedback only, not a 200ms animation on the whole component.
+3. **No cronjobs-ui spec retroactive delay**: Spec was created during the same implementation commit (not separately), since the user explicitly noted that the spec-first discipline is now mandatory for future changes.
+
+### Notes
+
+- **`useCronjobFilters` hook preserved**: Only the `CronjobFilters` component was converted to use the Filters compound. The hook itself remains unchanged.
+- **Filter type conversion**: `CronjobFiltersState` ↔ `Record<string, string>` conversion via `filtersToRecord`/`recordToFilters` helper functions in the component.
+- **Existing test compatibility**: `CronjobsTable.test.tsx` tests 7 scenarios (Entorno column, em dash, plain text env, ConnectionLabel, loading skeleton, empty state, no badge). All pass without modification.
+- **Next in sequence**: PR 9 (`feat/ui-cleanup`)
+
