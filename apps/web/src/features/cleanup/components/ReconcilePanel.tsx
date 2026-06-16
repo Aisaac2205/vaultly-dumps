@@ -33,7 +33,7 @@ function Row({ label, value, muted = false }: RowProps) {
 }
 
 export function ReconcilePanel() {
-  const { data, isLoading } = useReconcilePreview();
+  const { data, isLoading, isError, error } = useReconcilePreview();
   const run = useRunReconcile();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -43,6 +43,25 @@ export function ReconcilePanel() {
         <CardContent className="flex items-center gap-2 p-5 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
           Analizando R2 y base…
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card>
+        <CardContent className="space-y-3 p-5 sm:p-6">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="size-4 text-muted-foreground" aria-hidden="true" />
+            <h3 className="text-sm font-semibold text-text-primary">
+              Sincronizar Almacenamiento y Base de Datos
+            </h3>
+          </div>
+          <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            Error al analizar:{" "}
+            {error instanceof Error ? error.message : "Error desconocido"}
+          </div>
         </CardContent>
       </Card>
     );

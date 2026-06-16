@@ -14,7 +14,7 @@ function countOldDumps(connections: { oldest: string | null }[]): number {
 }
 
 export function StoragePanel() {
-  const { data, isLoading } = useStorageOverview();
+  const { data, isLoading, isError, error } = useStorageOverview();
 
   if (!data && !isLoading) {
     return (
@@ -34,8 +34,59 @@ export function StoragePanel() {
 
   const oldDumps = data ? countOldDumps(data.byConnection) : 0;
 
+  if (data != null && data.totalDumps === 0) {
+    return (
+      <div className="space-y-4">
+        <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StaggerItem>
+            <StatCard
+              variant="outlined"
+              label="Total dumps"
+              value="0"
+              icon={<Database className="h-4 w-4" />}
+            />
+          </StaggerItem>
+          <StaggerItem>
+            <StatCard
+              variant="outlined"
+              label="Total MB"
+              value="0 MB"
+              icon={<HardDrive className="h-4 w-4" />}
+            />
+          </StaggerItem>
+          <StaggerItem>
+            <StatCard
+              variant="outlined"
+              label="Conexiones con dumps"
+              value="0"
+              icon={<Radio className="h-4 w-4" />}
+            />
+          </StaggerItem>
+          <StaggerItem>
+            <StatCard
+              variant="outlined"
+              label="Dumps viejos (&gt;30 d)"
+              value="0"
+              icon={<Clock className="h-4 w-4" />}
+            />
+          </StaggerItem>
+        </Stagger>
+        <p className="text-sm text-muted-foreground text-center py-4">
+          No tenés dumps todavía. Cuando se ejecute un backup, los vas a ver acá.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {isError && (
+        <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Error al cargar almacenamiento:{" "}
+          {error instanceof Error ? error.message : "Error desconocido"}
+        </div>
+      )}
+
       <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StaggerItem>
           <StatCard

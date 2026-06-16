@@ -67,7 +67,7 @@ function NumberField({
 }
 
 export function ManualRetentionSettings() {
-  const { data, isLoading } = useManualRetention();
+  const { data, isLoading, isError, error } = useManualRetention();
   const update = useUpdateManualRetention();
 
   const [enabled, setEnabled] = useState(false);
@@ -109,6 +109,13 @@ export function ManualRetentionSettings() {
             día. Siempre se conserva al menos 1.
           </p>
         </div>
+
+        {isError && (
+          <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            Error al cargar retención:{" "}
+            {error instanceof Error ? error.message : "Error desconocido"}
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <input

@@ -23,7 +23,7 @@ export function DbHygienePanel() {
   const valid =
     days.trim() !== "" && Number.isInteger(daysNum) && daysNum >= 1;
 
-  const { data: preview } = useDbHygienePreview(valid ? daysNum : 0, valid);
+  const { data: preview, isError: previewError, error: previewErrorDetail } = useDbHygienePreview(valid ? daysNum : 0, valid);
   const run = useRunDbHygiene();
 
   const count = preview?.failedCount ?? 0;
@@ -54,6 +54,14 @@ export function DbHygienePanel() {
             <span className="text-muted-foreground">Tus dumps no se tocan.</span>
           </p>
         </div>
+
+        {previewError && (
+          <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            {previewErrorDetail instanceof Error
+              ? previewErrorDetail.message
+              : "Error al cargar la vista previa"}
+          </div>
+        )}
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
