@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAudit } from "./useAudit";
 import type { AuditLog } from "../types";
 import apiClient from "../../../shared/lib/api-client";
@@ -20,6 +21,17 @@ const mockLog: AuditLog = {
   metadata: { backupId: "b1" },
 };
 
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+    },
+  });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
+
 describe("useAudit", () => {
   beforeEach(() => {
     mockApiClient.get.mockClear();
@@ -39,7 +51,9 @@ describe("useAudit", () => {
       },
     });
 
-    const { result } = renderHook(() => useAudit());
+    const { result } = renderHook(() => useAudit(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
@@ -61,7 +75,9 @@ describe("useAudit", () => {
       },
     });
 
-    const { result } = renderHook(() => useAudit());
+    const { result } = renderHook(() => useAudit(), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false);
