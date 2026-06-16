@@ -4,8 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "./api/dashboard-api";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { KpiGrid } from "./components/KpiGrid";
-import { ConnectionHealthCard } from "./components/ConnectionHealthCard";
-import { StorageCard } from "./components/StorageCard";
+import { SystemHealthCard } from "./components/SystemHealthCard";
 import { BackupTimeline } from "./components/BackupTimeline";
 import { RestoreTimeline } from "./components/RestoreTimeline";
 import { FailureAlertBanner } from "./components/FailureAlertBanner";
@@ -104,8 +103,7 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-col gap-6 lg:col-span-2">
           <RestoreTimeline restores={recentRestores} />
-          <StorageCard dumps={dumps} />
-          <ConnectionHealthCard connections={connections} />
+          <SystemHealthCard dumps={dumps} connections={connections} />
           <UpcomingCronjobsCard cronjobs={cronjobs} />
         </div>
       </div>
