@@ -21,6 +21,42 @@ function parseField(value: string): number | undefined {
   return Number.isInteger(n) && n >= 0 ? n : undefined;
 }
 
+function formatRelative(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / 60_000);
+  const diffHours = Math.floor(diffMs / 3_600_000);
+  const diffDays = Math.floor(diffMs / 86_400_000);
+  if (diffMinutes < 1) return "ahora";
+  if (diffMinutes < 60)
+    return new Intl.RelativeTimeFormat("es", { numeric: "auto" }).format(
+      -diffMinutes,
+      "minute",
+    );
+  if (diffHours < 24)
+    return new Intl.RelativeTimeFormat("es", { numeric: "auto" }).format(
+      -diffHours,
+      "hour",
+    );
+  if (diffDays < 2)
+    return `ayer a las ${new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(date)}`;
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function formatAbsolute(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
 interface NumberFieldProps {
   id: string;
   label: string;
@@ -29,6 +65,7 @@ interface NumberFieldProps {
   min: number;
   placeholder: string;
   disabled: boolean;
+  hint: string;
 }
 
 function NumberField({
@@ -39,7 +76,9 @@ function NumberField({
   min,
   placeholder,
   disabled,
+  hint,
 }: NumberFieldProps) {
+  const hintId = `${id}-hint`;
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-xs font-medium text-muted-foreground">
@@ -54,13 +93,17 @@ function NumberField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        aria-describedby={hintId}
       />
+      <p id={hintId} className="text-[11px] text-muted-foreground">
+        {hint}
+      </p>
     </div>
   );
 }
 
 export function ManualRetentionSettings() {
-  const { data, isLoading } = useManualRetention();
+  const { data, isLoading, isError, error } = useManualRetention();
   const update = useUpdateManualRetention();
 
   const [enabled, setEnabled] = useState(false);
@@ -103,15 +146,35 @@ export function ManualRetentionSettings() {
           </p>
         </div>
 
-        <label className="flex items-center gap-2 text-sm">
+        {enabled && (
+          <div
+            role="status"
+            className="rounded-md border border-accent/25 bg-accent/5 px-3 py-2 text-xs text-accent-foreground"
+          >
+            Limpieza automática ACTIVADA — se ejecuta todos los días a las
+            03:00.
+          </div>
+        )}
+
+        {isError && (
+          <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+            Error al cargar retención:{" "}
+            {error instanceof Error ? error.message : "Error desconocido"}
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
           <input
+            id="mr-enabled"
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
             disabled={isLoading}
           />
-          Activar limpieza automática de dumps manuales
-        </label>
+          <label htmlFor="mr-enabled" className="text-sm">
+            Activar limpieza automática de dumps manuales
+          </label>
+        </div>
 
         {enabled && (
           <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -124,6 +187,7 @@ export function ManualRetentionSettings() {
               min={0}
               placeholder="Ej. 10"
               disabled={isLoading}
+              hint="Cantidad de dumps a conservar. 0 = sin límite."
             />
             <NumberField
               id="mr-max-age"
@@ -133,6 +197,7 @@ export function ManualRetentionSettings() {
               min={1}
               placeholder="Ej. 30"
               disabled={isLoading}
+              hint="Se eliminan los dumps con más días que este valor."
             />
             <NumberField
               id="mr-max-size"
@@ -142,8 +207,35 @@ export function ManualRetentionSettings() {
               min={1}
               placeholder="Ej. 2000"
               disabled={isLoading}
+              hint="Se eliminan dumps hasta que el total baje de este tope."
             />
           </fieldset>
+        )}
+
+        {data && (
+          <div
+            aria-live="polite"
+            className="space-y-1 border-t pt-4 text-[11px] text-muted-foreground"
+          >
+            {data.updatedAt && (
+              <p>
+                Editado por última vez:{" "}
+                <span title={formatAbsolute(data.updatedAt)}>
+                  {formatRelative(data.updatedAt)}
+                </span>
+              </p>
+            )}
+            <p>
+              Última ejecución del barrido:{" "}
+              {data.lastSweepAt ? (
+                <span title={formatAbsolute(data.lastSweepAt)}>
+                  {formatRelative(data.lastSweepAt)}
+                </span>
+              ) : (
+                "Aún no se ejecutó"
+              )}
+            </p>
+          </div>
         )}
 
         <div className="flex justify-end">

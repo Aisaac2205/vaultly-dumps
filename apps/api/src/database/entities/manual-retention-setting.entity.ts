@@ -23,4 +23,7 @@ export class ManualRetentionSettingEntity {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastSweepAt!: Date | null;
 }

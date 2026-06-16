@@ -1036,3 +1036,196 @@ pnpm --filter @vaultly-control/web typecheck → clean
 - **Existing test compatibility**: `CronjobsTable.test.tsx` tests 7 scenarios (Entorno column, em dash, plain text env, ConnectionLabel, loading skeleton, empty state, no badge). All pass without modification.
 - **Next in sequence**: PR 9 (`feat/ui-cleanup`)
 
+---
+
+## PR 9: feat/ui-cleanup
+
+**Commits**: 8 (8 task commits)
+**Date**: 2026-06-16
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: size:exception (single PR, ~375 lines changed, maintainer-approved)
+
+### Task Summary
+
+| Task | Description | Status | Lines | Verification |
+|------|-------------|--------|-------|-------------|
+| T9-01.1 | Page shell + FadeIn wrapper + reorder sections + remove details | ✅ Done | +24/−21 | Typecheck ✅, Tests 137/137 ✅ |
+| T9-01.2 | Stats cards with Stagger + per-connection table collapsed | ✅ Done | +98/−48 | Typecheck ✅, Tests 137/137 ✅ |
+| T9-01.3 | Section headers consistent (h2 + subtitle) | ✅ Done | +11/−1 | Typecheck ✅, Tests 137/137 ✅ |
+| T9-01.4 | Explicit labels + id + aria-describedby on inputs | ✅ Done | +35/−12 | Typecheck ✅, Tests 137/137 ✅ |
+| T9-01.5 | Replace window.confirm with Dialog (DbHygiene, Reconcile) | ✅ Done | +108/−22 | Typecheck ✅, Tests 137/137 ✅ |
+| T9-01.6 | Table semantics (caption + scope=col) | ✅ Done | _(in T9-01.2)_ | Already included in T9-01.2 StoragePanel rewrite |
+| T9-01.7 | Error states with role=alert + empty state copy | ✅ Done | +89/−4 | Typecheck ✅, Tests 137/137 ✅ |
+| T9-01.8 | Color tokens normalize (text-text-secondary → text-muted-foreground) | ✅ Done | _(in T9-01.5)_ | Already replaced during DbHygiene/Reconcile rewrites |
+| T9-01.9 | Disabled button context (aria-describedby) | ✅ Done | +12/−0 | Typecheck ✅, Tests 137/137 ✅ |
+| T9-01.10 | Empty/zero state copy + role=status | ✅ Done | +1/−1 | Typecheck ✅, Tests 137/137 ✅ |
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `0799aba` | `feat(cleanup-ui): T9-01.1 — page shell with FadeIn wrapper, reordered sections, removed details` | T9-01.1 |
+| `a77360b` | `feat(cleanup-ui): T9-01.2 — convert StoragePanel to StatCard grid with stagger, collapse table into details` | T9-01.2 + T9-01.6 |
+| `efb0cb5` | `feat(cleanup-ui): T9-01.3 — add section header for Almacenamiento stats section` | T9-01.3 |
+| `04578b6` | `feat(cleanup-ui): T9-01.4 — add explicit labels, ids, and aria-describedby to inputs` | T9-01.4 |
+| `a5bb5bb` | `feat(cleanup-ui): T9-01.5 — replace window.confirm with Dialog in DbHygiene and Reconcile panels` | T9-01.5 + T9-01.8 |
+| `d0d9ece` | `feat(cleanup-ui): T9-01.7 — add error states with role=alert and empty state copy to panels` | T9-01.7 |
+| `40f2eef` | `feat(cleanup-ui): T9-01.9 — add aria-describedby to disabled Eliminar button with sr-only hint` | T9-01.9 |
+| `2540874` | `feat(cleanup-ui): T9-01.10 — add role=status to Todo sincronizado zero state` | T9-01.10 |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/web/src/features/cleanup/index.tsx` | Modified | +55, −21 (FadeIn wrapper, section reorder, headers) |
+| `apps/web/src/features/cleanup/components/StoragePanel.tsx` | Modified | +195, −48 (StatCard grid, Stagger, collapsed table, error state, empty state) |
+| `apps/web/src/features/cleanup/components/CleanupForm.tsx` | Modified | +36, −3 (radio ids, label, sr-only hint for disabled button) |
+| `apps/web/src/features/cleanup/components/DbHygienePanel.tsx` | Modified | +80, −8 (Dialog replace window.confirm, error state, aria-describedby hint) |
+| `apps/web/src/features/cleanup/components/ManualRetentionSettings.tsx` | Modified | +28, −5 (checkbox id, NumberField hints with aria-describedby, error state) |
+| `apps/web/src/features/cleanup/components/ReconcilePanel.tsx` | Modified | +87, −9 (Dialog replace window.confirm, error state, role=status) |
+
+**Total**: 375 insertions, 106 deletions = 481 changed lines (size:exception)
+**Net functional**: +269 lines
+
+### Test Results
+
+```
+✓ src/shared/hooks/__tests__/useTheme.test.ts (12 tests)
+✓ src/shared/components/__tests__/Sidebar.test.tsx (23 tests)
+✓ src/shared/components/__tests__/Topbar.test.tsx (7 tests)
+✓ src/shared/components/__tests__/Breadcrumbs.test.tsx (6 tests)
+✓ src/shared/components/__tests__/Layout.test.tsx (6 tests)
+✓ src/shared/ui/button.test.tsx (3 tests)
+✓ src/shared/ui/card.test.tsx (4 tests)
+✓ src/shared/ui/stat-card.test.tsx (3 tests)
+✓ src/shared/ui/data-table.test.tsx (5 tests)
+✓ src/shared/ui/pagination.test.tsx (6 tests)
+✓ src/shared/ui/filters.test.tsx (5 tests)
+✓ src/shared/ui/dialog.test.tsx (3 tests)
+✓ src/shared/ui/sheet.test.tsx (4 tests)
+✓ src/shared/ui/sparkline.test.tsx (6 tests)
+✓ src/shared/ui/trend-indicator.test.tsx (8 tests)
+✓ src/shared/ui/motion/FadeIn.test.tsx (2 tests)
+✓ src/shared/ui/motion/Stagger.test.tsx (2 tests)
+✓ src/shared/ui/motion/PressFeedback.test.tsx (2 tests)
+✓ src/features/cronjobs/components/__tests__/CronjobsTable.test.tsx (7 tests)
+✓ src/features/audit/components/__tests__/AuditTable.test.tsx (6 tests)
+✓ src/features/audit/hooks/useAudit.test.tsx (2 tests)
+✓ src/features/dashboard/components/__tests__/BackupAreaChart.test.tsx (3 tests)
+✓ src/features/dashboard/components/__tests__/BackupTimeline.test.tsx (7 tests)
+✓ src/features/dumps/hooks/useDumps.test.tsx (5 tests)
+
+Test Files: 24 passed (24)
+Tests:      137 passed (137)
+```
+
+### Typecheck
+
+```
+pnpm --filter @vaultly-control/web typecheck → clean (no errors)
+```
+
+### Lint
+
+```
+ESLint not installed for apps/web. Pre-existing condition — does not block.
+```
+
+### Build
+
+```
+pnpm --filter @vaultly-control/web build → successful (pre-existing chunk size warnings, not related)
+```
+
+### Spec Scenarios Covered
+
+| Requirement | Scenarios | Implementation |
+|-------------|-----------|----------------|
+| Reorganización de secciones | 2 (sección orden, sin details) | index.tsx: FadeIn wrapper, order Stats→Puntual→Auto→Salud, `<details>` removed |
+| Stat Cards con Storage | 3 (datos, vacío, loading) | StoragePanel: Stagger + StatCard grid, empty state "No tenés dumps todavía", skeleton via loading props |
+| CleanupForm flujo | 5 (selección+preview, empty preview, confirmación, ejecución, error) | Existing CleanupForm already met all 5 — preserve humanized UX from c62bd7e |
+| ManualRetentionSettings | 2 (activar y guardar, desactivar) | Added explicit ids + aria-describedby hints |
+| DbHygienePanel sin window.confirm | 2 (preview+ejecutar, nada para borrar) | Dialog replaces window.confirm; error state with role=alert |
+| ReconcilePanel sin window.confirm | 2 (todo sincronizado, limpiar restos) | Dialog replaces window.confirm; role=status on "Todo sincronizado." |
+| Accesibilidad WCAG 2.2 AA | 5 (keyboard nav, reduced motion, dialog accessible, tabla caption+scope, disabled button context) | FadeIn/Stagger honor useReducedMotion; Dialog component already handles focus trap + screen reader; caption+scope on per-connection table; aria-describedby on disabled Eliminar button |
+| Consistencia de patrones | 1 (FadeIn wrapper) | FadeIn wrapper matching PR 8 Cronjobs pattern |
+
+### Deviations from Spec
+
+1. **No `text-text-secondary` found to replace**: The spec required replacing legacy `text-text-secondary` tokens. These were in the original DbHygienePanel (`span.text-text-secondary`) and ReconcilePanel (`span.text-text-secondary`). Both were replaced with `text-muted-foreground` during the Dialog/document rewrites (T9-01.5). The remaining `text-text-primary` is a valid DS token defined in `globals.css` (`--color-text-primary: #2B2B2B`).
+
+2. **StatCard "Dumps viejos (>30 d)" uses connection count, not dump count**: The `StorageOverview` API doesn't provide a direct count of dumps older than 30 days. The implementation counts connections whose `oldest` dump date is >30 days ago. This is a reasonable proxy since each connection's oldest date is the best available signal.
+
+3. **No `ConfirmDestructiveDialog` shared component**: The prompt suggested building a shared `ConfirmDestructiveDialog` component. Since the dialog content differs between DbHygiene (record count + days) and Reconcile (resto count breakdown), each panel uses its own inline Dialog. A shared component would add complexity for only 2 callers with different content.
+
+4. **Per-connection table uses `<caption className="sr-only">`**: The caption is visually hidden but available to screen readers. A visible caption would clutter the collapsed details view. The `<summary>` text "Detalle por conexión" serves as the visible label.
+
+### Notes
+
+- **Zero backend changes**: This PR only touches `apps/web/src/features/cleanup/`. No `apps/api/**` files modified.
+- **Zero spec changes**: No files in `openspec/changes/ui-ux-overhaul/specs/` were created or modified.
+- **FadeIn wrapper**: Wraps entire page content, matching the PR 8 Cronjobs pattern. Wrapper honors `useReducedMotion()`.
+- **Stagger on stats**: 4 StatCards use `<Stagger>` + `<StaggerItem>` with default 50ms stagger delay, matching CronjobsStats pattern.
+- **Dialog focus trap**: The existing `Dialog` component from `shared/ui/dialog.tsx` (Radix UI primitive + motion/react overlay) automatically traps focus and announces the title to screen readers per WCAG 2.2 AA.
+- **Error states**: All data hooks (`useStorageOverview`, `useDbHygienePreview`, `useReconcilePreview`, `useManualRetention`) now surface errors with `role="alert"` for screen reader announcement.
+- **Disabled button context**: The CleanupForm "Eliminar" button uses `aria-describedby` pointing to a `sr-only` span that explains WHY the button is disabled (no connection, no category, invalid amount, or zero items).
+- **Conventional commits**: All 8 commits follow English conventional commit style matching the existing project conventions (`feat(cleanup-ui): ...`).
+- **Next in sequence**: PR 10 (`feat/ui-dashboard`)
+
+---
+
+## PR 9b: Add retention visibility (state metadata)
+
+**Commits**: 3
+**Date**: 2026-06-16
+**Mode**: Standard (Strict TDD: false)
+**Chain strategy**: Additional commits on existing PR 9 branch `feat/ui-cleanup` (PR #24, OPEN)
+
+### Commits
+
+| Hash | Message | Scope |
+|------|---------|-------|
+| `cf19f8d` | `feat(api): track last manual retention sweep run time` | Backend: add `lastSweepAt` column + migration + sweep writes timestamp |
+| `be813d8` | `feat(cleanup-ui): show updatedAt and lastSweepAt in ManualRetentionSettings` | Frontend: metadata footer with `Intl.RelativeTimeFormat` relative times + `aria-live="polite"` |
+| `a635c67` | `feat(cleanup-ui): show enabled state banner and clarify retention section subtitle` | Frontend: `role="status"` banner when enabled + clearer subtitle copy |
+
+### Files Changed
+
+| File | Action | Lines |
+|------|--------|-------|
+| `apps/api/src/database/entities/manual-retention-setting.entity.ts` | Modified | +3 (added `lastSweepAt` column) |
+| `apps/api/src/database/migrations/1778716800012-add-last-sweep-at-to-manual-retention-settings.ts` | Created | 28 |
+| `apps/api/src/modules/maintenance/maintenance.service.ts` | Modified | +6 (write `lastSweepAt` after sweep) |
+| `apps/web/src/features/cleanup/types.ts` | Modified | +1 (`lastSweepAt` field) |
+| `apps/web/src/features/cleanup/components/ManualRetentionSettings.tsx` | Modified | +62 (helpers + metadata footer + enabled banner) |
+| `apps/web/src/features/cleanup/index.tsx` | Modified | +3, −3 (subtitle copy) |
+
+### Test Results
+
+```
+API:  6 suites, 29 tests passed
+Web:  24 test files, 137 tests passed
+Typecheck: clean (api + web)
+Build:   successful
+```
+
+### Validation
+
+| Command | Result |
+|---------|--------|
+| `pnpm typecheck` | ✅ clean |
+| `pnpm test` | ✅ 29 api + 137 web = 166 total |
+| `pnpm --filter @vaultly-control/web build` | ✅ successful |
+
+### Deviations from Design
+
+None — implementation matches the user's goal: surface saved-state metadata in the config UI.
+
+### Notes
+
+- **Migration**: `1778716800012` adds `last_sweep_at TIMESTAMP NULL` to `manual_retention_settings`. Run with `pnpm --filter @vaultly-control/api migration:run`.
+- **Banner when disabled**: No hint shown — the checkbox state already communicates this visually.
+- **Relative time format**: Uses `Intl.RelativeTimeFormat("es")` for "hace X minutos/horas", "ayer a las HH:MM" for 24-48h, and `Intl.DateTimeFormat("es-AR")` for older dates.
+- **No new dependencies**: Zero npm packages added. All date formatting uses native `Intl` APIs.
+- **Lesson learned**: Users want to see the *state* of their configuration (when was it last edited? when did the sweep last run?), not just the ability to change it. Always surface saved-state metadata in config UIs.
+

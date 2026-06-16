@@ -115,39 +115,45 @@ export function CleanupForm() {
                 Criterio
               </legend>
               <div className="flex gap-4 pt-1">
-                <label className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2">
                   <input
+                    id="cleanup-mode-keepLast"
                     type="radio"
                     name="cleanup-mode"
                     value="keepLast"
                     checked={mode === "keepLast"}
                     onChange={() => handleModeChange("keepLast")}
                   />
-                  Conservar últimos
-                </label>
-                <label className="flex items-center gap-2 text-sm">
+                  <label htmlFor="cleanup-mode-keepLast" className="text-sm">
+                    Conservar últimos
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
                   <input
+                    id="cleanup-mode-maxAgeDays"
                     type="radio"
                     name="cleanup-mode"
                     value="maxAgeDays"
                     checked={mode === "maxAgeDays"}
                     onChange={() => handleModeChange("maxAgeDays")}
                   />
-                  Más viejos que
-                </label>
+                  <label htmlFor="cleanup-mode-maxAgeDays" className="text-sm">
+                    Más viejos que
+                  </label>
+                </div>
               </div>
             </fieldset>
           </div>
 
           {/* Frequency */}
           {connectionSlug && (
-            <div className="space-y-1.5">
-              <span
+            <div className="space-y-1.5" role="group" aria-labelledby="cleanup-frequency-label">
+              <label
                 id="cleanup-frequency-label"
                 className="block text-xs font-medium text-muted-foreground"
               >
                 Tipo de dump
-              </span>
+              </label>
               <FrequencyTabs value={category} onChange={setCategory} />
             </div>
           )}
@@ -193,11 +199,23 @@ export function CleanupForm() {
               type="button"
               variant="destructive"
               disabled={!hasItems || runCleanup.isPending}
+              aria-describedby={!hasItems ? "cleanup-submit-hint" : undefined}
               onClick={() => setConfirmOpen(true)}
             >
               <Trash2 aria-hidden="true" />
               Eliminar {hasItems ? `${preview?.count}` : ""} dump(s)
             </Button>
+            {!hasItems && (
+              <span id="cleanup-submit-hint" className="sr-only">
+                {!connectionSlug
+                  ? "Seleccioná una conexión y tipo de dump primero"
+                  : !category
+                    ? "Seleccioná un tipo de dump"
+                    : !amountValid
+                      ? "Ingresá una cantidad válida"
+                      : "No hay dumps para eliminar con estos criterios"}
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
