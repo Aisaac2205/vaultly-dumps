@@ -54,7 +54,14 @@ describe("AuditTable", () => {
   function renderTable(logs = mockLogs, isLoading = false) {
     return render(
       <MemoryRouter>
-        <AuditTable logs={logs} isLoading={isLoading} total={logs.length} />
+        <AuditTable
+          logs={logs}
+          isLoading={isLoading}
+          total={logs.length}
+          page={1}
+          pageSize={25}
+          onPageChange={() => {}}
+        />
       </MemoryRouter>,
     );
   }
@@ -103,9 +110,16 @@ describe("AuditTable", () => {
   it("renders empty state when no logs", () => {
     render(
       <MemoryRouter>
-        <AuditTable logs={[]} isLoading={false} total={0} />
+        <AuditTable
+          logs={[]}
+          isLoading={false}
+          total={0}
+          page={1}
+          pageSize={25}
+          onPageChange={() => {}}
+        />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/No hay registros/i)).toBeInTheDocument();
+    expect(screen.getByText(/No hay registros de auditoría/i)).toBeInTheDocument();
   });
 });
