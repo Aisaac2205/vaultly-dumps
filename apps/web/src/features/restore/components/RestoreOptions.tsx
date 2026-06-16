@@ -1,4 +1,4 @@
-import { Shield, ToggleLeft, ToggleRight } from "lucide-react";
+import { Shield } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 
 interface RestoreOptionsProps {
@@ -26,25 +26,45 @@ export function RestoreOptions({
             Simular sin modificar datos
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={isDryRun}
-          id="dry-run"
-          disabled={disabled}
-          onClick={() => onDryRunChange(!isDryRun)}
-          className={cn(
-            "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-            isDryRun ? "bg-primary" : "bg-input",
-          )}
-        >
-          <span
-            className={cn(
-              "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform",
-              isDryRun ? "translate-x-5" : "translate-x-0",
-            )}
+
+        {/* Custom Toggle */}
+        <div className="relative">
+          <input
+            id="dry-run"
+            type="checkbox"
+            className="peer sr-only"
+            checked={isDryRun}
+            onChange={(e) => onDryRunChange(e.target.checked)}
+            disabled={disabled}
           />
-        </button>
+          <div
+            className={cn(
+              "h-6 w-11 cursor-pointer rounded-full border-2 border-transparent transition-colors peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+              isDryRun ? "bg-primary" : "bg-input",
+            )}
+            onClick={() => !disabled && onDryRunChange(!isDryRun)}
+          >
+            <div className="relative h-full w-full">
+              {/* Knob */}
+              <div
+                className={cn(
+                  "absolute top-0.5 h-5 w-5 rounded-full bg-background shadow-lg transition-transform",
+                  isDryRun ? "translate-x-5" : "translate-x-0",
+                )}
+              >
+                {/* Bar inside knob */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div
+                    className={cn(
+                      "h-0.5 w-2 rounded-full transition-colors",
+                      isDryRun ? "bg-primary" : "bg-muted-foreground",
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {!isDryRun && (

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -63,8 +63,8 @@ const statusConfig: Record<
 const ENV_FILTERS = ["Todos", "dev", "sqa", "prod"] as const;
 const STATUS_FILTERS = ["Todos", "completed", "failed"] as const;
 
-const PAGE_SIZE = 10;
-const MAX_HISTORY = 75;
+const INITIAL_PAGE_SIZE = 10;
+const LOAD_MORE_SIZE = 10;
 
 function formatDuration(
   startedAt: string,
@@ -111,7 +111,9 @@ export function RestoreHistory({
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [envOpen, setEnvOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_PAGE_SIZE);
+
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const hasFilters = envFilter !== "Todos" || statusFilter !== "Todos";
 
@@ -123,13 +125,30 @@ export function RestoreHistory({
     return envMatch && statusMatch;
   });
 
-  const cappedJobs = filteredJobs.slice(0, MAX_HISTORY);
-  const displayJobs = hasFilters ? cappedJobs : cappedJobs.slice(0, visibleCount);
-  const hasMore = cappedJobs.length > visibleCount && !hasFilters;
+  const displayJobs = filteredJobs.slice(0, visibleCount);
+  const hasMore = filteredJobs.length > visibleCount;
 
-  function loadMore() {
-    setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, MAX_HISTORY));
-  }
+  // Infinite scroll: load more when near bottom
+  useEffect(() => {
+    const el = tableRef.current;
+    if (!el || !hasMore) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      // Load more when within 200px of bottom
+      if (scrollHeight - scrollTop - clientHeight < 200) {
+        setVisibleCount((prev) => Math.min(prev + LOAD_MORE_SIZE, filteredJobs.length));
+      }
+    };
+
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [hasMore, filteredJobs.length]);
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(INITIAL_PAGE_SIZE);
+  }, [envFilter, statusFilter]);
 
   if (isLoading) {
     return (
@@ -221,7 +240,10 @@ export function RestoreHistory({
         </div>
       ) : (
         <>
-          <div className="flex-1 overflow-auto rounded-lg border border-border">
+          <div
+            ref={tableRef}
+            className="flex-1 overflow-auto rounded-lg border border-border"
+          >
             <Table>
               <TableHeader className="sticky top-0 z-10 bg-background">
                 <TableRow className="hover:bg-transparent">
@@ -277,12 +299,13 @@ export function RestoreHistory({
               </TableBody>
             </Table>
           </div>
-          
+
+          {/* Loading indicator when more data available */}
           {hasMore && (
-            <div className="mt-3 flex justify-center">
-              <Button variant="ghost" size="sm" onClick={loadMore}>
-                Ver más historial ({cappedJobs.length - visibleCount} restantes)
-              </Button>
+            <div className="mt-2 flex justify-center">
+              <span className="text-xs text-muted-foreground">
+                Mostrando {displayJobs.length} de {filteredJobs.length} registros
+              </span>
             </div>
           )}
         </>
