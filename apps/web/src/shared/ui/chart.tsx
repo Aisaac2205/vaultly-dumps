@@ -58,7 +58,7 @@ function ChartContainer({
         className={cn("w-full text-xs", className)}
         {...props}
       >
-        <ResponsiveContainer>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           {children}
         </ResponsiveContainer>
       </div>
