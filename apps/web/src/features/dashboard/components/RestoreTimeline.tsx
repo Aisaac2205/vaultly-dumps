@@ -48,7 +48,7 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
 
   return (
     <div>
-      <h3 className="mb-3 text-base font-semibold">Últimos Restores</h3>
+      <h2 className="mb-3 text-base font-semibold">Últimos Restores</h2>
       <DataTable
         columns={columns}
         data={visible}
