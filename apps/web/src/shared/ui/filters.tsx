@@ -342,10 +342,12 @@ function FiltersSelect({ filterKey, label, options, placeholder = "Seleccionar..
             className="z-50 min-w-[var(--radix-select-trigger-width)] max-h-60 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
           >
             <SelectPrimitive.Viewport className="p-1">
-              {options.map((opt) => (
-                <SelectPrimitive.Item
-                  key={opt.value}
-                  value={opt.value}
+              {options
+                .filter((opt) => opt.value !== "")
+                .map((opt) => (
+                  <SelectPrimitive.Item
+                    key={opt.value}
+                    value={opt.value}
                   className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                 >
                   <SelectPrimitive.ItemIndicator className="absolute left-2 inline-flex items-center">
@@ -360,8 +362,8 @@ function FiltersSelect({ filterKey, label, options, placeholder = "Seleccionar..
                     </svg>
                   </SelectPrimitive.ItemIndicator>
                   <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
-                </SelectPrimitive.Item>
-              ))}
+                  </SelectPrimitive.Item>
+                ))}
             </SelectPrimitive.Viewport>
           </SelectPrimitive.Content>
         </SelectPrimitive.Portal>
