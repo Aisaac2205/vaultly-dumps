@@ -125,7 +125,7 @@ export function ReconcilePanel() {
         </ul>
 
         <div className="flex items-center justify-between gap-3">
-          <p aria-live="polite" className="text-xs text-muted-foreground">
+          <p aria-live="polite" role="status" className="text-xs text-muted-foreground">
             {toClean === 0
               ? "Todo sincronizado."
               : `${toClean} resto(s) se limpiarían.`}
