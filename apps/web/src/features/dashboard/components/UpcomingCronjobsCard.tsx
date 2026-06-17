@@ -23,7 +23,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
     return new Date(a.nextRunAt).getTime() - new Date(b.nextRunAt).getTime();
   });
 
-  const upcoming = sortedActive.slice(0, 4);
+  const upcoming = sortedActive.slice(0, 3);
   const remaining = sortedActive.length - upcoming.length;
 
   return (
