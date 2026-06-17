@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Badge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { EmptyState } from "@/shared/ui/empty-state";
 import postgresSvg from "@/shared/assets/PostgresSQL.svg";
@@ -27,6 +26,7 @@ import {
 } from "lucide-react";
 import type { RestoreJob, Connection } from "../types";
 import { cn } from "@/shared/lib/cn";
+import { Button } from "@/shared/ui/button";
 
 interface RestoreHistoryProps {
   jobs: RestoreJob[];
@@ -62,9 +62,6 @@ const statusConfig: Record<
 
 const ENV_FILTERS = ["Todos", "dev", "sqa", "prod"] as const;
 const STATUS_FILTERS = ["Todos", "completed", "failed"] as const;
-
-const INITIAL_PAGE_SIZE = 10;
-const LOAD_MORE_SIZE = 10;
 
 function formatDuration(
   startedAt: string,
@@ -111,11 +108,8 @@ export function RestoreHistory({
   const [statusFilter, setStatusFilter] = useState<string>("Todos");
   const [envOpen, setEnvOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(INITIAL_PAGE_SIZE);
 
   const tableRef = useRef<HTMLDivElement>(null);
-
-  const hasFilters = envFilter !== "Todos" || statusFilter !== "Todos";
 
   const filteredJobs = jobs.filter((job) => {
     const envMatch =
@@ -125,29 +119,9 @@ export function RestoreHistory({
     return envMatch && statusMatch;
   });
 
-  const displayJobs = filteredJobs.slice(0, visibleCount);
-  const hasMore = filteredJobs.length > visibleCount;
-
-  // Infinite scroll: load more when near bottom
+  // Reset scroll position when filters change
   useEffect(() => {
-    const el = tableRef.current;
-    if (!el || !hasMore) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = el;
-      // Load more when within 200px of bottom
-      if (scrollHeight - scrollTop - clientHeight < 200) {
-        setVisibleCount((prev) => Math.min(prev + LOAD_MORE_SIZE, filteredJobs.length));
-      }
-    };
-
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-  }, [hasMore, filteredJobs.length]);
-
-  // Reset visible count when filters change
-  useEffect(() => {
-    setVisibleCount(INITIAL_PAGE_SIZE);
+    if (tableRef.current) tableRef.current.scrollTop = 0;
   }, [envFilter, statusFilter]);
 
   if (isLoading) {
@@ -161,12 +135,17 @@ export function RestoreHistory({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 h-full flex-col">
       {/* Header with filters */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <HistoryIcon className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold">Historial</h3>
+          {filteredJobs.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              ({filteredJobs.length})
+            </span>
+          )}
         </div>
         <div className="flex gap-2">
           <Popover open={envOpen} onOpenChange={setEnvOpen}>
@@ -230,8 +209,8 @@ export function RestoreHistory({
       </div>
 
       {/* Table or Empty State */}
-      {displayJobs.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
+      {filteredJobs.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon={<HistoryIcon className="h-8 w-8" />}
             title="No hay restores registrados"
@@ -239,76 +218,65 @@ export function RestoreHistory({
           />
         </div>
       ) : (
-        <>
-          <div
-            ref={tableRef}
-            className="flex-1 overflow-auto rounded-lg border border-border"
-          >
-            <Table>
-              <TableHeader className="sticky top-0 z-10 bg-background">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="py-3">Conexión</TableHead>
-                  <TableHead className="py-3">Fecha</TableHead>
-                  <TableHead className="py-3">Ambiente</TableHead>
-                  <TableHead className="py-3">Estado</TableHead>
-                  <TableHead className="py-3 text-right">Duración</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayJobs.map((job) => {
-                  const info = job.targetConnectionId ? connectionMap.get(job.targetConnectionId) : undefined;
-                  return (
-                    <TableRow key={job.id} className="hover:bg-muted/40">
-                      <TableCell className="py-3 max-w-[180px]">
-                        {info ? (
-                          <div className="flex items-center gap-2">
-                            {DB_LOGOS[info.dbType] && (
-                              <img src={DB_LOGOS[info.dbType]} alt={info.dbType} className="h-4 w-4 shrink-0" />
-                            )}
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium" title={info.name}>{info.name}</p>
-                              <p className="truncate font-mono text-[11px] text-muted-foreground" title={info.database}>{info.database}</p>
-                            </div>
+        <div
+          ref={tableRef}
+          className="min-h-0 flex-1 overflow-auto rounded-lg border border-border"
+        >
+          <Table>
+            <TableHeader className="sticky top-0 z-10 bg-background">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="py-3">Conexión</TableHead>
+                <TableHead className="py-3">Fecha</TableHead>
+                <TableHead className="py-3">Ambiente</TableHead>
+                <TableHead className="py-3">Estado</TableHead>
+                <TableHead className="py-3 text-right">Duración</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredJobs.map((job) => {
+                const info = job.targetConnectionId ? connectionMap.get(job.targetConnectionId) : undefined;
+                return (
+                  <TableRow key={job.id} className="hover:bg-muted/40">
+                    <TableCell className="py-3 max-w-[180px]">
+                      {info ? (
+                        <div className="flex items-center gap-2">
+                          {DB_LOGOS[info.dbType] && (
+                            <img src={DB_LOGOS[info.dbType]} alt={info.dbType} className="h-4 w-4 shrink-0" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium" title={info.name}>{info.name}</p>
+                            <p className="truncate font-mono text-[11px] text-muted-foreground" title={info.database}>{info.database}</p>
                           </div>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
-                        {job.startedAt ? formatDate(job.startedAt) : "—"}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <Badge variant="outline" className="rounded-full text-xs font-normal">
-                          {job.targetEnvironment ?? "—"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <StatusBadge status={job.status} />
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap py-3 text-right font-mono text-xs text-muted-foreground">
-                        {job.startedAt
-                          ? formatDuration(
-                              job.startedAt,
-                              job.completedAt ?? null,
-                            )
-                          : "—"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Loading indicator when more data available */}
-          {hasMore && (
-            <div className="mt-2 flex justify-center">
-              <span className="text-xs text-muted-foreground">
-                Mostrando {displayJobs.length} de {filteredJobs.length} registros
-              </span>
-            </div>
-          )}
-        </>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
+                      {job.startedAt ? formatDate(job.startedAt) : "—"}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <Badge variant="outline" className="rounded-full text-xs font-normal">
+                        {job.targetEnvironment ?? "—"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <StatusBadge status={job.status} />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap py-3 text-right font-mono text-xs text-muted-foreground">
+                      {job.startedAt
+                        ? formatDuration(
+                            job.startedAt,
+                            job.completedAt ?? null,
+                          )
+                        : "—"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </div>
   );
