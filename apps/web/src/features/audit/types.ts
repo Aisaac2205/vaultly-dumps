@@ -14,7 +14,7 @@ export type AuditAction =
 
 export type ResourceType = "backup" | "restore" | "connection" | "cronjob";
 
-export type Environment = "prod" | "dev" | "sqa";
+export type Environment = "prod" | "dev" | "qa";
 
 export interface AuditLog {
   id: string;

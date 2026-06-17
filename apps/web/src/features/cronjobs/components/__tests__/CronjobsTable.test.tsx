@@ -8,7 +8,7 @@ vi.mock("@/features/connections/hooks/useConnections", () => ({
     data: [
       { id: "conn-1", name: "Prod DB", environment: "prod" },
       { id: "conn-2", name: "Dev DB", environment: "dev" },
-      { id: "conn-3", name: "SQA DB", environment: "sqa" },
+      { id: "conn-3", name: "QA DB", environment: "qa" },
     ],
     isLoading: false,
   }),

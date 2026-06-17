@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, LessThan, Repository } from 'typeorm';
+import { Between, In, LessThan, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 import { BackupJobEntity } from '../../database/entities/backup-job.entity';
 import { JobStatus } from '../../database/enums/job-status.enum';
+import { Environment } from '../../database/enums/environment.enum';
 
 @Injectable()
 export class BackupRepository {
@@ -18,16 +19,45 @@ export class BackupRepository {
   async findAll(options?: {
     page?: number;
     pageSize?: number;
+    connectionId?: string;
+    environment?: Environment;
+    status?: JobStatus;
+    from?: string;
+    to?: string;
   }): Promise<{ data: BackupJobEntity[]; total: number }> {
+    const where: any = {};
+    if (options?.connectionId) {
+      where.connectionId = options.connectionId;
+    }
+    if (options?.environment) {
+      where.environment = options.environment;
+    }
+    if (options?.status) {
+      where.status = options.status;
+    }
+    if (options?.from || options?.to) {
+      if (options.from && options.to) {
+        where.createdAt = Between(new Date(options.from), new Date(options.to));
+      } else if (options.from) {
+        where.createdAt = MoreThanOrEqual(new Date(options.from));
+      } else if (options.to) {
+        where.createdAt = LessThanOrEqual(new Date(options.to));
+      }
+    }
+
     if (options?.page && options?.pageSize) {
       const [data, total] = await this.repository.findAndCount({
+        where,
         order: { createdAt: 'DESC' },
         take: options.pageSize,
         skip: (options.page - 1) * options.pageSize,
       });
       return { data, total };
     }
-    const data = await this.repository.find({ order: { createdAt: 'DESC' } });
+    const data = await this.repository.find({
+      where,
+      order: { createdAt: 'DESC' },
+    });
     return { data, total: data.length };
   }
 

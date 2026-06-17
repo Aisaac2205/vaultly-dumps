@@ -256,7 +256,7 @@ export default function ConnectionForm({
                 disabled={isLoading}
               >
                 <option value="dev">dev</option>
-                <option value="sqa">sqa</option>
+                <option value="qa">qa</option>
                 <option value="prod">prod</option>
               </select>
             </div>

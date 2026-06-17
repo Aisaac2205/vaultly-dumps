@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   PieChart,
@@ -22,6 +23,12 @@ const COLORS = {
 
 
 export function BackupStatusChart({ summary }: BackupStatusChartProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const data = summary
     ? [
         { name: "Completados", value: summary.completed, type: "completed" },
@@ -38,7 +45,8 @@ export function BackupStatusChart({ summary }: BackupStatusChartProps) {
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
-          <ResponsiveContainer width="100%" height={300} minWidth={0}>
+          mounted ? (
+            <ResponsiveContainer width="100%" height={300} minWidth={0}>
             <PieChart>
               <Pie
                 data={data}
@@ -67,6 +75,9 @@ export function BackupStatusChart({ summary }: BackupStatusChartProps) {
               <Legend />
             </PieChart>
           </ResponsiveContainer>
+          ) : (
+            <div className="flex h-[300px] items-center justify-center" />
+          )
         ) : (
           <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
             No hay datos de backups disponibles

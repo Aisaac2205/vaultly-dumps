@@ -59,7 +59,7 @@ const statusConfig: Record<
   },
 };
 
-const ENV_FILTERS = ["Todos", "dev", "sqa", "prod"] as const;
+const ENV_FILTERS = ["Todos", "dev", "qa", "prod"] as const;
 const STATUS_FILTERS = ["Todos", "completed", "failed"] as const;
 
 function formatDuration(

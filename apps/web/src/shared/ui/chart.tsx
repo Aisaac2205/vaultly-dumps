@@ -40,6 +40,12 @@ function ChartContainer({
   className,
   ...props
 }: ChartContainerProps) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const cssVars = React.useMemo(
     () =>
       Object.fromEntries(
@@ -58,9 +64,13 @@ function ChartContainer({
         className={cn("w-full text-xs", className)}
         {...props}
       >
-        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-          {children}
-        </ResponsiveContainer>
+        {mounted ? (
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            {children}
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-full w-full" />
+        )}
       </div>
     </ChartContext.Provider>
   );
