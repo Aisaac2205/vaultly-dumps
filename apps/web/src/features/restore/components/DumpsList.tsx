@@ -98,11 +98,25 @@ export function DumpsList({
                 <span className="truncate font-mono text-xs">
                   {dump.timestamp}
                 </span>
-                <span className="truncate text-[11px] text-muted-foreground">
+                <span
+                  className={cn(
+                    "truncate text-[11px]",
+                    isSelected
+                      ? "text-accent-foreground/75"
+                      : "text-foreground/55",
+                  )}
+                >
                   {formatDate(dump.lastModified)}
                 </span>
               </div>
-              <span className="ml-auto w-20 shrink-0 text-right font-mono text-xs text-muted-foreground">
+              <span
+                className={cn(
+                  "ml-auto w-20 shrink-0 text-right font-mono text-xs",
+                  isSelected
+                    ? "text-accent-foreground/75"
+                    : "text-foreground/55",
+                )}
+              >
                 {formatSize(dump.size)}
               </span>
             </button>

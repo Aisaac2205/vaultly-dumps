@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Badge } from "@/shared/ui/badge";
-import { Button } from "@/shared/ui/button";
+import { StatusBadge } from "@/shared/ui/status-badge";
+import { EmptyState } from "@/shared/ui/empty-state";
 import postgresSvg from "@/shared/assets/PostgresSQL.svg";
 import mysqlSvg from "@/shared/assets/MySQL.svg";
 import {
@@ -21,9 +22,11 @@ import {
   Filter,
   ChevronDown,
   Check,
+  History as HistoryIcon,
 } from "lucide-react";
 import type { RestoreJob, Connection } from "../types";
 import { cn } from "@/shared/lib/cn";
+import { Button } from "@/shared/ui/button";
 
 interface RestoreHistoryProps {
   jobs: RestoreJob[];
@@ -106,7 +109,7 @@ export function RestoreHistory({
   const [envOpen, setEnvOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
-  const hasFilters = envFilter !== "Todos" || statusFilter !== "Todos";
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const filteredJobs = jobs.filter((job) => {
     const envMatch =
@@ -116,7 +119,10 @@ export function RestoreHistory({
     return envMatch && statusMatch;
   });
 
-  const displayJobs = hasFilters ? filteredJobs : filteredJobs.slice(0, 14);
+  // Reset scroll position when filters change
+  useEffect(() => {
+    if (tableRef.current) tableRef.current.scrollTop = 0;
+  }, [envFilter, statusFilter]);
 
   if (isLoading) {
     return (
@@ -129,14 +135,22 @@ export function RestoreHistory({
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 h-full flex-col">
       {/* Header with filters */}
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Historial</h3>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <HistoryIcon className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold">Historial</h3>
+          {filteredJobs.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              ({filteredJobs.length})
+            </span>
+          )}
+        </div>
         <div className="flex gap-2">
           <Popover open={envOpen} onOpenChange={setEnvOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 rounded-xl">
+              <Button variant="outline" size="sm" className="gap-2 rounded-lg">
                 <Filter className="h-3.5 w-3.5" />
                 {envFilter === "Todos" ? "Ambiente" : envFilter}
                 <ChevronDown className="h-3 w-3 opacity-50" />
@@ -163,7 +177,7 @@ export function RestoreHistory({
 
           <Popover open={statusOpen} onOpenChange={setStatusOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 rounded-xl">
+              <Button variant="outline" size="sm" className="gap-2 rounded-lg">
                 <Filter className="h-3.5 w-3.5" />
                 {statusFilter === "Todos"
                   ? "Estado"
@@ -194,86 +208,62 @@ export function RestoreHistory({
         </div>
       </div>
 
-      {/* Table */}
-      {displayJobs.length === 0 ? (
-        <p className="flex flex-1 items-center justify-center py-8 text-center text-sm text-muted-foreground">
-          No hay restores registrados aún.
-        </p>
+      {/* Table or Empty State */}
+      {filteredJobs.length === 0 ? (
+        <div className="flex flex-1 items-center justify-center">
+          <EmptyState
+            icon={<HistoryIcon className="h-8 w-8" />}
+            title="No hay restores registrados"
+            description="Los restores ejecutados aparecerán acá."
+          />
+        </div>
       ) : (
-        <div className="flex-1 max-h-[720px] overflow-auto rounded-xl bg-card shadow-sm">
+        <div
+          ref={tableRef}
+          className="min-h-0 flex-1 overflow-auto rounded-lg border border-border"
+        >
           <Table>
-            <TableHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm">
-              <TableRow className="border-border/30 hover:bg-transparent">
-                <TableHead className="py-2.5 text-xs uppercase font-medium tracking-wide text-muted-foreground">
-                  Conexión
-                </TableHead>
-                <TableHead className="py-2.5 text-xs uppercase font-medium tracking-wide text-muted-foreground">
-                  Fecha y hora
-                </TableHead>
-                <TableHead className="py-2.5 text-xs uppercase font-medium tracking-wide text-muted-foreground">
-                  Ambiente
-                </TableHead>
-                <TableHead className="py-2.5 text-xs uppercase font-medium tracking-wide text-muted-foreground">
-                  Estado
-                </TableHead>
-                <TableHead className="py-2.5 text-xs uppercase font-medium tracking-wide text-muted-foreground">
-                  Duración
-                </TableHead>
+            <TableHeader className="sticky top-0 z-10 bg-background">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="py-3">Conexión</TableHead>
+                <TableHead className="py-3">Fecha</TableHead>
+                <TableHead className="py-3">Ambiente</TableHead>
+                <TableHead className="py-3">Estado</TableHead>
+                <TableHead className="py-3 text-right">Duración</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayJobs.map((job) => {
-                const config = statusConfig[job.status];
+              {filteredJobs.map((job) => {
+                const info = job.targetConnectionId ? connectionMap.get(job.targetConnectionId) : undefined;
                 return (
-                  <TableRow
-                    key={job.id}
-                    data-state={job.status === "running" ? "active" : undefined}
-                    className="border-border/20 hover:bg-muted/40 data-[state=active]:bg-blue-500/5 data-[state=active]:shadow-[inset_3px_0_0_rgba(59,130,246,0.5)]"
-                  >
+                  <TableRow key={job.id} className="hover:bg-muted/40">
                     <TableCell className="py-3 max-w-[180px]">
-                      {(() => {
-                        const info = job.targetConnectionId ? connectionMap.get(job.targetConnectionId) : undefined;
-                        if (!info) return <span className="text-xs text-muted-foreground">—</span>;
-                        return (
-                          <div className="flex items-center gap-2">
-                            {DB_LOGOS[info.dbType] && (
-                              <img src={DB_LOGOS[info.dbType]} alt={info.dbType} className="h-4 w-4 shrink-0" />
-                            )}
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium" title={info.name}>{info.name}</p>
-                              <p className="truncate font-mono text-[11px] text-muted-foreground" title={info.database}>{info.database}</p>
-                            </div>
+                      {info ? (
+                        <div className="flex items-center gap-2">
+                          {DB_LOGOS[info.dbType] && (
+                            <img src={DB_LOGOS[info.dbType]} alt={info.dbType} className="h-4 w-4 shrink-0" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium" title={info.name}>{info.name}</p>
+                            <p className="truncate font-mono text-[11px] text-muted-foreground" title={info.database}>{info.database}</p>
                           </div>
-                        );
-                      })()}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
                       {job.startedAt ? formatDate(job.startedAt) : "—"}
                     </TableCell>
                     <TableCell className="py-3">
-                      <Badge
-                        variant="outline"
-                        className="rounded-full text-xs font-normal"
-                      >
+                      <Badge variant="outline" className="rounded-full text-xs font-normal">
                         {job.targetEnvironment ?? "—"}
                       </Badge>
                     </TableCell>
                     <TableCell className="py-3">
-                      <div className="flex items-center justify-center gap-2">
-                        <span
-                          className={cn(
-                            "h-2 w-2 rounded-full",
-                            config.dotClass,
-                          )}
-                        />
-                        <span
-                          className={cn("text-xs font-medium", config.textClass)}
-                        >
-                          {config.label}
-                        </span>
-                      </div>
+                      <StatusBadge status={job.status} />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
+                    <TableCell className="whitespace-nowrap py-3 text-right font-mono text-xs text-muted-foreground">
                       {job.startedAt
                         ? formatDuration(
                             job.startedAt,

@@ -4,6 +4,8 @@ import { Button } from "@/shared/ui/button";
 import { formatNumber } from "../lib/format";
 import postgresSvg from "@/shared/assets/PostgresSQL.svg";
 import mysqlSvg from "@/shared/assets/MySQL.svg";
+import { Check, X } from "lucide-react";
+import { useState } from "react";
 
 const DB_LOGOS: Record<string, string> = {
   postgres: postgresSvg as string,
@@ -39,7 +41,7 @@ function ConnectionCard({ conn, label }: { conn: DryRunConnectionInfo; label: st
 
 interface DryRunResultProps {
   result: DryRunResultType;
-  onConfirm: () => void;
+  onConfirm: (excludedTables: string[]) => void;
   onCancel: () => void;
   isLoading: boolean;
 }
@@ -51,9 +53,19 @@ export function DryRunResult({
   isLoading,
 }: DryRunResultProps) {
   const { source, target, diff } = result;
+  const [excludedTables, setExcludedTables] = useState<Set<string>>(new Set());
+
+  function toggleTable(name: string) {
+    setExcludedTables((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
 
   if (!diff || !source) {
-    return <TargetOnlyView target={target} targetConnection={result.targetConnection} onConfirm={onConfirm} onCancel={onCancel} isLoading={isLoading} />;
+    return <TargetOnlyView target={target} targetConnection={result.targetConnection} onConfirm={() => onConfirm([])} onCancel={onCancel} isLoading={isLoading} />;
   }
 
   return (
@@ -81,10 +93,11 @@ export function DryRunResult({
         </div>
       </div>
 
-      <div className="max-h-[480px] lg:max-h-[640px] 2xl:max-h-[800px] overflow-auto rounded-xl bg-card shadow-sm">
+      <div className="max-h-[60dvh] overflow-auto rounded-xl bg-card shadow-sm">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm">
+          <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
             <tr>
+              <th className="w-10 px-3 py-2.5"></th>
               <th className="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Tabla
               </th>
@@ -103,6 +116,20 @@ export function DryRunResult({
             {diff.added.map((name) => (
               <tr key={name} className="border-t border-border/20 bg-emerald-500/5">
                 <td className="px-3 py-2.5">
+                  <button
+                    type="button"
+                    onClick={() => toggleTable(name)}
+                    className="flex h-5 w-5 items-center justify-center rounded border border-border bg-background hover:bg-accent"
+                    aria-label={`Excluir tabla ${name}`}
+                  >
+                    {excludedTables.has(name) ? (
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    ) : (
+                      <Check className="h-3 w-3 text-transparent" />
+                    )}
+                  </button>
+                </td>
+                <td className="px-3 py-2.5">
                   <span className="mr-1.5 text-xs text-emerald-600">+</span>{name}
                 </td>
                 <td className="px-3 py-2.5 text-right font-mono text-xs">
@@ -114,8 +141,23 @@ export function DryRunResult({
             ))}
             {diff.common.map((t) => {
               const delta = t.sourceRows - t.targetRows;
+              const isExcluded = excludedTables.has(t.name);
               return (
-                <tr key={t.name} className="border-t border-border/20 hover:bg-muted/40">
+                <tr key={t.name} className={`border-t border-border/20 hover:bg-muted/40 ${isExcluded ? "opacity-40" : ""}`}>
+                  <td className="px-3 py-2.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleTable(t.name)}
+                      className="flex h-5 w-5 items-center justify-center rounded border border-border bg-background hover:bg-accent"
+                      aria-label={`Excluir tabla ${t.name}`}
+                    >
+                      {isExcluded ? (
+                        <X className="h-3 w-3 text-muted-foreground" />
+                      ) : (
+                        <Check className="h-3 w-3 text-transparent" />
+                      )}
+                    </button>
+                  </td>
                   <td className="px-3 py-2.5">{t.name}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-xs">
                     {formatNumber(t.sourceRows)}
@@ -132,6 +174,20 @@ export function DryRunResult({
             {diff.removed.map((name) => (
               <tr key={name} className="border-t border-border/20 bg-red-500/5">
                 <td className="px-3 py-2.5">
+                  <button
+                    type="button"
+                    onClick={() => toggleTable(name)}
+                    className="flex h-5 w-5 items-center justify-center rounded border border-border bg-background hover:bg-accent"
+                    aria-label={`Excluir tabla ${name}`}
+                  >
+                    {excludedTables.has(name) ? (
+                      <X className="h-3 w-3 text-muted-foreground" />
+                    ) : (
+                      <Check className="h-3 w-3 text-transparent" />
+                    )}
+                  </button>
+                </td>
+                <td className="px-3 py-2.5">
                   <span className="mr-1.5 text-xs text-red-500">−</span>{name}
                 </td>
                 <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">—</td>
@@ -145,13 +201,20 @@ export function DryRunResult({
         </table>
       </div>
 
-      <div className="flex gap-3 pt-2">
-        <Button onClick={onCancel} disabled={isLoading} variant="ghost">
-          Cancelar
-        </Button>
-        <Button onClick={onConfirm} disabled={isLoading} className="bg-black text-white hover:bg-black/90">
-          {isLoading ? "Procesando\u2026" : "Confirmar restore"}
-        </Button>
+      <div className="flex items-center justify-between pt-2">
+        <span className="text-xs text-muted-foreground">
+          {excludedTables.size > 0
+            ? `${excludedTables.size} tabla(s) excluida(s)`
+            : "Todas las tablas serán restauradas"}
+        </span>
+        <div className="flex gap-3">
+          <Button onClick={onCancel} disabled={isLoading} variant="ghost">
+            Cancelar
+          </Button>
+          <Button onClick={() => onConfirm(Array.from(excludedTables))} disabled={isLoading} className="bg-black text-white hover:bg-black/90">
+            {isLoading ? "Procesando…" : "Confirmar restore"}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -182,9 +245,9 @@ function TargetOnlyView({
         </span>
       </p>
 
-      <div className="max-h-[480px] lg:max-h-[640px] 2xl:max-h-[800px] overflow-auto rounded-xl bg-card shadow-sm">
+      <div className="max-h-[60dvh] overflow-auto rounded-xl bg-card shadow-sm">
         <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur-sm">
+          <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
             <tr>
               <th className="px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Tabla
@@ -212,7 +275,7 @@ function TargetOnlyView({
           Cancelar
         </Button>
         <Button onClick={onConfirm} disabled={isLoading} className="bg-black text-white hover:bg-black/90">
-          {isLoading ? "Procesando\u2026" : "Confirmar restore"}
+          {isLoading ? "Procesando…" : "Confirmar restore"}
         </Button>
       </div>
     </div>
