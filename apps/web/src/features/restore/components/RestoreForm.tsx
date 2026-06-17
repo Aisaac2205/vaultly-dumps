@@ -115,7 +115,7 @@ export function RestoreForm({
   return (
     <div className="flex flex-col h-full">
       {/* Scrollable sections */}
-      <div className="flex-1 overflow-auto pr-2">
+      <div className="min-h-0 flex-1 overflow-auto pr-2">
         <div className="space-y-6">
           {/* Section 1: R2 Dump or Backup Info */}
           {showR2Selector ? (
@@ -242,10 +242,11 @@ export function RestoreForm({
       </div>
 
       {/* Sticky actions at bottom */}
-      <div className="sticky bottom-0 -mx-6 mt-4 bg-background pt-4 border-t border-border">
+      <div className="sticky bottom-0 -mx-6 mt-4 border-t border-border bg-background px-6 pt-4">
         <RestoreActions
           canSimulate={canSimulate}
-          canExecute={!!targetConnectionId}
+          canExecute={!!targetConnectionId && hasSource}
+          isDryRun={isDryRun}
           isLoading={isLoading}
           onSimulate={handleSimulate}
           onExecute={handleExecute}

@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/button";
 interface RestoreActionsProps {
   canSimulate: boolean;
   canExecute: boolean;
+  isDryRun: boolean;
   isLoading: boolean;
   onSimulate: () => void;
   onExecute: () => void;
@@ -12,6 +13,7 @@ interface RestoreActionsProps {
 export function RestoreActions({
   canSimulate,
   canExecute,
+  isDryRun,
   isLoading,
   onSimulate,
   onExecute,
@@ -21,22 +23,22 @@ export function RestoreActions({
       <div className="flex gap-3">
         <Button
           onClick={onSimulate}
-          disabled={isLoading || !canSimulate}
+          disabled={isLoading || !canSimulate || !isDryRun}
           className="flex-1"
           variant="outline"
         >
           <Play className="mr-2 h-4 w-4" />
-          {isLoading ? "Procesando..." : "Simular restore"}
+          {isLoading && isDryRun ? "Procesando..." : "Simular Restauración"}
         </Button>
 
         <Button
           onClick={onExecute}
-          disabled={isLoading || !canExecute}
+          disabled={isLoading || !canExecute || isDryRun}
           variant="destructive"
           className="flex-1"
         >
           <AlertTriangle className="mr-2 h-4 w-4" />
-          {isLoading ? "Procesando..." : "Restaurar (real)"}
+          {isLoading && !isDryRun ? "Procesando..." : "Restaurar (real)"}
         </Button>
       </div>
 
