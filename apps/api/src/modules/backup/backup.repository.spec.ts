@@ -1,8 +1,11 @@
+/// <reference types="jest" />
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BackupRepository } from './backup.repository';
 import { BackupJobEntity } from '../../database/entities/backup-job.entity';
+import { Environment } from '../../database/enums/environment.enum';
+import { JobStatus } from '../../database/enums/job-status.enum';
 
 type MockRepo = Partial<Record<keyof Repository<BackupJobEntity>, jest.Mock>>;
 
@@ -37,6 +40,7 @@ describe('BackupRepository', () => {
       const result = await backupRepo.findAll({ page: 2, pageSize: 10 });
 
       expect(mockRepo.findAndCount).toHaveBeenCalledWith({
+        where: {},
         order: { createdAt: 'DESC' },
         take: 10,
         skip: 10, // (page 2 - 1) * 10
@@ -50,7 +54,7 @@ describe('BackupRepository', () => {
       await backupRepo.findAll({ page: 1, pageSize: 25 });
 
       expect(mockRepo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({ skip: 0, take: 25 }),
+        expect.objectContaining({ where: {}, skip: 0, take: 25 }),
       );
     });
 
@@ -61,6 +65,44 @@ describe('BackupRepository', () => {
 
       expect(result).toEqual({ data: [], total: 0 });
     });
+
+    it('filters by connectionId, environment, and status', async () => {
+      mockRepo.findAndCount!.mockResolvedValue([[], 0]);
+
+      await backupRepo.findAll({
+        page: 1,
+        pageSize: 10,
+        connectionId: 'conn-abc',
+        environment: Environment.PROD,
+        status: JobStatus.COMPLETED,
+      });
+
+      expect(mockRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            connectionId: 'conn-abc',
+            environment: Environment.PROD,
+            status: JobStatus.COMPLETED,
+          },
+        }),
+      );
+    });
+
+    it('filters by date range (from and to)', async () => {
+      mockRepo.findAndCount!.mockResolvedValue([[], 0]);
+
+      const from = '2026-06-16T00:00:00Z';
+      const to = '2026-06-17T00:00:00Z';
+      await backupRepo.findAll({ page: 1, pageSize: 10, from, to });
+
+      expect(mockRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            createdAt: expect.anything(),
+          },
+        }),
+      );
+    });
   });
 
   describe('findAll — unpaginated (backward compat)', () => {
@@ -70,7 +112,10 @@ describe('BackupRepository', () => {
 
       const result = await backupRepo.findAll();
 
-      expect(mockRepo.find).toHaveBeenCalledWith({ order: { createdAt: 'DESC' } });
+      expect(mockRepo.find).toHaveBeenCalledWith({
+        where: {},
+        order: { createdAt: 'DESC' },
+      });
       expect(mockRepo.findAndCount).not.toHaveBeenCalled();
       expect(result).toEqual({ data: jobs, total: 2 });
     });
@@ -94,7 +139,9 @@ describe('BackupRepository', () => {
       // undefined page should fall through to unpaginated path
       const result = await backupRepo.findAll({});
 
-      expect(mockRepo.find).toHaveBeenCalled();
+      expect(mockRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ where: {} }),
+      );
       expect(result.data).toHaveLength(1);
     });
   });

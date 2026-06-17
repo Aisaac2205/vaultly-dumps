@@ -12,7 +12,7 @@ interface DumpsFiltersProps {
 const ENV_OPTIONS = [
   { value: "prod", label: "prod" },
   { value: "dev", label: "dev" },
-  { value: "sqa", label: "sqa" },
+  { value: "qa", label: "qa" },
 ];
 
 const STATUS_OPTIONS = [

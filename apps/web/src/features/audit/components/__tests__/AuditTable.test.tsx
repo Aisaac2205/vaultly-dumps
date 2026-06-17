@@ -45,7 +45,7 @@ const mockLogs: AuditLog[] = [
     username: "admin",
     resourceType: "restore",
     resourceId: "restore-1",
-    environment: "sqa",
+    environment: "qa",
     createdAt: "2026-06-13T12:00:00Z",
   },
 ];
@@ -77,7 +77,7 @@ describe("AuditTable", () => {
     // The environment text is stored lowercase, displayed uppercase via CSS
     expect(screen.getByText("prod")).toBeInTheDocument();
     expect(screen.getByText("dev")).toBeInTheDocument();
-    expect(screen.getByText("sqa")).toBeInTheDocument();
+    expect(screen.getByText("qa")).toBeInTheDocument();
 
     // EnvironmentBadge was previously used — verify no badge-specific classes
     const badges = document.querySelectorAll(".border-destructive\\/40");

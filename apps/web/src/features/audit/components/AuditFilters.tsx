@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { Filters } from "@/shared/ui/filters";
 import type { AuditFilters } from "../types";
 
@@ -11,7 +11,7 @@ interface AuditFiltersProps {
 const ENV_OPTIONS = [
   { value: "prod", label: "prod" },
   { value: "dev", label: "dev" },
-  { value: "sqa", label: "sqa" },
+  { value: "qa", label: "qa" },
 ];
 
 const RESOURCE_OPTIONS = [

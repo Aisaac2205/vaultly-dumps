@@ -18,7 +18,7 @@ interface ConnectionFiltersProps {
 
 const ENVIRONMENT_OPTIONS: FilterOption[] = [
   { value: "dev", label: "dev" },
-  { value: "sqa", label: "sqa" },
+  { value: "qa", label: "qa" },
   { value: "prod", label: "prod" },
 ];
 
@@ -67,13 +67,17 @@ export function ConnectionFilters({
       filters={toRecord(filters)}
       onFiltersChange={handleChange}
     >
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="w-full sm:min-w-[220px] sm:w-auto sm:flex-1">
           <Filters.Search
             filterKey="search"
             placeholder="Buscar por nombre, host o BD..."
           />
         </div>
+        <Filters.Trigger />
+        <Filters.ActiveChips className="flex-1" />
+      </div>
+      <Filters.Popover>
         <Filters.Select
           filterKey="environment"
           label="Ambiente"
@@ -92,8 +96,7 @@ export function ConnectionFilters({
           options={STATUS_OPTIONS}
           placeholder="Todos los estados"
         />
-      </div>
-      <Filters.ActiveChips className="mt-2" />
+      </Filters.Popover>
     </Filters.Root>
   );
 }

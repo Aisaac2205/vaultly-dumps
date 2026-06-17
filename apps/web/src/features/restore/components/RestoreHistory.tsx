@@ -25,7 +25,6 @@ import {
   History as HistoryIcon,
 } from "lucide-react";
 import type { RestoreJob, Connection } from "../types";
-import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/button";
 
 interface RestoreHistoryProps {
@@ -60,7 +59,7 @@ const statusConfig: Record<
   },
 };
 
-const ENV_FILTERS = ["Todos", "dev", "sqa", "prod"] as const;
+const ENV_FILTERS = ["Todos", "dev", "qa", "prod"] as const;
 const STATUS_FILTERS = ["Todos", "completed", "failed"] as const;
 
 function formatDuration(

@@ -164,6 +164,11 @@ export class BackupService {
     const { data: jobs, total } = await this.backupRepository.findAll({
       page: query?.page,
       pageSize: query?.pageSize,
+      connectionId: query?.connectionId,
+      environment: query?.environment,
+      status: query?.status,
+      from: query?.from,
+      to: query?.to,
     });
 
     if (jobs.length === 0) {
