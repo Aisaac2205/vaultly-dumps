@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, ShieldAlert, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import {
@@ -13,22 +13,24 @@ import {
 } from "@/shared/ui/dialog";
 import { useReconcilePreview, useRunReconcile } from "../hooks/useMaintenance";
 
-interface RowProps {
+interface StatProps {
   label: string;
   value: number;
   muted?: boolean;
 }
 
-function Row({ label, value, muted = false }: RowProps) {
+function Stat({ label, value, muted = false }: StatProps) {
   return (
-    <li
-      className={`flex items-center justify-between gap-3 ${
-        muted ? "text-muted-foreground" : ""
+    <div
+      className={`flex flex-col gap-0.5 rounded-md border border-border px-4 py-3 ${
+        muted ? "opacity-60" : ""
       }`}
     >
-      <span>{label}</span>
-      <span className="font-mono tabular-nums">{value}</span>
-    </li>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className="text-2xl font-semibold tabular-nums text-text-primary">
+        {value}
+      </span>
+    </div>
   );
 }
 
@@ -52,13 +54,13 @@ export function ReconcilePanel() {
     return (
       <Card>
         <CardContent className="space-y-3 p-5 sm:p-6">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="size-4 text-muted-foreground" aria-hidden="true" />
-            <h3 className="text-sm font-semibold text-text-primary">
-              Sincronizar Almacenamiento y Base de Datos
-            </h3>
-          </div>
-          <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <h3 className="text-sm font-semibold text-text-primary">
+            Sincronizar Almacenamiento y Base de Datos
+          </h3>
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
             Error al analizar:{" "}
             {error instanceof Error ? error.message : "Error desconocido"}
           </div>
@@ -95,37 +97,32 @@ export function ReconcilePanel() {
     <Card>
       <CardContent className="space-y-4 p-5 sm:p-6">
         <div>
-          <div className="flex items-center gap-2">
-            <ShieldAlert
-              className="size-4 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <h3 className="text-sm font-semibold text-text-primary">
-              Sincronizar Almacenamiento y Base de Datos
-            </h3>
-          </div>
+          <h3 className="text-sm font-semibold text-text-primary">
+            Sincronizar Almacenamiento y Base de Datos
+          </h3>
           <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-            A veces el Almacenamiento R2 y la Base de Datos se desincronizan.
-            Esto detecta y limpia los restos.{" "}
-            <span className="text-muted-foreground">
-              Lo que se puede restaurar nunca se toca.
-            </span>
+            Detecta restos cuando R2 y la base se desincronizan. Lo que se puede
+            restaurar nunca se toca.
           </p>
         </div>
 
-        <ul className="space-y-1 text-sm">
-          <Row label="Registros que apuntan a dumps ya borrados" value={stale} />
-          <Row label="Archivos de metadatos sueltos" value={manifests} />
-          <Row label="Dumps incompletos de subidas falladas" value={junkDumps} />
-          <Row
-            label="Dumps sin registrar pero restaurables (se conservan)"
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat label="Registros huérfanos" value={stale} />
+          <Stat label="Metadatos sueltos" value={manifests} />
+          <Stat label="Dumps incompletos" value={junkDumps} />
+          <Stat
+            label="Restaurables (se conservan)"
             value={restorable}
             muted
           />
-        </ul>
+        </div>
 
         <div className="flex items-center justify-between gap-3">
-          <p aria-live="polite" role="status" className="text-xs text-muted-foreground">
+          <p
+            aria-live="polite"
+            role="status"
+            className="text-xs text-muted-foreground"
+          >
             {toClean === 0
               ? "Todo sincronizado."
               : `${toClean} resto(s) se limpiarían.`}
@@ -145,7 +142,10 @@ export function ReconcilePanel() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-error" aria-hidden="true" />
+              <AlertTriangle
+                className="size-5 text-destructive"
+                aria-hidden="true"
+              />
               Limpiar restos
             </DialogTitle>
             <DialogDescription>
@@ -170,7 +170,9 @@ export function ReconcilePanel() {
               onClick={handleConfirm}
               disabled={run.isPending}
             >
-              {run.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              {run.isPending && (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              )}
               Limpiar definitivamente
             </Button>
           </DialogFooter>

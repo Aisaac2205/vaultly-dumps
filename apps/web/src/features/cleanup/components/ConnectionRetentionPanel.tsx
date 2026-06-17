@@ -164,7 +164,7 @@ export function ConnectionRetentionPanel() {
               htmlFor="retention-connection"
               className="block text-xs font-medium text-muted-foreground"
             >
-              Base de datos
+              Base de datos (PROD)
             </label>
             <select
               id="retention-connection"
@@ -173,13 +173,22 @@ export function ConnectionRetentionPanel() {
               disabled={connectionsLoading}
               className={inputClass}
             >
-              <option value="">Seleccioná una conexión</option>
-              {connections.map((connection) => (
-                <option key={connection.id} value={connection.slug}>
-                  {connection.name} · {connection.environment}
-                </option>
-              ))}
+              <option value="">Seleccioná una conexión PROD</option>
+              {connections
+                .filter((c) => c.environment === "prod")
+                .map((connection) => (
+                  <option key={connection.id} value={connection.slug}>
+                    {connection.name}
+                  </option>
+                ))}
             </select>
+            {!connectionsLoading &&
+              connections.filter((c) => c.environment === "prod").length ===
+                0 && (
+                <p className="text-xs text-muted-foreground">
+                  No tenés conexiones PROD configuradas.
+                </p>
+              )}
           </div>
         </CardContent>
       </Card>

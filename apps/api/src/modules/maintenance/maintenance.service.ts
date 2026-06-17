@@ -11,6 +11,7 @@ import { EnrichedR2Object } from '../backup/interfaces/enriched-r2-object.interf
 import { ManualRetentionSettingEntity } from '../../database/entities/manual-retention-setting.entity';
 import { ConnectionRetentionPolicyEntity } from '../../database/entities/connection-retention-policy.entity';
 import { BackupCategory } from '../../database/enums/backup-category.enum';
+import { Environment } from '../../database/enums/environment.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { CleanupParamsDto } from './dto/cleanup-params.dto';
 import { UpdateManualRetentionDto } from './dto/update-manual-retention.dto';
@@ -139,7 +140,7 @@ export class MaintenanceService {
       if (!lock[0]?.acquired) return;
 
       try {
-        const connections = await this.connectionsService.findAll();
+        const connections = await this.connectionsService.findAll(Environment.PROD);
         const connectionIds = connections.map((c) => c.id);
 
         const policies = await this.retentionPolicyRepo.find({

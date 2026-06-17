@@ -25,7 +25,7 @@ export class BackfillConnectionRetentionPolicies1778716800015
           WHEN 'daily'   THEN 'daily'
           WHEN 'weekly'  THEN 'weekly'
           WHEN 'custom'  THEN 'custom'
-        END::text AS category,
+        END::connection_retention_policies_category_enum AS category,
         c."retentionMaxAgeDays",
         NOW(),
         NOW()
