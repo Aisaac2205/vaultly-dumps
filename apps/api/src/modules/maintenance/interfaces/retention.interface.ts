@@ -1,3 +1,4 @@
+import type { BackupCategory } from '../../../database/enums/backup-category.enum';
 import { EnrichedR2Object } from '../../backup/interfaces/enriched-r2-object.interface';
 
 /**
@@ -30,4 +31,31 @@ export interface CleanupResult {
   deleted: number;
   freedMb: number;
   errors: CleanupError[];
+}
+
+/** Per-category retention policy row as stored and returned by the API. */
+export interface ConnectionRetentionPolicy {
+  category: BackupCategory;
+  retentionDays: number | null;
+}
+
+/** Input for upserting a per-connection retention policy. */
+export interface ConnectionRetentionPolicyInput {
+  category: BackupCategory;
+  retentionDays: number | null;
+}
+
+/** Preview of what would be pruned for one category under a connection policy. */
+export interface RetentionPreviewItem {
+  category: BackupCategory;
+  count: number;
+  totalSizeMb: number;
+}
+
+/** Result of running retention for one category. */
+export interface RetentionRunItem {
+  category: BackupCategory;
+  deleted: number;
+  freedMb: number;
+  errors: number;
 }

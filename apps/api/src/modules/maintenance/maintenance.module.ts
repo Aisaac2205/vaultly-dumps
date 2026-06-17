@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ManualRetentionSettingEntity } from '../../database/entities/manual-retention-setting.entity';
+import { ConnectionRetentionPolicyEntity } from '../../database/entities/connection-retention-policy.entity';
 import { BackupModule } from '../backup/backup.module';
 import { RestoreModule } from '../restore/restore.module';
 import { ConnectionsModule } from '../connections/connections.module';
@@ -9,7 +10,7 @@ import { MaintenanceService } from './maintenance.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ManualRetentionSettingEntity]),
+    TypeOrmModule.forFeature([ManualRetentionSettingEntity, ConnectionRetentionPolicyEntity]),
     BackupModule,
     RestoreModule,
     ConnectionsModule,

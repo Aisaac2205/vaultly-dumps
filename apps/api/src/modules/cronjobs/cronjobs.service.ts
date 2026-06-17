@@ -357,21 +357,25 @@ export class CronjobsService implements OnApplicationBootstrap {
     }
   }
 
-  // Prune old dumps for this cronjob's connection+category per its retention
-  // policy. Self-contained try/catch: a retention failure must never propagate
-  // and turn a successful backup into a FAILED run.
+  // Prune old dumps for this cronjob's connection+category per the
+  // connection-specific retention policy stored in connection_retention_policies.
+  // Self-contained try/catch: a retention failure must never propagate and turn
+  // a successful backup into a FAILED run.
   private async applyRetention(cronjob: CronjobEntity): Promise<void> {
-    if (!cronjob.retentionEnabled) return;
-
-    const policy: RetentionPolicy = {
-      keepLast: cronjob.retentionKeepLast ?? undefined,
-      maxAgeDays: cronjob.retentionMaxAgeDays ?? undefined,
-      maxTotalSizeMb: cronjob.retentionMaxSizeMb ?? undefined,
-    };
-
     try {
       const connection = await this.connectionsService.findById(cronjob.connectionId);
       const category = FREQUENCY_TO_CATEGORY[cronjob.frequency];
+      const retentionPolicy = await this.maintenanceService.getRetentionPolicy(
+        connection.slug,
+        category,
+      );
+
+      if (!retentionPolicy || retentionPolicy.retentionDays == null) return;
+
+      const policy: RetentionPolicy = {
+        maxAgeDays: retentionPolicy.retentionDays,
+      };
+
       const result = await this.maintenanceService.applyRetention(
         connection.slug,
         category,

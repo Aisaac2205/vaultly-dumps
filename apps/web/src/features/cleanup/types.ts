@@ -96,3 +96,28 @@ export interface ReconcileResult {
   untrackedKept: number;
   errors: CleanupError[];
 }
+
+// ─── Per-connection retention policy (new) ───────────────────────────────
+
+export interface ConnectionRetentionPolicy {
+  category: BackupCategory;
+  retentionDays: number | null;
+}
+
+export interface ConnectionRetentionPolicyInput {
+  category: BackupCategory;
+  retentionDays: number | null;
+}
+
+export interface RetentionPreviewItem {
+  category: BackupCategory;
+  count: number;
+  totalSizeMb: number;
+}
+
+export interface RetentionRunItem {
+  category: BackupCategory;
+  deleted: number;
+  freedMb: number;
+  errors: number;
+}
