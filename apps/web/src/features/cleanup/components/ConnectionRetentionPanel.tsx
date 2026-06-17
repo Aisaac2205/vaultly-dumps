@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Trash2, AlertTriangle } from "lucide-react";
+import { Loader2, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -154,6 +154,23 @@ export function ConnectionRetentionPanel() {
   const totalCount = prunable.reduce((s, i) => s + i.count, 0);
   const totalMb = prunable.reduce((s, i) => s + i.totalSizeMb, 0);
 
+  const isDirty = useMemo(() => {
+    const saved = new Map(
+      policies.map((p) => [p.category, p.retentionDays]),
+    );
+    for (const row of rows) {
+      const savedDays = saved.get(row.category);
+      if (row.keepForever && savedDays != null) return true;
+      if (!row.keepForever && savedDays == null) return true;
+      if (!row.keepForever && savedDays != null) {
+        if (savedDays !== Number(row.days)) return true;
+      }
+    }
+    return false;
+  }, [rows, policies]);
+
+  const hasSavedPolicy = policies.some((p) => p.retentionDays != null);
+
   return (
     <div className="space-y-4">
       {/* Connection selector */}
@@ -202,6 +219,12 @@ export function ConnectionRetentionPanel() {
               Eliminá automáticamente los dumps por antigüedad según su tipo.
               Esta política aplica solo a la conexión seleccionada.
             </CardDescription>
+            {!isLoading && !isDirty && hasSavedPolicy && (
+              <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600">
+                <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                Política guardada — se aplica en el próximo barrido.
+              </div>
+            )}
           </CardHeader>
 
           {policiesError && (
@@ -310,7 +333,7 @@ export function ConnectionRetentionPanel() {
             <Button
               type="button"
               onClick={handleSave}
-              disabled={isLoading || updatePolicies.isPending}
+              disabled={isLoading || updatePolicies.isPending || !isDirty}
             >
               {updatePolicies.isPending ? "Guardando..." : "Guardar política"}
             </Button>

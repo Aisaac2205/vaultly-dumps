@@ -142,12 +142,12 @@ export function ReconcilePanel() {
         </div>
 
         {toClean === 0 ? (
-          <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/30">
+          <div className="flex items-center gap-2 rounded-md border border-border bg-muted/20 px-4 py-3">
             <CheckCircle2
               className="size-5 text-emerald-600"
               aria-hidden="true"
             />
-            <span className="text-sm font-medium text-emerald-800 dark:text-emerald-400">
+            <span className="text-sm font-medium text-text-primary">
               Todo sincronizado — no hay restos que limpiar.
             </span>
           </div>

@@ -14,7 +14,7 @@ import {
 import { useDbHygienePreview, useRunDbHygiene } from "../hooks/useMaintenance";
 
 const inputClass =
-  "h-9 w-28 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+  "h-9 w-20 rounded-md border border-input bg-background px-3 text-center text-sm tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export function DbHygienePanel() {
   const [days, setDays] = useState("30");
@@ -45,6 +45,12 @@ export function DbHygienePanel() {
     });
   }
 
+  const statusText = !valid
+    ? "Ingresá un número de días válido."
+    : count === 0
+      ? "No hay registros fallidos con esa antigüedad."
+      : `Se borrarían ${count} registro(s) fallido(s).`;
+
   return (
     <Card>
       <CardContent className="space-y-4 p-5 sm:p-6">
@@ -70,13 +76,12 @@ export function DbHygienePanel() {
         )}
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col gap-1">
-              <label
-                htmlFor="db-hygiene-days"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Más viejos que (días)
+          <div className="space-y-3">
+            {/* Inline sentence control */}
+            <div className="flex flex-wrap items-center gap-2 text-sm text-text-primary">
+              <span className="text-muted-foreground">Eliminar fallidos con más de</span>
+              <label htmlFor="db-hygiene-days" className="sr-only">
+                Días de antigüedad
               </label>
               <input
                 id="db-hygiene-days"
@@ -85,21 +90,23 @@ export function DbHygienePanel() {
                 min={1}
                 value={days}
                 onChange={(e) => setDays(e.target.value)}
-                aria-describedby="db-hygiene-hint"
+                aria-describedby="db-hygiene-status"
               />
+              <span className="text-muted-foreground">días de antigüedad.</span>
             </div>
 
-            <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">
-                Registros a borrar
-              </span>
-              <span
-                aria-live="polite"
-                className="text-2xl font-semibold tabular-nums text-text-primary"
-              >
-                {!valid ? "—" : count}
-              </span>
-            </div>
+            {/* Status line */}
+            <p
+              id="db-hygiene-status"
+              aria-live="polite"
+              className={`text-xs ${
+                !valid || count === 0
+                  ? "text-muted-foreground"
+                  : "font-medium text-destructive"
+              }`}
+            >
+              {statusText}
+            </p>
           </div>
 
           <Button
@@ -111,11 +118,6 @@ export function DbHygienePanel() {
             {run.isPending ? "Borrando..." : "Borrar"}
           </Button>
         </div>
-
-        <p id="db-hygiene-hint" className="text-[11px] text-muted-foreground">
-          Se borrarán los registros de backups fallidos con más días que el valor
-          indicado.
-        </p>
       </CardContent>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
