@@ -25,7 +25,6 @@ import {
   History as HistoryIcon,
 } from "lucide-react";
 import type { RestoreJob, Connection } from "../types";
-import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/button";
 
 interface RestoreHistoryProps {

@@ -1,5 +1,3 @@
-import { useMemo, useState } from "react";
-import type { FormEvent, ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import type {
@@ -8,7 +6,6 @@ import type {
   CreateCronjobDto,
   UpdateCronjobDto,
 } from "../types";
-import type { CronFrequency } from "@/types/backup.types";
 import { Button } from "@/shared/ui/button";
 import {
   Card,
@@ -18,32 +15,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/shared/ui/card";
-import { validateCronExpression } from "../lib/cron-validator";
 import {
-  useRetentionPreview,
-  type RetentionPreviewParams,
-} from "../hooks/useRetentionPreview";
-
-function parseOptionalInt(value: string): number | undefined {
-  if (value.trim() === "") return undefined;
-  const n = Number(value);
-  return Number.isInteger(n) && n >= 0 ? n : undefined;
-}
-
-interface CronPreset {
-  label: string;
-  cronExpression: string;
-  frequency: CronFrequency;
-}
-
-const CRON_PRESETS: readonly CronPreset[] = [
-  { label: "Cada hora", cronExpression: "0 * * * *", frequency: "hourly" },
-  { label: "Diario a las 2am", cronExpression: "0 2 * * *", frequency: "daily" },
-  { label: "Semanal (lunes 2am)", cronExpression: "0 2 * * 1", frequency: "weekly" },
-  { label: "Personalizado", cronExpression: "", frequency: "custom" },
-] as const;
-
-const CUSTOM_LABEL = "Personalizado";
+  useCronjobForm,
+  CRON_PRESETS,
+} from "../hooks/useCronjobForm";
 
 interface CronjobFormProps {
   cronjob?: Cronjob;
@@ -59,17 +34,6 @@ interface CronjobFormProps {
 const inputClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
-function detectPresetLabel(
-  cronExpression: string,
-  frequency: CronFrequency,
-): string {
-  const match = CRON_PRESETS.find(
-    (p) => p.frequency === frequency && p.cronExpression === cronExpression,
-  );
-  if (match) return match.label;
-  return CUSTOM_LABEL;
-}
-
 export default function CronjobForm({
   cronjob,
   connections,
@@ -78,130 +42,28 @@ export default function CronjobForm({
   onCancel,
   isLoading,
 }: CronjobFormProps) {
-  const isEditMode = cronjob !== undefined;
-
-  const initialFrequency: CronFrequency = cronjob?.frequency ?? "custom";
-  const initialCronExpression = cronjob?.cronExpression ?? "";
-
-  const [formData, setFormData] = useState({
-    name: cronjob?.name ?? "",
-    connectionId: cronjob?.connectionId ?? "",
-    cronExpression: initialCronExpression,
-    frequency: initialFrequency,
+  const {
+    formData,
+    selectedPresetLabel,
+    validationError,
+    retention,
+    retentionPreview,
+    isCustom,
+    isEditMode,
+    nameCounts,
+    hasDuplicateNames,
+    handleChange,
+    handlePresetChange,
+    handleCronExpressionChange,
+    handleRetentionChange,
+    handleSubmit,
+  } = useCronjobForm({
+    cronjob,
+    connections,
+    onSubmit,
+    onCancel,
+    isLoading,
   });
-
-  const [selectedPresetLabel, setSelectedPresetLabel] = useState<string>(
-    () => detectPresetLabel(initialCronExpression, initialFrequency),
-  );
-
-  const [validationError, setValidationError] = useState<string | null>(null);
-
-  const [retention, setRetention] = useState({
-    enabled: cronjob?.retentionEnabled ?? false,
-    keepLast: cronjob?.retentionKeepLast?.toString() ?? "",
-    maxAgeDays: cronjob?.retentionMaxAgeDays?.toString() ?? "",
-    maxSizeMb: cronjob?.retentionMaxSizeMb?.toString() ?? "",
-  });
-
-  const previewParams: RetentionPreviewParams | null = useMemo(() => {
-    if (!retention.enabled) return null;
-    const slug = connections.find((c) => c.id === formData.connectionId)?.slug;
-    if (!slug) return null;
-    const keepLast = parseOptionalInt(retention.keepLast);
-    const maxAgeDays = parseOptionalInt(retention.maxAgeDays);
-    const maxTotalSizeMb = parseOptionalInt(retention.maxSizeMb);
-    if (keepLast === undefined && maxAgeDays === undefined && maxTotalSizeMb === undefined) {
-      return null;
-    }
-    return {
-      connectionSlug: slug,
-      category: formData.frequency,
-      keepLast,
-      maxAgeDays,
-      maxTotalSizeMb,
-    };
-  }, [retention, connections, formData.connectionId, formData.frequency]);
-
-  const { data: retentionPreview } = useRetentionPreview(previewParams);
-
-  const nameCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const c of connections) counts[c.name] = (counts[c.name] ?? 0) + 1;
-    return counts;
-  }, [connections]);
-  const hasDuplicateNames = Object.values(nameCounts).some((n) => n > 1);
-
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setValidationError(null);
-  };
-
-  const handlePresetChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const label = e.target.value;
-    const preset = CRON_PRESETS.find((p) => p.label === label);
-    if (!preset) return;
-    setSelectedPresetLabel(label);
-    setFormData((prev) => ({
-      ...prev,
-      frequency: preset.frequency,
-      cronExpression:
-        preset.frequency === "custom"
-          ? prev.cronExpression
-          : preset.cronExpression,
-    }));
-    setValidationError(null);
-  };
-
-  const handleCronExpressionChange = (
-    e: ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = e.target.value;
-    setFormData((prev) => ({
-      ...prev,
-      cronExpression: value,
-      frequency: "custom",
-    }));
-    setSelectedPresetLabel(CUSTOM_LABEL);
-    setValidationError(null);
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.name.trim()) {
-      setValidationError("El nombre es obligatorio");
-      return;
-    }
-    if (!formData.connectionId) {
-      setValidationError("La conexión es obligatoria");
-      return;
-    }
-    const cronCheck = validateCronExpression(formData.cronExpression);
-    if (!cronCheck.valid) {
-      setValidationError(cronCheck.error ?? "Expresión cron inválida");
-      return;
-    }
-
-    try {
-      await onSubmit({
-        name: formData.name.trim(),
-        connectionId: formData.connectionId,
-        cronExpression: formData.cronExpression.trim(),
-        frequency: formData.frequency,
-        retentionEnabled: retention.enabled,
-        retentionKeepLast: parseOptionalInt(retention.keepLast),
-        retentionMaxAgeDays: parseOptionalInt(retention.maxAgeDays),
-        retentionMaxSizeMb: parseOptionalInt(retention.maxSizeMb),
-      });
-    } catch {
-      // Error handling is done by the parent
-    }
-  };
-
-  const isCustom = formData.frequency === "custom";
 
   return (
     <Card>
@@ -386,7 +248,7 @@ export default function CronjobForm({
                 type="checkbox"
                 checked={retention.enabled}
                 onChange={(e) =>
-                  setRetention((r) => ({ ...r, enabled: e.target.checked }))
+                  handleRetentionChange("enabled", e.target.checked)
                 }
                 disabled={isLoading}
               />
@@ -410,7 +272,7 @@ export default function CronjobForm({
                       min={0}
                       value={retention.keepLast}
                       onChange={(e) =>
-                        setRetention((r) => ({ ...r, keepLast: e.target.value }))
+                        handleRetentionChange("keepLast", e.target.value)
                       }
                       placeholder="Ej. 24"
                       disabled={isLoading}
@@ -430,7 +292,7 @@ export default function CronjobForm({
                       min={1}
                       value={retention.maxAgeDays}
                       onChange={(e) =>
-                        setRetention((r) => ({ ...r, maxAgeDays: e.target.value }))
+                        handleRetentionChange("maxAgeDays", e.target.value)
                       }
                       placeholder="Ej. 30"
                       disabled={isLoading}
@@ -450,7 +312,7 @@ export default function CronjobForm({
                       min={1}
                       value={retention.maxSizeMb}
                       onChange={(e) =>
-                        setRetention((r) => ({ ...r, maxSizeMb: e.target.value }))
+                        handleRetentionChange("maxSizeMb", e.target.value)
                       }
                       placeholder="Ej. 5000"
                       disabled={isLoading}

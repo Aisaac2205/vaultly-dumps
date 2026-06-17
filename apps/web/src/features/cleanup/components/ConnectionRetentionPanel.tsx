@@ -1,6 +1,4 @@
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { Loader2, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -18,158 +16,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { useConnections } from "@/features/connections/hooks/useConnections";
-import { BACKUP_CATEGORIES, type BackupCategory } from "@/types/backup.types";
-import {
-  useRetentionPolicies,
-  useRetentionPreview,
-  useUpdateRetentionPolicies,
-  useRunRetention,
-} from "../hooks/useConnectionRetention";
+import { useConnectionRetentionPanel } from "../hooks/useConnectionRetention";
 import { CATEGORY_LABELS } from "../lib/labels";
-import type { ConnectionRetentionPolicyInput } from "../types";
 
 const inputClass =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
-interface RowState {
-  category: BackupCategory;
-  keepForever: boolean;
-  days: string;
-}
-
-function buildInitialRows(
-  policies: { category: BackupCategory; retentionDays: number | null }[],
-): RowState[] {
-  const byCategory = new Map(
-    policies.map((p) => [p.category, p.retentionDays]),
-  );
-
-  return BACKUP_CATEGORIES.map((category) => {
-    const days = byCategory.get(category);
-    return {
-      category,
-      keepForever: days == null,
-      days: days?.toString() ?? "30",
-    };
-  });
-}
-
 export function ConnectionRetentionPanel() {
-  const { data: connections = [], isLoading: connectionsLoading } =
-    useConnections();
-
-  const [connectionSlug, setConnectionSlug] = useState<string>("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
-
   const {
-    data: policies = [],
-    isLoading: policiesLoading,
-    isError: policiesError,
-    error: policiesErrorObj,
-  } = useRetentionPolicies(connectionSlug);
-
-  const { data: preview = [], isLoading: previewLoading } =
-    useRetentionPreview(connectionSlug);
-
-  const updatePolicies = useUpdateRetentionPolicies(connectionSlug);
-  const runRetention = useRunRetention(connectionSlug);
-
-  const [rows, setRows] = useState<RowState[]>(() =>
-    buildInitialRows(policies),
-  );
-
-  // Sync rows when policies load or connection changes.
-  const policyKey = useMemo(
-    () => `${connectionSlug}-${policies.map((p) => p.category + p.retentionDays).join(",")}`,
-    [connectionSlug, policies],
-  );
-
-  useMemo(() => {
-    setRows(buildInitialRows(policies));
-    setValidationError(null);
-  }, [policyKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const updateRow = (category: BackupCategory, patch: Partial<RowState>) => {
-    setRows((prev) =>
-      prev.map((r) => (r.category === category ? { ...r, ...patch } : r)),
-    );
-    setValidationError(null);
-  };
-
-  const handleSave = async () => {
-    for (const row of rows) {
-      if (row.keepForever) continue;
-      const parsed = Number(row.days);
-      if (!Number.isInteger(parsed) || parsed < 1) {
-        setValidationError(
-          `El valor de "${CATEGORY_LABELS[row.category]}" debe ser un entero mayor o igual a 1.`,
-        );
-        return;
-      }
-    }
-
-    const payload: ConnectionRetentionPolicyInput[] = rows.map((row) => ({
-      category: row.category,
-      retentionDays: row.keepForever ? null : Number(row.days),
-    }));
-
-    try {
-      await updatePolicies.mutateAsync(payload);
-      toast.success("Política guardada", {
-        description:
-          "La retención se aplicará en el próximo barrido diario.",
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error al guardar la política";
-      toast.error("No se pudo guardar la política", { description: message });
-    }
-  };
-
-  const handleRunCleanup = async () => {
-    try {
-      const summary = await runRetention.mutateAsync();
-      const deleted = summary.reduce((s, i) => s + i.deleted, 0);
-      const freed = summary.reduce((s, i) => s + i.freedMb, 0);
-      const errors = summary.reduce((s, i) => s + i.errors, 0);
-      toast.success("Limpieza ejecutada", {
-        description: `Se eliminaron ${deleted} dumps (${freed.toFixed(2)} MB).${
-          errors > 0 ? ` ${errors} con error.` : ""
-        }`,
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error al ejecutar la limpieza";
-      toast.error("No se pudo ejecutar la limpieza", { description: message });
-    } finally {
-      setConfirmOpen(false);
-    }
-  };
-
-  const connectionSelected = connectionSlug !== "";
-  const isLoading = connectionsLoading || policiesLoading;
-  const prunable = preview.filter((i) => i.count > 0);
-  const totalCount = prunable.reduce((s, i) => s + i.count, 0);
-  const totalMb = prunable.reduce((s, i) => s + i.totalSizeMb, 0);
-
-  const isDirty = useMemo(() => {
-    const saved = new Map(
-      policies.map((p) => [p.category, p.retentionDays]),
-    );
-    for (const row of rows) {
-      const savedDays = saved.get(row.category);
-      if (row.keepForever && savedDays != null) return true;
-      if (!row.keepForever && savedDays == null) return true;
-      if (!row.keepForever && savedDays != null) {
-        if (savedDays !== Number(row.days)) return true;
-      }
-    }
-    return false;
-  }, [rows, policies]);
-
-  const hasSavedPolicy = policies.some((p) => p.retentionDays != null);
+    connections,
+    connectionSlug,
+    setConnectionSlug,
+    confirmOpen,
+    setConfirmOpen,
+    validationError,
+    rows,
+    updateRow,
+    handleSave,
+    handleRunCleanup,
+    connectionSelected,
+    isLoading,
+    policiesError,
+    policiesErrorObj,
+    isDirty,
+    hasSavedPolicy,
+    prunable,
+    totalCount,
+    totalMb,
+    previewLoading,
+    isSaving,
+    isRunning,
+  } = useConnectionRetentionPanel();
 
   return (
     <div className="space-y-4">
@@ -187,7 +64,7 @@ export function ConnectionRetentionPanel() {
               id="retention-connection"
               value={connectionSlug}
               onChange={(e) => setConnectionSlug(e.target.value)}
-              disabled={connectionsLoading}
+              disabled={isLoading}
               className={inputClass}
             >
               <option value="">Seleccioná una conexión PROD</option>
@@ -195,11 +72,11 @@ export function ConnectionRetentionPanel() {
                 .filter((c) => c.environment === "prod")
                 .map((connection) => (
                   <option key={connection.id} value={connection.slug}>
-                    {connection.name}
+                     {connection.name}
                   </option>
                 ))}
             </select>
-            {!connectionsLoading &&
+            {!isLoading &&
               connections.filter((c) => c.environment === "prod").length ===
                 0 && (
                 <p className="text-xs text-muted-foreground">
@@ -276,7 +153,7 @@ export function ConnectionRetentionPanel() {
                             keepForever: e.target.checked,
                           })
                         }
-                        disabled={updatePolicies.isPending}
+                        disabled={isSaving}
                       />
                       Conservar para siempre
                     </label>
@@ -299,7 +176,7 @@ export function ConnectionRetentionPanel() {
                               days: e.target.value,
                             })
                           }
-                          disabled={updatePolicies.isPending}
+                          disabled={isSaving}
                         />
                         <span className="text-sm text-muted-foreground">
                           días
@@ -322,10 +199,10 @@ export function ConnectionRetentionPanel() {
             <Button
               type="button"
               variant="destructive"
-              disabled={prunable.length === 0 || runRetention.isPending}
+              disabled={prunable.length === 0 || isRunning}
               onClick={() => setConfirmOpen(true)}
             >
-              {runRetention.isPending && (
+              {isRunning && (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               )}
               Ejecutar limpieza ahora
@@ -333,9 +210,9 @@ export function ConnectionRetentionPanel() {
             <Button
               type="button"
               onClick={handleSave}
-              disabled={isLoading || updatePolicies.isPending || !isDirty}
+              disabled={isLoading || isSaving || !isDirty}
             >
-              {updatePolicies.isPending ? "Guardando..." : "Guardar política"}
+              {isSaving ? "Guardando..." : "Guardar política"}
             </Button>
           </CardFooter>
         </Card>
@@ -416,7 +293,7 @@ export function ConnectionRetentionPanel() {
               type="button"
               variant="outline"
               onClick={() => setConfirmOpen(false)}
-              disabled={runRetention.isPending}
+              disabled={isRunning}
             >
               Cancelar
             </Button>
@@ -424,9 +301,9 @@ export function ConnectionRetentionPanel() {
               type="button"
               variant="destructive"
               onClick={() => void handleRunCleanup()}
-              disabled={runRetention.isPending}
+              disabled={isRunning}
             >
-              {runRetention.isPending && (
+              {isRunning && (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               )}
               Eliminar dumps viejos

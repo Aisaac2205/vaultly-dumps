@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { toast } from "sonner";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
@@ -11,45 +9,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { useDbHygienePreview, useRunDbHygiene } from "../hooks/useMaintenance";
+import { useDbHygienePanel } from "../hooks/useMaintenance";
 
 const inputClass =
   "h-9 w-20 rounded-md border border-input bg-background px-3 text-center text-sm tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export function DbHygienePanel() {
-  const [days, setDays] = useState("30");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const daysNum = Number(days);
-  const valid =
-    days.trim() !== "" && Number.isInteger(daysNum) && daysNum >= 1;
-
   const {
-    data: preview,
-    isError: previewError,
-    error: previewErrorDetail,
-  } = useDbHygienePreview(valid ? daysNum : 0, valid);
-  const run = useRunDbHygiene();
-
-  const count = preview?.failedCount ?? 0;
-
-  function handleConfirm() {
-    if (!valid) return;
-    run.mutate(daysNum, {
-      onSuccess: (result) => {
-        setConfirmOpen(false);
-        toast.success(`${result.deleted} registro(s) fallido(s) borrado(s)`);
-      },
-      onError: (error) => {
-        toast.error(error.message || "No se pudo limpiar la base");
-      },
-    });
-  }
-
-  const statusText = !valid
-    ? "Ingresá un número de días válido."
-    : count === 0
-      ? "No hay registros fallidos con esa antigüedad."
-      : `Se borrarían ${count} registro(s) fallido(s).`;
+    days,
+    setDays,
+    confirmOpen,
+    setConfirmOpen,
+    valid,
+    daysNum,
+    previewError,
+    previewErrorDetail,
+    count,
+    handleConfirm,
+    statusText,
+    isPending,
+  } = useDbHygienePanel();
 
   return (
     <Card>
@@ -112,10 +91,10 @@ export function DbHygienePanel() {
           <Button
             type="button"
             variant="destructive"
-            disabled={!valid || count === 0 || run.isPending}
+            disabled={!valid || count === 0 || isPending}
             onClick={() => setConfirmOpen(true)}
           >
-            {run.isPending ? "Borrando..." : "Borrar"}
+            {isPending ? "Borrando..." : "Borrar"}
           </Button>
         </div>
       </CardContent>
@@ -141,7 +120,7 @@ export function DbHygienePanel() {
               type="button"
               variant="outline"
               onClick={() => setConfirmOpen(false)}
-              disabled={run.isPending}
+              disabled={isPending}
             >
               Cancelar
             </Button>
@@ -149,9 +128,9 @@ export function DbHygienePanel() {
               type="button"
               variant="destructive"
               onClick={handleConfirm}
-              disabled={run.isPending}
+              disabled={isPending}
             >
-              {run.isPending && (
+              {isPending && (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               )}
               Borrar definitivamente

@@ -1,25 +1,9 @@
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
-import {
-  useManualRetention,
-  useUpdateManualRetention,
-} from "../hooks/useManualRetention";
-import type { ManualRetentionUpdate } from "../types";
+import { useManualRetentionSettings } from "../hooks/useManualRetention";
 
 const inputClass =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-
-function toField(value: number | null | undefined): string {
-  return value == null ? "" : String(value);
-}
-
-function parseField(value: string): number | undefined {
-  if (value.trim() === "") return undefined;
-  const n = Number(value);
-  return Number.isInteger(n) && n >= 0 ? n : undefined;
-}
 
 function formatRelative(dateStr: string): string {
   const date = new Date(dateStr);
@@ -103,35 +87,22 @@ function NumberField({
 }
 
 export function ManualRetentionSettings() {
-  const { data, isLoading, isError, error } = useManualRetention();
-  const update = useUpdateManualRetention();
-
-  const [enabled, setEnabled] = useState(false);
-  const [keepLast, setKeepLast] = useState("");
-  const [maxAgeDays, setMaxAgeDays] = useState("");
-  const [maxSizeMb, setMaxSizeMb] = useState("");
-
-  useEffect(() => {
-    if (!data) return;
-    setEnabled(data.enabled);
-    setKeepLast(toField(data.keepLast));
-    setMaxAgeDays(toField(data.maxAgeDays));
-    setMaxSizeMb(toField(data.maxTotalSizeMb));
-  }, [data]);
-
-  function handleSave() {
-    const dto: ManualRetentionUpdate = {
-      enabled,
-      keepLast: parseField(keepLast),
-      maxAgeDays: parseField(maxAgeDays),
-      maxTotalSizeMb: parseField(maxSizeMb),
-    };
-    update.mutate(dto, {
-      onSuccess: () => toast.success("Retención de manuales guardada"),
-      onError: (error) =>
-        toast.error(error.message || "No se pudo guardar la retención"),
-    });
-  }
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    enabled,
+    setEnabled,
+    keepLast,
+    setKeepLast,
+    maxAgeDays,
+    setMaxAgeDays,
+    maxSizeMb,
+    setMaxSizeMb,
+    handleSave,
+    isSaving,
+  } = useManualRetentionSettings();
 
   return (
     <Card>
@@ -242,9 +213,9 @@ export function ManualRetentionSettings() {
           <Button
             type="button"
             onClick={handleSave}
-            disabled={isLoading || update.isPending}
+            disabled={isLoading || isSaving}
           >
-            {update.isPending ? "Guardando..." : "Guardar"}
+            {isSaving ? "Guardando..." : "Guardar"}
           </Button>
         </div>
       </CardContent>

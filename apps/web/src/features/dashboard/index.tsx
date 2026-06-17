@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useDashboard, useConnectionStats, useStorageStats } from "./hooks";
 import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "./api/dashboard-api";
@@ -42,11 +42,30 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   });
 
-  const refreshCycle = useRef(0);
+  const [refreshCycle, setRefreshCycle] = useState(0);
+
+  const statsDeps = stats ? "loaded" : "empty";
+  const backupsLen = recentBackups.length;
+  const restoresLen = recentRestores.length;
+  const connectionsLen = connections.length;
+  const dumpsLen = dumps.length;
+  const cronjobsLen = cronjobs.length;
+  const dailyCountsLen = dailyCounts.length;
 
   useEffect(() => {
-    refreshCycle.current += 1;
-  }, [stats, dailyCounts, recentBackups, recentRestores, connections, dumps, cronjobs]);
+    const timer = setTimeout(() => {
+      setRefreshCycle((c) => c + 1);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [
+    statsDeps,
+    backupsLen,
+    restoresLen,
+    connectionsLen,
+    dumpsLen,
+    cronjobsLen,
+    dailyCountsLen,
+  ]);
 
   const isLoading =
     dashboardLoading || connectionsLoading || storageLoading || cronjobsLoading || statsLoading || dailyCountsLoading;
@@ -90,7 +109,7 @@ export default function Dashboard() {
         aria-atomic="true"
         className="sr-only"
       >
-        Dashboard actualizado (ciclo {refreshCycle.current})
+        Dashboard actualizado (ciclo {refreshCycle})
       </div>
 
       <DashboardHeader lastUpdated={new Date()} />
@@ -105,7 +124,7 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-col gap-4 sm:gap-6 lg:col-span-2">
           <RestoreTimeline restores={recentRestores} />
-          <SystemHealthCard dumps={dumps} connections={connections} />
+          <SystemHealthCard dumps={dumps} />
           <UpcomingCronjobsCard cronjobs={cronjobs} />
         </div>
       </div>

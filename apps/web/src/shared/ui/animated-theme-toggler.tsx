@@ -77,14 +77,15 @@ export function AnimatedThemeToggler({
   const rawId = useId();
   const maskId = `att${rawId.replace(/:/g, "")}`;
   const lastSnd = useRef(0);
-  const isFirst = useRef(true);
+  const [isFirst, setIsFirst] = useState(true);
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
-    requestAnimationFrame(() => {
-      isFirst.current = false;
+    const frame = requestAnimationFrame(() => {
+      setIsFirst(false);
     });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const handleToggle = () => {
@@ -92,7 +93,7 @@ export function AnimatedThemeToggler({
     if (sound) tick(lastSnd);
   };
 
-  const spring = isFirst.current
+  const spring = isFirst
     ? { duration: 0 }
     : { type: "spring" as const, stiffness: 380, damping: 30 };
 

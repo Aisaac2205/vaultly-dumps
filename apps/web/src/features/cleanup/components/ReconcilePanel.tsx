@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { toast } from "sonner";
 import { Loader2, AlertTriangle, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
@@ -11,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { useReconcilePreview, useRunReconcile } from "../hooks/useMaintenance";
+import { useReconcilePanel } from "../hooks/useMaintenance";
 
 interface HealthRowProps {
   label: string;
@@ -70,9 +68,21 @@ function HealthRow({ label, count, severity }: HealthRowProps) {
 }
 
 export function ReconcilePanel() {
-  const { data, isLoading, isError, error } = useReconcilePreview();
-  const run = useRunReconcile();
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    confirmOpen,
+    setConfirmOpen,
+    stale,
+    manifests,
+    junkDumps,
+    restorable,
+    toClean,
+    handleConfirm,
+    isPending,
+  } = useReconcilePanel();
 
   if (isLoading) {
     return (
@@ -105,28 +115,6 @@ export function ReconcilePanel() {
   }
 
   if (!data) return null;
-
-  const stale = data.staleDbRows.length;
-  const manifests = data.orphanManifests.length;
-  const junkDumps = data.orphanDumps.filter((d) => !d.hasManifest).length;
-  const restorable = data.orphanDumps.filter((d) => d.hasManifest).length;
-  const toClean = stale + manifests + junkDumps;
-
-  function handleConfirm() {
-    run.mutate(undefined, {
-      onSuccess: (result) => {
-        setConfirmOpen(false);
-        const summary = `${result.dbRowsDeleted} registros · ${result.manifestsDeleted} metadatos · ${result.dumpsDeleted} dumps incompletos`;
-        if (result.errors.length > 0) {
-          toast.warning(`${summary} · ${result.errors.length} con error`);
-        } else {
-          toast.success(summary);
-        }
-      },
-      onError: (error) =>
-        toast.error(error.message || "No se pudo reconciliar"),
-    });
-  }
 
   return (
     <Card>
@@ -189,10 +177,10 @@ export function ReconcilePanel() {
           <Button
             type="button"
             variant="destructive"
-            disabled={toClean === 0 || run.isPending}
+            disabled={toClean === 0 || isPending}
             onClick={() => setConfirmOpen(true)}
           >
-            {run.isPending ? "Limpiando..." : "Limpiar restos"}
+            {isPending ? "Limpiando..." : "Limpiar restos"}
           </Button>
         </div>
       </CardContent>
@@ -219,7 +207,7 @@ export function ReconcilePanel() {
               type="button"
               variant="outline"
               onClick={() => setConfirmOpen(false)}
-              disabled={run.isPending}
+              disabled={isPending}
             >
               Cancelar
             </Button>
@@ -227,9 +215,9 @@ export function ReconcilePanel() {
               type="button"
               variant="destructive"
               onClick={handleConfirm}
-              disabled={run.isPending}
+              disabled={isPending}
             >
-              {run.isPending && (
+              {isPending && (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               )}
               Limpiar definitivamente
