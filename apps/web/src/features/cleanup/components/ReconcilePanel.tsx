@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, CheckCircle2, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import {
@@ -13,24 +13,59 @@ import {
 } from "@/shared/ui/dialog";
 import { useReconcilePreview, useRunReconcile } from "../hooks/useMaintenance";
 
-interface StatProps {
+interface HealthRowProps {
   label: string;
-  value: number;
-  muted?: boolean;
+  count: number;
+  severity: "ok" | "warning" | "critical";
 }
 
-function Stat({ label, value, muted = false }: StatProps) {
+function HealthRow({ label, count, severity }: HealthRowProps) {
+  const icon =
+    severity === "ok" ? (
+      <CheckCircle2 className="size-4 text-emerald-500" aria-hidden="true" />
+    ) : severity === "warning" ? (
+      <AlertCircle className="size-4 text-amber-500" aria-hidden="true" />
+    ) : (
+      <AlertTriangle
+        className="size-4 text-destructive"
+        aria-hidden="true"
+      />
+    );
+
   return (
-    <div
-      className={`flex flex-col gap-0.5 rounded-md border border-border px-4 py-3 ${
-        muted ? "opacity-60" : ""
-      }`}
-    >
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-2xl font-semibold tabular-nums text-text-primary">
-        {value}
-      </span>
-    </div>
+    <li className="flex items-center justify-between gap-3 py-2.5">
+      <div className="flex items-center gap-2.5">
+        {icon}
+        <span className="text-sm text-text-primary">{label}</span>
+      </div>
+      <div className="flex items-center gap-3">
+        {count > 0 && (
+          <div className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-muted sm:block">
+            <div
+              className={`h-full rounded-full ${
+                severity === "critical"
+                  ? "bg-destructive"
+                  : severity === "warning"
+                    ? "bg-amber-500"
+                    : "bg-emerald-500"
+              }`}
+              style={{ width: `${Math.min(count * 10, 100)}%` }}
+            />
+          </div>
+        )}
+        <span
+          className={`min-w-[2ch] text-right text-sm font-medium tabular-nums ${
+            severity === "ok"
+              ? "text-emerald-600"
+              : severity === "warning"
+                ? "text-amber-600"
+                : "text-destructive"
+          }`}
+        >
+          {count}
+        </span>
+      </div>
+    </li>
   );
 }
 
@@ -106,25 +141,49 @@ export function ReconcilePanel() {
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Registros huérfanos" value={stale} />
-          <Stat label="Metadatos sueltos" value={manifests} />
-          <Stat label="Dumps incompletos" value={junkDumps} />
-          <Stat
-            label="Restaurables (se conservan)"
-            value={restorable}
-            muted
-          />
-        </div>
+        {toClean === 0 ? (
+          <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900 dark:bg-emerald-950/30">
+            <CheckCircle2
+              className="size-5 text-emerald-600"
+              aria-hidden="true"
+            />
+            <span className="text-sm font-medium text-emerald-800 dark:text-emerald-400">
+              Todo sincronizado — no hay restos que limpiar.
+            </span>
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            <HealthRow
+              label="Registros que apuntan a dumps ya borrados"
+              count={stale}
+              severity={stale > 0 ? "critical" : "ok"}
+            />
+            <HealthRow
+              label="Archivos de metadatos sueltos"
+              count={manifests}
+              severity={manifests > 0 ? "warning" : "ok"}
+            />
+            <HealthRow
+              label="Dumps incompletos de subidas fallidas"
+              count={junkDumps}
+              severity={junkDumps > 0 ? "warning" : "ok"}
+            />
+            <HealthRow
+              label="Dumps sin registrar pero restaurables (se conservan)"
+              count={restorable}
+              severity="ok"
+            />
+          </ul>
+        )}
 
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 pt-2">
           <p
             aria-live="polite"
             role="status"
             className="text-xs text-muted-foreground"
           >
             {toClean === 0
-              ? "Todo sincronizado."
+              ? "Nada por limpiar."
               : `${toClean} resto(s) se limpiarían.`}
           </p>
           <Button
