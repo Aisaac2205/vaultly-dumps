@@ -9,7 +9,9 @@ import { RestoreRepository } from '../restore/restore.repository';
 import { ConnectionsService } from '../connections/connections.service';
 import { EnrichedR2Object } from '../backup/interfaces/enriched-r2-object.interface';
 import { ManualRetentionSettingEntity } from '../../database/entities/manual-retention-setting.entity';
+import { ConnectionRetentionPolicyEntity } from '../../database/entities/connection-retention-policy.entity';
 import { BackupCategory } from '../../database/enums/backup-category.enum';
+import { Environment } from '../../database/enums/environment.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { CleanupParamsDto } from './dto/cleanup-params.dto';
 import { UpdateManualRetentionDto } from './dto/update-manual-retention.dto';
@@ -17,7 +19,11 @@ import {
   CleanupError,
   CleanupPreview,
   CleanupResult,
+  ConnectionRetentionPolicy,
+  ConnectionRetentionPolicyInput,
   RetentionPolicy,
+  RetentionPreviewItem,
+  RetentionRunItem,
 } from './interfaces/retention.interface';
 import {
   StorageCategoryUsage,
@@ -51,6 +57,8 @@ export class MaintenanceService {
     private readonly connectionsService: ConnectionsService,
     @InjectRepository(ManualRetentionSettingEntity)
     private readonly manualRetentionRepo: Repository<ManualRetentionSettingEntity>,
+    @InjectRepository(ConnectionRetentionPolicyEntity)
+    private readonly retentionPolicyRepo: Repository<ConnectionRetentionPolicyEntity>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -118,7 +126,7 @@ export class MaintenanceService {
   }
 
   /**
-   * Daily sweep: applies the global manual-dump retention to every connection.
+   * Daily sweep: applies the manual-dump retention policy of every connection.
    * Guarded by a pg advisory lock so only one replica runs it; wrapped so a
    * failure never crashes the process.
    */
@@ -132,19 +140,26 @@ export class MaintenanceService {
       if (!lock[0]?.acquired) return;
 
       try {
-        const settings = await this.getManualRetention();
-        if (!settings.enabled) return;
+        const connections = await this.connectionsService.findAll(Environment.PROD);
+        const connectionIds = connections.map((c) => c.id);
 
-        const policy: RetentionPolicy = {
-          keepLast: settings.keepLast ?? undefined,
-          maxAgeDays: settings.maxAgeDays ?? undefined,
-          maxTotalSizeMb: settings.maxTotalSizeMb ?? undefined,
-        };
-        if (!this.hasCriterion(policy)) return;
+        const policies = await this.retentionPolicyRepo.find({
+          where: { category: BackupCategory.MANUAL },
+        });
+        const policyByConnectionId = new Map(
+          policies
+            .filter((p) => p.retentionDays != null && connectionIds.includes(p.connectionId))
+            .map((p) => [p.connectionId, p.retentionDays]),
+        );
 
-        const connections = await this.connectionsService.findAll();
+        if (policyByConnectionId.size === 0) return;
+
         let processedCount = 0;
         for (const connection of connections) {
+          const days = policyByConnectionId.get(connection.id);
+          if (days == null) continue;
+
+          const policy: RetentionPolicy = { maxAgeDays: days };
           try {
             const result = await this.applyRetention(
               connection.slug,
@@ -164,9 +179,12 @@ export class MaintenanceService {
             );
           }
         }
+
         if (processedCount > 0) {
-          settings.lastSweepAt = new Date();
-          await this.manualRetentionRepo.save(settings);
+          await this.dataSource.query(
+            `UPDATE connection_retention_policies SET "updatedAt" = NOW() WHERE category = $1`,
+            [BackupCategory.MANUAL],
+          );
         }
       } finally {
         await this.dataSource.query('SELECT pg_advisory_unlock($1)', [
@@ -177,6 +195,129 @@ export class MaintenanceService {
       const message = error instanceof Error ? error.message : String(error);
       this.logger.error(`sweepManualRetention crashed: ${message}`);
     }
+  }
+
+  // --- Per-connection retention policy ------------------------------------
+
+  async getRetentionPolicy(
+    connectionSlug: string,
+    category: BackupCategory,
+  ): Promise<ConnectionRetentionPolicy | null> {
+    const connection = await this.connectionsService.findBySlug(connectionSlug);
+    if (!connection) return null;
+
+    const row = await this.retentionPolicyRepo.findOne({
+      where: { connectionId: connection.id, category },
+    });
+
+    if (!row) return null;
+    return { category: row.category, retentionDays: row.retentionDays };
+  }
+
+  async getRetentionPolicies(
+    connectionSlug: string,
+  ): Promise<ConnectionRetentionPolicy[]> {
+    const connection = await this.connectionsService.findBySlug(connectionSlug);
+    if (!connection) {
+      throw new BadRequestException(`Connection "${connectionSlug}" not found`);
+    }
+
+    const rows = await this.retentionPolicyRepo.find({
+      where: { connectionId: connection.id },
+    });
+
+    return rows.map((r) => ({
+      category: r.category,
+      retentionDays: r.retentionDays,
+    }));
+  }
+
+  async updateRetentionPolicies(
+    connectionSlug: string,
+    policies: ConnectionRetentionPolicyInput[],
+  ): Promise<ConnectionRetentionPolicy[]> {
+    const connection = await this.connectionsService.findBySlug(connectionSlug);
+    if (!connection) {
+      throw new BadRequestException(`Connection "${connectionSlug}" not found`);
+    }
+
+    const validCategories = Object.values(BackupCategory);
+    for (const p of policies) {
+      if (!validCategories.includes(p.category)) {
+        throw new BadRequestException(`Invalid category: ${p.category}`);
+      }
+      if (p.retentionDays != null && (!Number.isInteger(p.retentionDays) || p.retentionDays < 1)) {
+        throw new BadRequestException(
+          `retentionDays for ${p.category} must be an integer >= 1 or null`,
+        );
+      }
+    }
+
+    // Remove existing policies for this connection.
+    await this.retentionPolicyRepo.delete({ connectionId: connection.id });
+
+    // Insert new ones (only those with a value; null means keep forever → no row).
+    const toInsert = policies
+      .filter((p) => p.retentionDays != null)
+      .map((p) =>
+        this.retentionPolicyRepo.create({
+          connectionId: connection.id,
+          category: p.category,
+          retentionDays: p.retentionDays,
+        }),
+      );
+
+    if (toInsert.length > 0) {
+      await this.retentionPolicyRepo.save(toInsert);
+    }
+
+    return this.getRetentionPolicies(connectionSlug);
+  }
+
+  async previewRetentionForConnection(
+    connectionSlug: string,
+  ): Promise<RetentionPreviewItem[]> {
+    const policies = await this.getRetentionPolicies(connectionSlug);
+    const items: RetentionPreviewItem[] = [];
+
+    for (const policy of policies) {
+      if (policy.retentionDays == null) continue;
+      const dto: RetentionPolicy = { maxAgeDays: policy.retentionDays };
+      const dumps = await this.selectForDeletion(
+        connectionSlug,
+        policy.category,
+        dto,
+      );
+      const totalBytes = dumps.reduce((sum, d) => sum + d.size, 0);
+      items.push({
+        category: policy.category,
+        count: dumps.length,
+        totalSizeMb: this.bytesToMb(totalBytes),
+      });
+    }
+
+    return items;
+  }
+
+  async runRetentionForConnection(
+    connectionSlug: string,
+  ): Promise<RetentionRunItem[]> {
+    const policies = await this.getRetentionPolicies(connectionSlug);
+    const results: RetentionRunItem[] = [];
+
+    for (const policy of policies) {
+      if (policy.retentionDays == null) continue;
+      const dto: RetentionPolicy = { maxAgeDays: policy.retentionDays };
+      const result = await this.prune(connectionSlug, policy.category, dto);
+      results.push({
+        category: policy.category,
+        deleted: result.deleted,
+        freedMb: result.freedMb,
+        errors: result.errors.length,
+      });
+    }
+
+    return results;
   }
 
   // --- Storage overview ---------------------------------------------------

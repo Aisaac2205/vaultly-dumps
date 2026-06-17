@@ -1,6 +1,5 @@
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { StatusBadge } from "@/shared/ui/status-badge";
-import { cn } from "@/shared/lib/cn";
 
 type RestoreProgressStatus = "running" | "completed" | "failed";
 

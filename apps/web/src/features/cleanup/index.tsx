@@ -1,8 +1,7 @@
 import { PageHeader } from "@/shared/ui/page-header";
 import { FadeIn } from "@/shared/ui/motion/FadeIn";
 import { StoragePanel } from "./components/StoragePanel";
-import { CleanupForm } from "./components/CleanupForm";
-import { ManualRetentionSettings } from "./components/ManualRetentionSettings";
+import { ConnectionRetentionPanel } from "./components/ConnectionRetentionPanel";
 import { DbHygienePanel } from "./components/DbHygienePanel";
 import { ReconcilePanel } from "./components/ReconcilePanel";
 
@@ -27,32 +26,18 @@ export default function CleanupPage() {
         <StoragePanel />
       </section>
 
-      {/* ── Limpieza puntual ─────────────────────────── */}
+      {/* ── Política de retención ────────────────────── */}
       <section className="space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-text-primary">
-            Limpieza puntual
+            Política de retención
           </h2>
           <p className="max-w-2xl text-xs text-muted-foreground">
-            Borrado puntual de una conexión y tipo, con vista previa del espacio
-            a liberar.
+            Configurá por conexión y tipo de dump cuántos días conservar. Con
+            vista previa del espacio a liberar y ejecución manual.
           </p>
         </div>
-        <CleanupForm />
-      </section>
-
-      {/* ── Limpieza automática ──────────────────────── */}
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold text-text-primary">
-            Limpieza automática
-          </h2>
-          <p className="max-w-2xl text-xs text-muted-foreground">
-            Esta es tu política global de retención manual. Aplicá cambios
-            abajo para actualizarla.
-          </p>
-        </div>
-        <ManualRetentionSettings />
+        <ConnectionRetentionPanel />
       </section>
 
       {/* ── Salud del sistema ────────────────────────── */}

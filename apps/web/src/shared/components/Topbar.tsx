@@ -1,4 +1,4 @@
-import { User, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { useSidebar } from "./SidebarProvider";
 import { AnimatedThemeToggler } from "@/shared/ui/animated-theme-toggler";
@@ -37,15 +37,6 @@ export function Topbar({ className }: TopbarProps) {
 
       <div className="flex items-center gap-2">
         <AnimatedThemeToggler />
-
-        {/* User menu placeholder */}
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <User className="h-4 w-4" />
-          <span>Account</span>
-        </button>
       </div>
     </header>
   );

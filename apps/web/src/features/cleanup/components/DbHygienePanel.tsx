@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { toast } from "sonner";
-import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import {
@@ -11,35 +9,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
-import { useDbHygienePreview, useRunDbHygiene } from "../hooks/useMaintenance";
+import { useDbHygienePanel } from "../hooks/useMaintenance";
 
 const inputClass =
-  "h-9 w-32 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
+  "h-9 w-20 rounded-md border border-input bg-background px-3 text-center text-sm tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring";
 
 export function DbHygienePanel() {
-  const [days, setDays] = useState("30");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const daysNum = Number(days);
-  const valid =
-    days.trim() !== "" && Number.isInteger(daysNum) && daysNum >= 1;
-
-  const { data: preview, isError: previewError, error: previewErrorDetail } = useDbHygienePreview(valid ? daysNum : 0, valid);
-  const run = useRunDbHygiene();
-
-  const count = preview?.failedCount ?? 0;
-
-  function handleConfirm() {
-    if (!valid) return;
-    run.mutate(daysNum, {
-      onSuccess: (result) => {
-        setConfirmOpen(false);
-        toast.success(`${result.deleted} registro(s) fallido(s) borrado(s)`);
-      },
-      onError: (error) => {
-        toast.error(error.message || "No se pudo limpiar la base");
-      },
-    });
-  }
+  const {
+    days,
+    setDays,
+    confirmOpen,
+    setConfirmOpen,
+    valid,
+    daysNum,
+    previewError,
+    previewErrorDetail,
+    count,
+    handleConfirm,
+    statusText,
+    isPending,
+  } = useDbHygienePanel();
 
   return (
     <Card>
@@ -50,56 +39,62 @@ export function DbHygienePanel() {
           </h3>
           <p className="text-xs text-muted-foreground">
             Cada intento que falla deja un registro en la base. Borrá los más
-            viejos que los días indicados para que no se acumulen.{" "}
-            <span className="text-muted-foreground">Tus dumps no se tocan.</span>
+            viejos para que no se acumulen. Tus dumps no se tocan.
           </p>
         </div>
 
         {previewError && (
-          <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+          >
             {previewErrorDetail instanceof Error
               ? previewErrorDetail.message
               : "Error al cargar la vista previa"}
           </div>
         )}
 
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="db-hygiene-days"
-              className="text-xs font-medium text-muted-foreground"
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-3">
+            {/* Inline sentence control */}
+            <div className="flex flex-wrap items-center gap-2 text-sm text-text-primary">
+              <span className="text-muted-foreground">Eliminar fallidos con más de</span>
+              <label htmlFor="db-hygiene-days" className="sr-only">
+                Días de antigüedad
+              </label>
+              <input
+                id="db-hygiene-days"
+                className={inputClass}
+                type="number"
+                min={1}
+                value={days}
+                onChange={(e) => setDays(e.target.value)}
+                aria-describedby="db-hygiene-status"
+              />
+              <span className="text-muted-foreground">días de antigüedad.</span>
+            </div>
+
+            {/* Status line */}
+            <p
+              id="db-hygiene-status"
+              aria-live="polite"
+              className={`text-xs ${
+                !valid || count === 0
+                  ? "text-muted-foreground"
+                  : "font-medium text-destructive"
+              }`}
             >
-              Más viejos que (días)
-            </label>
-            <input
-              id="db-hygiene-days"
-              className={inputClass}
-              type="number"
-              min={1}
-              value={days}
-              onChange={(e) => setDays(e.target.value)}
-              aria-describedby="db-hygiene-days-hint"
-            />
-            <p id="db-hygiene-days-hint" className="text-[11px] text-muted-foreground">
-              Se borrarán los registros de backups fallidos con más días que este valor.
+              {statusText}
             </p>
           </div>
-          <p aria-live="polite" className="text-sm text-muted-foreground">
-            {!valid
-              ? "Indicá cuántos días"
-              : count === 0
-                ? "Nada para borrar"
-                : `${count} registro(s) fallido(s) se borrarían`}
-          </p>
+
           <Button
             type="button"
             variant="destructive"
-            className="ml-auto"
-            disabled={!valid || count === 0 || run.isPending}
+            disabled={!valid || count === 0 || isPending}
             onClick={() => setConfirmOpen(true)}
           >
-            <Trash2 aria-hidden="true" className="size-4" />
-            {run.isPending ? "Borrando..." : "Borrar"}
+            {isPending ? "Borrando..." : "Borrar"}
           </Button>
         </div>
       </CardContent>
@@ -108,13 +103,16 @@ export function DbHygienePanel() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="size-5 text-error" aria-hidden="true" />
+              <AlertTriangle
+                className="size-5 text-destructive"
+                aria-hidden="true"
+              />
               Borrar registros fallidos
             </DialogTitle>
             <DialogDescription>
               Vas a borrar <strong>{count}</strong> registro(s) de backups
-              fallidos con más de {valid ? daysNum : "?"} día(s). Esta acción es{" "}
-              <strong>irreversible</strong>.
+              fallidos con más de {valid ? daysNum : "?"} día(s). Esta acción
+              es <strong>irreversible</strong>.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -122,7 +120,7 @@ export function DbHygienePanel() {
               type="button"
               variant="outline"
               onClick={() => setConfirmOpen(false)}
-              disabled={run.isPending}
+              disabled={isPending}
             >
               Cancelar
             </Button>
@@ -130,9 +128,11 @@ export function DbHygienePanel() {
               type="button"
               variant="destructive"
               onClick={handleConfirm}
-              disabled={run.isPending}
+              disabled={isPending}
             >
-              {run.isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+              {isPending && (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              )}
               Borrar definitivamente
             </Button>
           </DialogFooter>

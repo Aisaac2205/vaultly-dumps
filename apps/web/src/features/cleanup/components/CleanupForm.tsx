@@ -1,5 +1,3 @@
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
@@ -12,73 +10,36 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { FrequencyTabs } from "@/features/restore/components/FrequencyTabs";
-import { useConnections } from "@/features/connections/hooks/useConnections";
 import { formatSize } from "@/shared/lib/format";
 import { formatDate } from "@/features/dumps/lib/format";
-import type { BackupCategory } from "@/types/backup.types";
-import type { CleanupMode, CleanupParams } from "../types";
-import { useCleanupPreview, useRunCleanup } from "../hooks/useCleanup";
+import { useCleanupForm } from "../hooks/useCleanup";
 
 const inputClass =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
 export function CleanupForm() {
-  const { data: connections = [], isLoading: connectionsLoading } = useConnections();
-
-  const [connectionSlug, setConnectionSlug] = useState<string>("");
-  const [category, setCategory] = useState<BackupCategory | null>(null);
-  const [mode, setMode] = useState<CleanupMode>("keepLast");
-  const [amount, setAmount] = useState<string>("5");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-
-  const amountNum = Number(amount);
-  const amountValid =
-    amount.trim() !== "" &&
-    Number.isInteger(amountNum) &&
-    (mode === "keepLast" ? amountNum >= 0 : amountNum >= 1);
-
-  const params: CleanupParams | null = useMemo(() => {
-    if (!connectionSlug || !category || !amountValid) return null;
-    return mode === "keepLast"
-      ? { connectionSlug, category, keepLast: amountNum }
-      : { connectionSlug, category, maxAgeDays: amountNum };
-  }, [connectionSlug, category, amountValid, amountNum, mode]);
-
-  const { data: preview, isFetching: previewFetching } = useCleanupPreview(params);
-  const runCleanup = useRunCleanup();
-
-  const hasItems = (preview?.count ?? 0) > 0;
-
-  function handleConnectionChange(slug: string) {
-    setConnectionSlug(slug);
-    setCategory(null);
-  }
-
-  function handleModeChange(next: CleanupMode) {
-    setMode(next);
-    setAmount(""); // el valor anterior no aplica al nuevo criterio
-  }
-
-  function handleConfirm() {
-    if (!params) return;
-    runCleanup.mutate(params, {
-      onSuccess: (result) => {
-        setConfirmOpen(false);
-        const summary = `${result.deleted} dump(s) · ${result.freedMb} MB liberados`;
-        if (result.errors.length > 0) {
-          toast.warning(`${summary} · ${result.errors.length} con error`);
-        } else {
-          toast.success(summary);
-        }
-      },
-      onError: (error) => {
-        toast.error(error.message || "No se pudo completar la limpieza");
-      },
-    });
-  }
-
-  const amountLabel =
-    mode === "keepLast" ? "Cantidad a conservar" : "Antigüedad mínima (días)";
+  const {
+    connections,
+    connectionsLoading,
+    connectionSlug,
+    category,
+    setCategory,
+    mode,
+    amount,
+    setAmount,
+    confirmOpen,
+    setConfirmOpen,
+    amountValid,
+    params,
+    preview,
+    previewFetching,
+    hasItems,
+    handleConnectionChange,
+    handleModeChange,
+    handleConfirm,
+    amountLabel,
+    isPending,
+  } = useCleanupForm();
 
   return (
     <div className="space-y-4">
@@ -198,7 +159,7 @@ export function CleanupForm() {
             <Button
               type="button"
               variant="destructive"
-              disabled={!hasItems || runCleanup.isPending}
+              disabled={!hasItems || isPending}
               aria-describedby={!hasItems ? "cleanup-submit-hint" : undefined}
               onClick={() => setConfirmOpen(true)}
             >
@@ -225,7 +186,7 @@ export function CleanupForm() {
         onOpenChange={setConfirmOpen}
         count={preview?.count ?? 0}
         totalSizeMb={preview?.totalSizeMb ?? 0}
-        pending={runCleanup.isPending}
+        pending={isPending}
         onConfirm={handleConfirm}
       />
     </div>

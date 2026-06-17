@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Param,
   Post,
   Put,
   Query,
@@ -16,6 +17,7 @@ import { Environment } from '../../database/enums/environment.enum';
 import { MaintenanceService } from './maintenance.service';
 import { CleanupParamsDto } from './dto/cleanup-params.dto';
 import { UpdateManualRetentionDto } from './dto/update-manual-retention.dto';
+import { UpdateConnectionRetentionDto } from './dto/update-connection-retention.dto';
 import { DbHygieneQueryDto } from './dto/db-hygiene.query.dto';
 
 @Controller('maintenance')
@@ -116,6 +118,64 @@ export class MaintenanceController {
         keepLast: result.keepLast,
         maxAgeDays: result.maxAgeDays,
         maxTotalSizeMb: result.maxTotalSizeMb,
+      },
+    });
+    return result;
+  }
+
+  // --- Per-connection retention policy ------------------------------------
+
+  @Get('retention/:connectionSlug')
+  getRetentionPolicies(@Param('connectionSlug') connectionSlug: string) {
+    return this.service.getRetentionPolicies(connectionSlug);
+  }
+
+  @Put('retention/:connectionSlug')
+  async updateRetentionPolicies(
+    @Param('connectionSlug') connectionSlug: string,
+    @Body() dto: UpdateConnectionRetentionDto,
+    @Req() req: Request,
+  ) {
+    const result = await this.service.updateRetentionPolicies(
+      connectionSlug,
+      dto.policies,
+    );
+    setAuditContext(req, {
+      environment: Environment.PROD,
+      metadata: {
+        connectionSlug,
+        policies: result.map((p) => ({
+          category: p.category,
+          retentionDays: p.retentionDays,
+        })),
+      },
+    });
+    return result;
+  }
+
+  @Get('retention/:connectionSlug/preview')
+  previewRetentionForConnection(
+    @Param('connectionSlug') connectionSlug: string,
+  ) {
+    return this.service.previewRetentionForConnection(connectionSlug);
+  }
+
+  @Post('retention/:connectionSlug/run')
+  async runRetentionForConnection(
+    @Param('connectionSlug') connectionSlug: string,
+    @Req() req: Request,
+  ) {
+    const result = await this.service.runRetentionForConnection(connectionSlug);
+    setAuditContext(req, {
+      environment: Environment.PROD,
+      metadata: {
+        connectionSlug,
+        results: result.map((r) => ({
+          category: r.category,
+          deleted: r.deleted,
+          freedMb: r.freedMb,
+          errors: r.errors,
+        })),
       },
     });
     return result;

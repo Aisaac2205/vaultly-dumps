@@ -80,7 +80,7 @@ export function BackupAreaChart({ data }: BackupAreaChartProps) {
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <AreaChart data={filteredData}>
+            <AreaChart data={filteredData} height={250}>
               <defs>
                 <linearGradient id="fillScheduled" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-scheduled)" stopOpacity={0.8} />
