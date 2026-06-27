@@ -5,14 +5,16 @@ import {
   AlertCircle,
   PauseCircle,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { formatUpcomingTime, formatDateTime } from "@/lib/format";
 import type { CronjobEntity } from "../types";
-import { formatUpcomingTime } from "@/lib/format";
 
 interface UpcomingCronjobsCardProps {
   cronjobs: CronjobEntity[];
 }
 
 export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
+  const { t } = useTranslation('dashboard')
   const active = cronjobs.filter((c) => c.isActive);
   const paused = cronjobs.filter((c) => !c.isActive);
 
@@ -31,7 +33,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Calendar className="h-4 w-4" aria-hidden="true" />
-          Próximas Ejecuciones
+          {t('upcoming.title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -41,14 +43,14 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
             className="flex flex-col items-center gap-2 py-4 text-center text-sm text-muted-foreground"
           >
             <Clock className="h-8 w-8" aria-hidden="true" />
-            <p>No hay ejecuciones programadas</p>
+            <p>{t('upcoming.empty')}</p>
           </div>
         ) : (
           <ul className="space-y-2">
             {upcoming.map((cj) => {
               const hasSchedule = cj.nextRunAt !== null;
               const absoluteTitle = hasSchedule
-                ? new Date(cj.nextRunAt as string).toLocaleString("es-AR")
+                ? formatDateTime(cj.nextRunAt as string)
                 : undefined;
               return (
                 <li
@@ -72,7 +74,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
                           className="h-3 w-3 shrink-0"
                           aria-hidden="true"
                         />
-                        Sin próxima ejecución
+                        {t('upcoming.noNext')}
                       </p>
                     )}
                   </div>
@@ -89,7 +91,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
         {paused.length > 0 && (
           <p className="mt-1 flex items-center justify-center gap-1 text-center text-xs text-muted-foreground">
             <PauseCircle className="h-3 w-3" aria-hidden="true" />
-            {paused.length} pausado{paused.length > 1 ? "s" : ""}
+            {t(paused.length === 1 ? 'upcoming.paused_one' : 'upcoming.paused_other', { count: paused.length })}
           </p>
         )}
       </CardContent>

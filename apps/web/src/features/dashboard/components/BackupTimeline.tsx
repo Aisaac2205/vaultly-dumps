@@ -4,6 +4,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Clock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { shortId, formatDateTimeShort as formatDate } from "@/lib/format";
 import type { BackupJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
@@ -14,13 +15,14 @@ interface BackupTimelineProps {
 }
 
 export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) {
+  const { t } = useTranslation('dashboard')
   const visible = maxItems > 0 ? backups.slice(0, maxItems) : backups;
   const remaining = maxItems > 0 ? Math.max(0, backups.length - maxItems) : 0;
   const hasBackups = backups.length > 0;
 
   const columns: Column<BackupJob>[] = [
     {
-      header: "Conexión",
+      header: t('column.connection'),
       accessor: (job) => (
         <div className="flex flex-col gap-0.5">
           <ConnectionLabel id={job.connectionId} name={job.connectionName} />
@@ -31,7 +33,7 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
       ),
     },
     {
-      header: "Entorno",
+      header: t('column.environment'),
       accessor: (job) => (
         <span className="font-mono text-xs uppercase text-muted-foreground">
           {job.environment}
@@ -41,11 +43,11 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
       headerClassName: "hidden md:table-cell",
     },
     {
-      header: "Estado",
+      header: t('column.status'),
       accessor: (job) => <StatusBadge status={job.status} />,
     },
     {
-      header: "Cuándo",
+      header: t('column.when'),
       accessor: (job) => (
         <span className="font-mono text-xs whitespace-nowrap tabular-nums">
           {formatDate(job.createdAt)}
@@ -58,7 +60,7 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Últimos Backups</CardTitle>
+        <CardTitle className="text-base">{t('timeline.backups.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         {hasBackups ? (
@@ -66,15 +68,15 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
             <DataTable columns={columns} data={visible} compact />
             {remaining > 0 && (
               <p className="py-2.5 text-center text-xs text-muted-foreground">
-                +{remaining} más
+                +{remaining}
               </p>
             )}
           </>
         ) : (
           <EmptyState
             icon={<Clock className="h-8 w-8" />}
-            title="Sin backups recientes"
-            description="No se ejecutaron backups en los últimos días."
+            title={t('timeline.backups.empty.title')}
+            description={t('timeline.backups.empty.description')}
           />
         )}
       </CardContent>

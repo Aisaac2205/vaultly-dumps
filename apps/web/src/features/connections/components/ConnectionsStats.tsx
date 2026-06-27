@@ -2,6 +2,7 @@ import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { StatCard } from "@/shared/ui/stat-card";
 import { Database, Activity, Layers, Server } from "lucide-react";
 import type { Connection } from "../types";
+import { useTranslation } from "react-i18next";
 import postgresSvg from "@/shared/assets/PostgresSQL.svg";
 import mysqlSvg from "@/shared/assets/MySQL.svg";
 
@@ -14,6 +15,7 @@ export function ConnectionsStats({
   connections,
   loading = false,
 }: ConnectionsStatsProps) {
+  const { t } = useTranslation('connections')
   const total = connections.length;
   const active = connections.filter((c) => c.isActive).length;
 
@@ -34,7 +36,7 @@ export function ConnectionsStats({
     <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StaggerItem>
         <StatCard
-          label="Total conexiones"
+          label={t('stats.total')}
           value={total}
           icon={<Database className="h-4 w-4" />}
           loading={loading}
@@ -43,7 +45,7 @@ export function ConnectionsStats({
       </StaggerItem>
       <StaggerItem>
         <StatCard
-          label="Activas"
+          label={t('stats.active')}
           value={active}
           icon={<Activity className="h-4 w-4" />}
           loading={loading}
@@ -52,7 +54,7 @@ export function ConnectionsStats({
       </StaggerItem>
       <StaggerItem>
         <StatCard
-          label="Por ambiente"
+          label={t('stats.byEnvironment')}
           value={
             topEnv ? (
               <span className="flex items-baseline gap-1">
@@ -74,7 +76,7 @@ export function ConnectionsStats({
       </StaggerItem>
       <StaggerItem>
         <StatCard
-          label="Por tipo de BD"
+          label={t('stats.byType')}
           value={
             <span className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1.5">

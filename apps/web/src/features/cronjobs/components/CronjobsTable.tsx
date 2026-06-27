@@ -1,5 +1,6 @@
 import type { Cronjob } from "../types";
 import { formatDateTimeShort as formatDate } from "@/lib/format";
+import { useTranslation } from "react-i18next";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
@@ -39,19 +40,20 @@ export default function CronjobsTable({
   onToggle,
   toggleLoading,
 }: CronjobsTableProps) {
+  const { t } = useTranslation('cronjobs')
   const { data: connections } = useConnections();
   const resolveEnv = (connectionId: string): string | undefined =>
     connections?.find((c) => c.id === connectionId)?.environment;
 
   const columns: Column<Cronjob>[] = [
     {
-      header: "Nombre",
+      header: t('column.name'),
       accessor: (cronjob) => (
         <span className="font-medium">{cronjob.name}</span>
       ),
     },
     {
-      header: "Conexión",
+      header: t('column.connection'),
       accessor: (cronjob) => (
         <ConnectionLabel
           id={cronjob.connectionId}
@@ -60,7 +62,7 @@ export default function CronjobsTable({
       ),
     },
     {
-      header: "Entorno",
+      header: t('column.environment'),
       accessor: (cronjob) => {
         const env = resolveEnv(cronjob.connectionId);
         return env ? (
@@ -73,7 +75,7 @@ export default function CronjobsTable({
       },
     },
     {
-      header: "Expresión Cron",
+      header: t('column.cronExpression'),
       accessor: (cronjob) => (
         <span className="font-mono text-xs whitespace-nowrap">
           {cronjob.cronExpression}
@@ -83,7 +85,7 @@ export default function CronjobsTable({
       headerClassName: "hidden sm:table-cell",
     },
     {
-      header: "Próxima Ejecución",
+      header: t('column.nextRun'),
       accessor: (cronjob) => (
         <span className="font-mono text-xs whitespace-nowrap">
           {formatDate(cronjob.nextRunAt)}
@@ -93,7 +95,7 @@ export default function CronjobsTable({
       headerClassName: "hidden sm:table-cell",
     },
     {
-      header: "Último Estado",
+      header: t('column.lastStatus'),
       accessor: (cronjob) =>
         cronjob.lastStatus ? (
           <StatusBadge status={cronjob.lastStatus} />
@@ -102,7 +104,7 @@ export default function CronjobsTable({
         ),
     },
     {
-      header: "Activo",
+      header: t('column.active'),
       accessor: (cronjob) => {
         const isToggling = toggleLoading[cronjob.id] ?? false;
         return (
@@ -111,7 +113,7 @@ export default function CronjobsTable({
             role="switch"
             aria-checked={cronjob.isActive}
             aria-label={
-              cronjob.isActive ? "Desactivar cronjob" : "Activar cronjob"
+              cronjob.isActive ? t('toggle.deactivate') : t('toggle.activate')
             }
             disabled={isToggling}
             onClick={() => onToggle(cronjob.id)}
@@ -127,7 +129,7 @@ export default function CronjobsTable({
       },
     },
     {
-      header: "Acciones",
+      header: t('column.actions'),
       accessor: (cronjob) => (
         <>
           {/* Desktop: full button row */}
@@ -137,14 +139,14 @@ export default function CronjobsTable({
               size="sm"
               onClick={() => onEdit(cronjob)}
             >
-              Editar
+              {t('action.edit')}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => onDelete(cronjob.id)}
             >
-              Eliminar
+              {t('action.delete')}
             </Button>
           </div>
 
@@ -155,7 +157,7 @@ export default function CronjobsTable({
                 <button
                   type="button"
                   className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="Acciones"
+                  aria-label={t('column.actions')}
                 >
                   <Ellipsis className="h-4 w-4" />
                 </button>
@@ -169,13 +171,13 @@ export default function CronjobsTable({
                     className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
                     onSelect={() => onEdit(cronjob)}
                   >
-                    Editar
+                    {t('action.edit')}
                   </DropdownMenuPrimitive.Item>
                   <DropdownMenuPrimitive.Item
                     className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
                     onSelect={() => onDelete(cronjob.id)}
                   >
-                    Eliminar
+                    {t('action.delete')}
                   </DropdownMenuPrimitive.Item>
                 </DropdownMenuPrimitive.Content>
               </DropdownMenuPrimitive.Portal>
@@ -187,7 +189,13 @@ export default function CronjobsTable({
   ];
 
   if (!isLoading && cronjobs.length === 0) {
-    return <CronjobsEmptyState />;
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <Clock className="h-8 w-8 mb-3 text-muted-foreground/50" />
+        <p className="text-sm font-medium text-foreground">{t('empty.title')}</p>
+        <p className="text-xs mt-1">{t('empty.description')}</p>
+      </div>
+    );
   }
 
   return (

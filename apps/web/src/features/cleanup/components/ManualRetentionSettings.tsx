@@ -1,45 +1,11 @@
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
+import { useTranslation } from "react-i18next";
+import { formatDateTime, formatRelativeTime } from "@/lib/format";
 import { useManualRetentionSettings } from "../hooks/useManualRetention";
 
 const inputClass =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-
-function formatRelative(dateStr: string): string {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMinutes = Math.floor(diffMs / 60_000);
-  const diffHours = Math.floor(diffMs / 3_600_000);
-  const diffDays = Math.floor(diffMs / 86_400_000);
-  if (diffMinutes < 1) return "ahora";
-  if (diffMinutes < 60)
-    return new Intl.RelativeTimeFormat("es", { numeric: "auto" }).format(
-      -diffMinutes,
-      "minute",
-    );
-  if (diffHours < 24)
-    return new Intl.RelativeTimeFormat("es", { numeric: "auto" }).format(
-      -diffHours,
-      "hour",
-    );
-  if (diffDays < 2)
-    return `ayer a las ${new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit" }).format(date)}`;
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
-
-function formatAbsolute(dateStr: string): string {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-}
 
 interface NumberFieldProps {
   id: string;
@@ -87,6 +53,7 @@ function NumberField({
 }
 
 export function ManualRetentionSettings() {
+  const { t } = useTranslation('cleanup')
   const {
     data,
     isLoading,
@@ -109,11 +76,10 @@ export function ManualRetentionSettings() {
       <CardContent className="space-y-4 p-5 sm:p-6">
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
-            Dumps manuales
+            {t('manual.title')}
           </h3>
           <p className="max-w-2xl text-xs text-muted-foreground">
-            No tienen cronjob, así que se limpian con esta política una vez al
-            día. Siempre se conserva al menos 1.
+            {t('manual.description')}
           </p>
         </div>
 
@@ -122,15 +88,13 @@ export function ManualRetentionSettings() {
             role="status"
             className="rounded-md border border-accent/25 bg-accent/5 px-3 py-2 text-xs text-accent-foreground"
           >
-            Limpieza automática ACTIVADA — se ejecuta todos los días a las
-            03:00.
+            {t('manual.activeNotice')}
           </div>
         )}
 
         {isError && (
           <div role="alert" className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-            Error al cargar retención:{" "}
-            {error instanceof Error ? error.message : "Error desconocido"}
+            {t('error.loadRetention', { message: error instanceof Error ? error.message : t('error.generic', { ns: 'common' }) })}
           </div>
         )}
 
@@ -143,42 +107,42 @@ export function ManualRetentionSettings() {
             disabled={isLoading}
           />
           <label htmlFor="mr-enabled" className="text-sm">
-            Activar limpieza automática de dumps manuales
+            {t('manual.enable')}
           </label>
         </div>
 
         {enabled && (
           <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <legend className="sr-only">Criterios de retención manual</legend>
+            <legend className="sr-only">{t('manual.title')}</legend>
             <NumberField
               id="mr-keep-last"
-              label="Conservar últimos"
+              label={t('manual.keepLast')}
               value={keepLast}
               onChange={setKeepLast}
               min={0}
-              placeholder="Ej. 10"
+              placeholder="10"
               disabled={isLoading}
-              hint="Cantidad de dumps a conservar. 0 = sin límite."
+              hint={t('manual.keepLastHint')}
             />
             <NumberField
               id="mr-max-age"
-              label="Máx. antigüedad (días)"
+              label={t('manual.maxAge')}
               value={maxAgeDays}
               onChange={setMaxAgeDays}
               min={1}
-              placeholder="Ej. 30"
+              placeholder="30"
               disabled={isLoading}
-              hint="Se eliminan los dumps con más días que este valor."
+              hint={t('manual.maxAgeHint')}
             />
             <NumberField
               id="mr-max-size"
-              label="Tope de tamaño (MB)"
+              label={t('manual.maxSize')}
               value={maxSizeMb}
               onChange={setMaxSizeMb}
               min={1}
-              placeholder="Ej. 2000"
+              placeholder="2000"
               disabled={isLoading}
-              hint="Se eliminan dumps hasta que el total baje de este tope."
+              hint={t('manual.maxSizeHint')}
             />
           </fieldset>
         )}
@@ -190,20 +154,20 @@ export function ManualRetentionSettings() {
           >
             {data.updatedAt && (
               <p>
-                Editado por última vez:{" "}
-                <span title={formatAbsolute(data.updatedAt)}>
-                  {formatRelative(data.updatedAt)}
+                {t('manual.lastEdited')}{" "}
+                <span title={formatDateTime(data.updatedAt)}>
+                  {formatRelativeTime(data.updatedAt)}
                 </span>
               </p>
             )}
             <p>
-              Última ejecución del barrido:{" "}
+              {t('manual.lastSweep')}{" "}
               {data.lastSweepAt ? (
-                <span title={formatAbsolute(data.lastSweepAt)}>
-                  {formatRelative(data.lastSweepAt)}
+                <span title={formatDateTime(data.lastSweepAt)}>
+                  {formatRelativeTime(data.lastSweepAt)}
                 </span>
               ) : (
-                "Aún no se ejecutó"
+                t('manual.neverSwept')
               )}
             </p>
           </div>
@@ -215,7 +179,7 @@ export function ManualRetentionSettings() {
             onClick={handleSave}
             disabled={isLoading || isSaving}
           >
-            {isSaving ? "Guardando..." : "Guardar"}
+            {isSaving ? t('action.saving', { ns: 'common' }) : t('action.save', { ns: 'common' })}
           </Button>
         </div>
       </CardContent>

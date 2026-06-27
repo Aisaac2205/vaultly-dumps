@@ -2,6 +2,7 @@ import { StatCard } from "@/shared/ui/stat-card";
 import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { Clock, Play, CheckCircle2, Calendar } from "lucide-react";
 import type { Cronjob } from "../types";
+import { useTranslation } from "react-i18next";
 import { nextRunParts } from "@/lib/format";
 
 function ValueWithUnit({ value, unit }: { value: string; unit: string }) {
@@ -24,6 +25,7 @@ export function CronjobsStats({
   cronjobs,
   loading = false,
 }: CronjobsStatsProps) {
+  const { t } = useTranslation('cronjobs')
   const total = cronjobs.length;
   const active = cronjobs.filter((c) => c.isActive).length;
 
@@ -48,10 +50,10 @@ export function CronjobsStats({
   );
 
   const STATUS_LABELS: Record<string, string> = {
-    pending: "Pendiente",
-    running: "En progreso",
-    completed: "Completado",
-    failed: "Fallido",
+    pending: t('status.pending'),
+    running: t('status.running'),
+    completed: t('status.completed'),
+    failed: t('status.failed'),
   };
 
   return (
@@ -59,7 +61,7 @@ export function CronjobsStats({
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Total cronjobs"
+          label={t('stats.total')}
           value={total}
           icon={<Clock className="h-4 w-4" />}
           loading={loading}
@@ -68,7 +70,7 @@ export function CronjobsStats({
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Activos"
+          label={t('stats.active')}
           value={active}
           icon={<Play className="h-4 w-4" />}
           loading={loading}
@@ -77,7 +79,7 @@ export function CronjobsStats({
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Estado principal"
+          label={t('stats.mainStatus')}
           value={
             topStatus ? (
               <ValueWithUnit
@@ -97,7 +99,7 @@ export function CronjobsStats({
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Próxima ejecución"
+          label={t('stats.nextRun')}
           value={<ValueWithUnit value={nextRun.value} unit={nextRun.unit} />}
           icon={<Calendar className="h-4 w-4" />}
           loading={loading}

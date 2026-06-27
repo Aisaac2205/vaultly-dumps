@@ -2,6 +2,7 @@ import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { useSidebar } from "./SidebarProvider";
 import { AnimatedThemeToggler } from "@/shared/ui/animated-theme-toggler";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { cn } from "@/shared/lib/cn";
 
 interface TopbarProps {
@@ -36,6 +37,7 @@ export function Topbar({ className }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-2">
+        <LanguageSwitcher />
         <AnimatedThemeToggler />
       </div>
     </header>

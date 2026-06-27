@@ -1,6 +1,8 @@
 import { StatCard } from "@/shared/ui/stat-card";
 import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { Database, HardDrive, Calendar, Server } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { formatDate } from "@/lib/format";
 import type { BackupJob } from "../types";
 import { formatSizeMb } from "@/shared/lib/format";
 
@@ -9,6 +11,7 @@ interface DumpsStatsProps {
 }
 
 export function DumpsStats({ dumps }: DumpsStatsProps) {
+  const { t } = useTranslation('dumps')
   const completed = dumps.filter((d) => d.status === "completed");
   const totalSize = completed.reduce(
     (acc, d) => acc + (d.fileSizeMb ?? 0),
@@ -30,10 +33,7 @@ export function DumpsStats({ dumps }: DumpsStatsProps) {
   )[0];
 
   const lastBackupLabel = lastBackup?.completedAt
-    ? new Date(lastBackup.completedAt).toLocaleDateString("es-AR", {
-        day: "2-digit",
-        month: "short",
-      })
+    ? formatDate(lastBackup.completedAt, { day: '2-digit', month: 'short' })
     : "N/A";
 
   return (
@@ -41,7 +41,7 @@ export function DumpsStats({ dumps }: DumpsStatsProps) {
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Total Backups"
+          label={t('label.totalBackups')}
           value={dumps.length}
           icon={<Database className="h-4 w-4" />}
         />
@@ -49,7 +49,7 @@ export function DumpsStats({ dumps }: DumpsStatsProps) {
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Espacio Total"
+          label={t('label.totalSpace')}
           value={formatSizeMb(totalSize)}
           icon={<HardDrive className="h-4 w-4" />}
         />
@@ -57,7 +57,7 @@ export function DumpsStats({ dumps }: DumpsStatsProps) {
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Último Backup"
+          label={t('label.lastBackup')}
           value={lastBackupLabel}
           icon={<Calendar className="h-4 w-4" />}
         />
@@ -65,7 +65,7 @@ export function DumpsStats({ dumps }: DumpsStatsProps) {
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Más Respaldada"
+          label={t('label.mostBacked')}
           value={topConn?.[0] ?? "N/A"}
           icon={<Server className="h-4 w-4" />}
         />

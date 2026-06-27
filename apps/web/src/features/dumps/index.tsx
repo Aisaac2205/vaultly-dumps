@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { useDumps, useProdConnections } from "./hooks";
 import { dumpsApi } from "./api/dumps-api";
 import { PageHeader } from "@/shared/ui/page-header";
@@ -23,6 +24,7 @@ import type { DumpsFilters as DumpsFiltersType } from "./types";
 const DEFAULT_PAGE_SIZE = 25;
 
 export default function Dumps() {
+  const { t } = useTranslation('dumps')
   const [page, setPage] = useState(1);
   const [pageSize] = useState(DEFAULT_PAGE_SIZE);
   const [filters, setFilters] = useState<DumpsFiltersType>({});
@@ -46,9 +48,7 @@ export default function Dumps() {
   const handleCreateBackup = async () => {
     if (!selectedConnectionId) return;
 
-    const confirmed = window.confirm(
-      "¿Estás seguro de que querés crear un nuevo backup?",
-    );
+    const confirmed = window.confirm(t('confirm.create'));
 
     if (!confirmed) return;
 
@@ -57,13 +57,13 @@ export default function Dumps() {
 
     try {
       await dumpsApi.triggerBackup(selectedConnectionId);
-      toast.success("Backup creado correctamente");
+      toast.success(t('toast.created'));
       await refetch();
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Error al crear el backup";
+        err instanceof Error ? err.message : t('toast.createError');
       setBackupError(message);
-      toast.error("Error al crear el backup", { description: message });
+      toast.error(t('toast.createError'), { description: message });
     } finally {
       setIsCreatingBackup(false);
     }
@@ -116,8 +116,8 @@ export default function Dumps() {
             >
               <option value="">
                 {connections.length === 0
-                  ? "Sin conexiones PROD"
-                  : "Seleccioná una conexión"}
+                  ? t('select.noConnections')
+                  : t('select.placeholder')}
               </option>
               {connections.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -129,7 +129,7 @@ export default function Dumps() {
               onClick={() => void handleCreateBackup()}
               disabled={isCreatingBackup || !selectedConnectionId}
             >
-              {isCreatingBackup ? "Creando..." : "Nuevo backup"}
+              {isCreatingBackup ? t('action.creating') : t('action.newBackup')}
             </Button>
           </div>
         }

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { Badge } from "@/shared/ui/badge";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { useTranslation } from "react-i18next";
+import { formatDateTimeShort } from "@/lib/format";
 import postgresSvg from "@/shared/assets/PostgresSQL.svg";
 import mysqlSvg from "@/shared/assets/MySQL.svg";
 import {
@@ -33,34 +35,22 @@ interface RestoreHistoryProps {
   isLoading: boolean;
 }
 
-const statusConfig: Record<
-  RestoreJob["status"],
-  { label: string; dotClass: string; textClass: string }
-> = {
-  completed: {
-    label: "Completado",
-    dotClass: "bg-green-500",
-    textClass: "text-green-600 dark:text-green-400",
-  },
-  failed: {
-    label: "Error",
-    dotClass: "bg-red-500",
-    textClass: "text-red-600 dark:text-red-400",
-  },
-  running: {
-    label: "Ejecutando",
-    dotClass: "bg-blue-500 animate-pulse",
-    textClass: "text-blue-600 dark:text-blue-400",
-  },
-  pending: {
-    label: "Pendiente",
-    dotClass: "bg-muted-foreground/40",
-    textClass: "text-muted-foreground",
-  },
+const STATUS_CONFIG_KEYS: Record<RestoreJob["status"], string> = {
+  completed: 'status.completed',
+  failed: 'status.failed',
+  running: 'status.running',
+  pending: 'status.pending',
 };
 
-const ENV_FILTERS = ["Todos", "dev", "qa", "prod"] as const;
-const STATUS_FILTERS = ["Todos", "completed", "failed"] as const;
+const STATUS_DOT_CLASSES: Record<RestoreJob["status"], string> = {
+  completed: "bg-green-500",
+  failed: "bg-red-500",
+  running: "bg-blue-500 animate-pulse",
+  pending: "bg-muted-foreground/40",
+};
+
+const ENV_FILTERS = ["all", "dev", "qa", "prod"] as const;
+const STATUS_FILTERS = ["all", "completed", "failed"] as const;
 
 function formatDuration(
   startedAt: string,
@@ -78,21 +68,12 @@ function formatDuration(
   return `${minutes}m ${remainingSeconds}s`;
 }
 
-function formatDate(date: string): string {
-  return new Date(date).toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export function RestoreHistory({
   jobs,
   connections,
   isLoading,
 }: RestoreHistoryProps) {
+  const { t } = useTranslation('restore')
   const connectionMap = useMemo(() => {
     const map = new Map<string, { name: string; database: string; dbType: string }>();
     for (const c of connections) map.set(c.id, { name: c.name, database: c.database, dbType: c.dbType });
@@ -103,8 +84,8 @@ export function RestoreHistory({
     postgres: postgresSvg as string,
     mysql: mysqlSvg as string,
   };
-  const [envFilter, setEnvFilter] = useState<string>("Todos");
-  const [statusFilter, setStatusFilter] = useState<string>("Todos");
+  const [envFilter, setEnvFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [envOpen, setEnvOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
 
@@ -112,9 +93,9 @@ export function RestoreHistory({
 
   const filteredJobs = jobs.filter((job) => {
     const envMatch =
-      envFilter === "Todos" || job.targetEnvironment === envFilter;
+      envFilter === "all" || job.targetEnvironment === envFilter;
     const statusMatch =
-      statusFilter === "Todos" || job.status === statusFilter;
+      statusFilter === "all" || job.status === statusFilter;
     return envMatch && statusMatch;
   });
 
@@ -139,7 +120,7 @@ export function RestoreHistory({
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <HistoryIcon className="h-4 w-4 text-muted-foreground" />
-          <h3 className="text-sm font-semibold">Historial</h3>
+          <h3 className="text-sm font-semibold">{t('history.title')}</h3>
           {filteredJobs.length > 0 && (
             <span className="text-xs text-muted-foreground">
               ({filteredJobs.length})
@@ -151,7 +132,7 @@ export function RestoreHistory({
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 rounded-lg">
                 <Filter className="h-3.5 w-3.5" />
-                {envFilter === "Todos" ? "Ambiente" : envFilter}
+                {envFilter === "all" ? t('filter.environment') : envFilter}
                 <ChevronDown className="h-3 w-3 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -168,7 +149,7 @@ export function RestoreHistory({
                   <Check
                     className={`h-4 w-4 ${envFilter === env ? "opacity-100" : "opacity-0"}`}
                   />
-                  {env}
+                  {env === "all" ? t('filter.all') : env}
                 </button>
               ))}
             </PopoverContent>
@@ -178,9 +159,9 @@ export function RestoreHistory({
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 rounded-lg">
                 <Filter className="h-3.5 w-3.5" />
-                {statusFilter === "Todos"
-                  ? "Estado"
-                  : statusConfig[statusFilter as RestoreJob["status"]]?.label}
+                {statusFilter === "all"
+                  ? t('filter.status')
+                  : t(STATUS_CONFIG_KEYS[statusFilter as RestoreJob["status"]])}
                 <ChevronDown className="h-3 w-3 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -197,9 +178,9 @@ export function RestoreHistory({
                   <Check
                     className={`h-4 w-4 ${statusFilter === status ? "opacity-100" : "opacity-0"}`}
                   />
-                  {status === "Todos"
-                    ? "Todos"
-                    : statusConfig[status as RestoreJob["status"]]?.label}
+                  {status === "all"
+                    ? t('filter.all')
+                    : t(STATUS_CONFIG_KEYS[status as RestoreJob["status"]])}
                 </button>
               ))}
             </PopoverContent>
@@ -212,8 +193,8 @@ export function RestoreHistory({
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon={<HistoryIcon className="h-8 w-8" />}
-            title="No hay restores registrados"
-            description="Los restores ejecutados aparecerán acá."
+            title={t('empty.noRestores')}
+            description={t('empty.noRestoresDescription')}
           />
         </div>
       ) : (
@@ -224,11 +205,11 @@ export function RestoreHistory({
           <Table>
             <TableHeader className="sticky top-0 z-10 bg-background">
               <TableRow className="hover:bg-transparent">
-                <TableHead className="py-3">Conexión</TableHead>
-                <TableHead className="py-3">Fecha</TableHead>
-                <TableHead className="py-3">Ambiente</TableHead>
-                <TableHead className="py-3">Estado</TableHead>
-                <TableHead className="py-3 text-right">Duración</TableHead>
+                <TableHead className="py-3">{t('column.connection')}</TableHead>
+                <TableHead className="py-3">{t('column.date')}</TableHead>
+                <TableHead className="py-3">{t('column.environment')}</TableHead>
+                <TableHead className="py-3">{t('column.status')}</TableHead>
+                <TableHead className="py-3 text-right">{t('column.duration')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -252,7 +233,7 @@ export function RestoreHistory({
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
-                      {job.startedAt ? formatDate(job.startedAt) : "—"}
+                      {job.startedAt ? formatDateTimeShort(job.startedAt) : "—"}
                     </TableCell>
                     <TableCell className="py-3">
                       <Badge variant="outline" className="rounded-full text-xs font-normal">

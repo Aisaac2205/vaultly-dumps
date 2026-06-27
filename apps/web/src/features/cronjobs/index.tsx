@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   useCronjobs,
   useCronjobConnections,
@@ -25,6 +26,7 @@ import { Clock, Plus } from "lucide-react";
 import type { Cronjob, CreateCronjobDto, UpdateCronjobDto } from "./types";
 
 export default function Cronjobs() {
+  const { t } = useTranslation('cronjobs')
   const {
     data: cronjobs = [],
     isLoading: isQueryLoading,
@@ -71,10 +73,10 @@ export default function Cronjobs() {
             id: editingCronjob.id,
             dto: dto as UpdateCronjobDto,
           });
-          toast.success("Cronjob actualizado correctamente");
+          toast.success(t('toast.updated'));
         } else {
           await createMutation.mutateAsync(dto as CreateCronjobDto);
-          toast.success("Cronjob creado correctamente");
+          toast.success(t('toast.created'));
         }
         setShowForm(false);
         setEditingCronjob(undefined);
@@ -94,14 +96,12 @@ export default function Cronjobs() {
 
   const handleDelete = useCallback(
     async (id: string) => {
-      const confirmed = window.confirm(
-        "¿Estás seguro de que querés eliminar este cronjob?",
-      );
+      const confirmed = window.confirm(t('confirm.delete'));
       if (!confirmed) return;
 
       try {
         await deleteMutation.mutateAsync(id);
-        toast.success("Cronjob eliminado");
+        toast.success(t('toast.deleted'));
       } catch {
         // Error surfaced via mutation state
       }
@@ -116,7 +116,7 @@ export default function Cronjobs() {
       try {
         await toggleMutation.mutateAsync(id);
         toast.success(
-          cronjob?.isActive ? "Cronjob pausado" : "Cronjob activado",
+          cronjob?.isActive ? t('toast.paused') : t('toast.activated'),
         );
       } catch {
         // Error surfaced via mutation state
@@ -151,10 +151,7 @@ export default function Cronjobs() {
         <PageHeader title="Cronjobs" />
         <Alert variant="destructive">
           <AlertDescription>
-            Error al cargar cronjobs:{" "}
-            {queryError instanceof Error
-              ? queryError.message
-              : "Error desconocido"}
+            {t('error.load', { message: queryError instanceof Error ? queryError.message : t('error.generic', { ns: 'common' }) })}
           </AlertDescription>
         </Alert>
       </FadeIn>
@@ -166,17 +163,15 @@ export default function Cronjobs() {
   if (cronjobs.length === 0 && !showForm) {
     return (
       <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <PageHeader
-          title="Cronjobs"
-        />
+        <PageHeader title="Cronjobs" />
         <EmptyState
           icon={<Clock className="h-12 w-12" />}
-          title="No hay cronjobs configurados"
-          description="Creá tu primer cronjob para programar respaldos automáticos."
+          title={t('empty.title')}
+          description={t('empty.description')}
           action={
             <Button onClick={handleNewClick}>
               <Plus className="h-4 w-4" />
-              Nuevo cronjob
+              {t('action.new')}
             </Button>
           }
         />
@@ -200,7 +195,7 @@ export default function Cronjobs() {
           !showForm ? (
             <Button onClick={handleNewClick}>
               <Plus className="h-4 w-4" />
-              Nuevo cronjob
+              {t('action.new')}
             </Button>
           ) : undefined
         }
@@ -211,7 +206,7 @@ export default function Cronjobs() {
           <AlertDescription>
             {mutationError instanceof Error
               ? mutationError.message
-              : "Error inesperado"}
+              : t('error.unexpected', { ns: 'common' })}
           </AlertDescription>
         </Alert>
       )}

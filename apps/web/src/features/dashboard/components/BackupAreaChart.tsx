@@ -15,27 +15,30 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/shared/ui/chart";
+import { useTranslation } from "react-i18next";
+import { formatDate } from "@/lib/format";
 import type { DailyBackupCount } from "../types";
 
 interface BackupAreaChartProps {
   data: DailyBackupCount[];
 }
 
-const chartConfig: ChartConfig = {
-  scheduled: { label: "Programados", color: "var(--color-chart-scheduled)" },
-  manual: { label: "Manuales", color: "var(--color-chart-manual)" },
-};
-
 type TimeRange = "90d" | "30d" | "7d";
 
-const RANGE_LABELS: Record<TimeRange, string> = {
-  "90d": "3 meses",
-  "30d": "30 días",
-  "7d": "7 días",
-};
-
 export function BackupAreaChart({ data }: BackupAreaChartProps) {
+  const { t } = useTranslation('dashboard')
   const [timeRange, setTimeRange] = useState<TimeRange>("30d");
+
+  const RANGE_LABELS: Record<TimeRange, string> = {
+    "90d": t('chart.range.90d'),
+    "30d": t('chart.range.30d'),
+    "7d": t('chart.range.7d'),
+  };
+
+  const chartConfig: ChartConfig = {
+    scheduled: { label: t('chart.scheduled'), color: "var(--color-chart-scheduled)" },
+    manual: { label: t('chart.manual'), color: "var(--color-chart-manual)" },
+  };
 
   const daysMap: Record<TimeRange, number> = { "90d": 90, "30d": 30, "7d": 7 };
   const cutoff = new Date();
@@ -50,9 +53,9 @@ export function BackupAreaChart({ data }: BackupAreaChartProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-base">Backups completados</CardTitle>
+            <CardTitle className="text-base">{t('chart.title')}</CardTitle>
             <CardDescription>
-              Programados vs manuales — últimos {RANGE_LABELS[timeRange]}
+              {t('chart.description', { range: RANGE_LABELS[timeRange] })}
             </CardDescription>
           </div>
           <div className="flex gap-1">
@@ -76,7 +79,7 @@ export function BackupAreaChart({ data }: BackupAreaChartProps) {
       <CardContent>
         {filteredData.length === 0 ? (
           <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
-            No hay datos para este período
+            {t('chart.noData')}
           </div>
         ) : (
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
@@ -99,10 +102,7 @@ export function BackupAreaChart({ data }: BackupAreaChartProps) {
                 tickMargin={8}
                 minTickGap={32}
                 tickFormatter={(value: string) =>
-                  new Date(value).toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "short",
-                  })
+                  formatDate(value, { day: '2-digit', month: 'short' })
                 }
               />
               <ChartTooltip
@@ -110,11 +110,7 @@ export function BackupAreaChart({ data }: BackupAreaChartProps) {
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value: string) =>
-                      new Date(value).toLocaleDateString("es-AR", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
+                      formatDate(value, { day: '2-digit', month: 'short', year: 'numeric' })
                     }
                     indicator="dot"
                   />
