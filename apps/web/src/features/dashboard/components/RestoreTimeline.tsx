@@ -3,7 +3,7 @@ import { EmptyState } from "@/shared/ui/empty-state";
 import { DataTable } from "@/shared/ui/data-table";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { RotateCcw } from "lucide-react";
-import { shortId, formatDate } from "../lib/format";
+import { shortId, formatDateTimeShort as formatDate } from "@/lib/format";
 import type { RestoreJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
 

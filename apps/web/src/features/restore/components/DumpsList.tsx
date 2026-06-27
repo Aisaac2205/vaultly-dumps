@@ -2,7 +2,7 @@ import { Check, Loader2 } from "lucide-react";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 import { cn } from "@/shared/lib/cn";
 import { formatSize } from "@/shared/lib/format";
-import { formatDate } from "@/features/dumps/lib/format";
+import { formatDateTimeShort as formatDate } from "@/lib/format";
 import postgresSvg from "@/shared/assets/PostgresSQL.svg";
 import mysqlSvg from "@/shared/assets/MySQL.svg";
 

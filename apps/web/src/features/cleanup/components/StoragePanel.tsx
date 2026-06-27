@@ -1,5 +1,5 @@
 import { HardDrive, Database, Radio, Clock } from "lucide-react";
-import { formatDate } from "@/features/dumps/lib/format";
+import { formatDateTimeShort as formatDate } from "@/lib/format";
 import { StatCard } from "@/shared/ui/stat-card";
 import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { useStorageOverview } from "../hooks/useMaintenance";

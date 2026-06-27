@@ -11,7 +11,7 @@ import {
 } from "@/shared/ui/dialog";
 import { FrequencyTabs } from "@/features/restore/components/FrequencyTabs";
 import { formatSize } from "@/shared/lib/format";
-import { formatDate } from "@/features/dumps/lib/format";
+import { formatDateTimeShort as formatDate } from "@/lib/format";
 import { useCleanupForm } from "../hooks/useCleanup";
 
 const inputClass =

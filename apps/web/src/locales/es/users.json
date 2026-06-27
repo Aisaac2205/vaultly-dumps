@@ -1,0 +1,16 @@
+{
+  "page.title": "Usuarios",
+  "page.subtitle": "Gestión de usuarios y roles",
+  "column.name": "Nombre",
+  "column.email": "Correo",
+  "column.role": "Rol",
+  "column.created": "Creado",
+  "role.admin": "Administrador",
+  "role.user": "Usuario",
+  "status.banned": "Baneado",
+  "empty.title": "No hay usuarios",
+  "empty.description": "Creá el primer usuario para empezar a gestionar el acceso al sistema.",
+  "empty.filtered.title": "No se encontraron usuarios",
+  "empty.filtered.description": "Probá ajustar la búsqueda o quitar el filtro de rol.",
+  "empty.noResults": "No se encontraron usuarios"
+}

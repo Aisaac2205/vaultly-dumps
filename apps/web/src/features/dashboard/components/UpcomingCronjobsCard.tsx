@@ -6,7 +6,7 @@ import {
   PauseCircle,
 } from "lucide-react";
 import type { CronjobEntity } from "../types";
-import { formatUpcomingTime } from "../lib/format";
+import { formatUpcomingTime } from "@/lib/format";
 
 interface UpcomingCronjobsCardProps {
   cronjobs: CronjobEntity[];

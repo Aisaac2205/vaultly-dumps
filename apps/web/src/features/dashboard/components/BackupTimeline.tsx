@@ -4,7 +4,7 @@ import { DataTable } from "@/shared/ui/data-table";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Clock } from "lucide-react";
-import { shortId, formatDate } from "../lib/format";
+import { shortId, formatDateTimeShort as formatDate } from "@/lib/format";
 import type { BackupJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
 

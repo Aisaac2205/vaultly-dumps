@@ -16,7 +16,7 @@ import { DryRunResult } from "./components/DryRunResult";
 import { RestoreProgress } from "./components/RestoreProgress";
 import { RestoreHistory } from "./components/RestoreHistory";
 import { ConfirmRestoreDialog } from "./components/ConfirmRestoreDialog";
-import { formatDate } from "@/features/dumps/lib/format";
+import { formatDateTimeShort as formatDate } from "@/lib/format";
 import { PageHeader } from "@/shared/ui/page-header";
 import { FadeIn } from "@/shared/ui/motion/FadeIn";
 import type { RestoreDto } from "./types";

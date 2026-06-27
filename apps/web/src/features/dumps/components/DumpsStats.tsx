@@ -2,7 +2,7 @@ import { StatCard } from "@/shared/ui/stat-card";
 import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { Database, HardDrive, Calendar, Server } from "lucide-react";
 import type { BackupJob } from "../types";
-import { formatSizeMb } from "../lib/format";
+import { formatSizeMb } from "@/shared/lib/format";
 
 interface DumpsStatsProps {
   dumps: BackupJob[];

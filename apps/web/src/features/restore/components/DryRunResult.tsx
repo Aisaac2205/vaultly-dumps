@@ -1,7 +1,7 @@
 import type { DryRunResult as DryRunResultType, DryRunConnectionInfo } from "../types";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
-import { formatNumber } from "../lib/format";
+import { formatNumber } from "@/lib/format";
 import postgresSvg from "@/shared/assets/PostgresSQL.svg";
 import mysqlSvg from "@/shared/assets/MySQL.svg";
 import { Check, X } from "lucide-react";

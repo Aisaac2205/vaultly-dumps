@@ -2,7 +2,7 @@ import { StatCard } from "@/shared/ui/stat-card";
 import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { Clock, Play, CheckCircle2, Calendar } from "lucide-react";
 import type { Cronjob } from "../types";
-import { nextRunParts } from "../lib/format";
+import { nextRunParts } from "@/lib/format";
 
 function ValueWithUnit({ value, unit }: { value: string; unit: string }) {
   return (

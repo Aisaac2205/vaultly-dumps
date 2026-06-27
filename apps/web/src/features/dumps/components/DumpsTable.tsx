@@ -3,7 +3,8 @@ import { StatusBadge } from "@/shared/ui/status-badge";
 import { Database } from "lucide-react";
 import type { BackupJob } from "../types";
 import { DumpActions } from "./DumpActions";
-import { formatSize, formatDate } from "../lib/format";
+import { formatSize } from "@/shared/lib/format";
+import { formatDateTimeShort as formatDate } from "@/lib/format";
 import cloudflareSvg from "@/shared/assets/Cloudflare.svg";
 
 interface DumpsTableProps {

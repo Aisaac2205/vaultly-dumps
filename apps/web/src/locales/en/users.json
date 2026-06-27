@@ -1,0 +1,16 @@
+{
+  "page.title": "Users",
+  "page.subtitle": "User and role management",
+  "column.name": "Name",
+  "column.email": "Email",
+  "column.role": "Role",
+  "column.created": "Created",
+  "role.admin": "Administrator",
+  "role.user": "User",
+  "status.banned": "Banned",
+  "empty.title": "No users",
+  "empty.description": "Create the first user to start managing system access.",
+  "empty.filtered.title": "No users found",
+  "empty.filtered.description": "Try adjusting the search or removing the role filter.",
+  "empty.noResults": "No users found"
+}

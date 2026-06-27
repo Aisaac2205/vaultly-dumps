@@ -1,4 +1,4 @@
-import { formatRelativeTime } from "../lib/format";
+import { formatRelativeTime } from "@/lib/format";
 
 interface AutoRefreshIndicatorProps {
   lastUpdated: Date | null;

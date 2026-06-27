@@ -1,5 +1,5 @@
 import type { Cronjob } from "../types";
-import { formatDate } from "../lib/format";
+import { formatDateTimeShort as formatDate } from "@/lib/format";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
 import { ConnectionLabel } from "@/shared/components/ConnectionLabel";

@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { EmptyState } from "@/shared/ui/empty-state";
 import type { R2Object } from "../types";
-import { formatSize, formatRelativeTime } from "../lib/format";
+import { formatRelativeTime } from "@/lib/format";
+import { formatSize } from "@/shared/lib/format";
 import cloudflareSvg from "@/shared/assets/Cloudflare.svg";
 import { Activity, HardDrive } from "lucide-react";
 
