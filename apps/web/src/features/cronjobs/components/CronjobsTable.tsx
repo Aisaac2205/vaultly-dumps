@@ -18,19 +18,6 @@ interface CronjobsTableProps {
   toggleLoading: Record<string, boolean>;
 }
 
-function CronjobsEmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-      <Clock className="h-8 w-8 mb-3 text-muted-foreground/50" />
-      <p className="text-sm font-medium text-foreground">
-        No hay cronjobs configurados
-      </p>
-      <p className="text-xs mt-1">
-        Creá tu primer cronjob para programar respaldos automáticos.
-      </p>
-    </div>
-  );
-}
 
 export default function CronjobsTable({
   cronjobs,

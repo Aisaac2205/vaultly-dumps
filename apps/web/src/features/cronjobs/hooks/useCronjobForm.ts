@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { FormEvent, ChangeEvent } from "react";
 import type { CronFrequency } from "@/types/backup.types";
 import type {
@@ -27,13 +28,13 @@ export interface CronPreset {
 }
 
 export const CRON_PRESETS: readonly CronPreset[] = [
-  { label: "Cada hora", cronExpression: "0 * * * *", frequency: "hourly" },
-  { label: "Diario a las 2am", cronExpression: "0 2 * * *", frequency: "daily" },
-  { label: "Semanal (lunes 2am)", cronExpression: "0 2 * * 1", frequency: "weekly" },
-  { label: "Personalizado", cronExpression: "", frequency: "custom" },
+  { label: "Every hour", cronExpression: "0 * * * *", frequency: "hourly" },
+  { label: "Daily at 2am", cronExpression: "0 2 * * *", frequency: "daily" },
+  { label: "Weekly (Mon 2am)", cronExpression: "0 2 * * 1", frequency: "weekly" },
+  { label: "Custom", cronExpression: "", frequency: "custom" },
 ] as const;
 
-export const CUSTOM_LABEL = "Personalizado";
+export const CUSTOM_LABEL = "Custom";
 
 export function detectPresetLabel(
   cronExpression: string,
@@ -98,6 +99,7 @@ export function useCronjobForm({
   onSubmit,
   isLoading,
 }: UseCronjobFormProps): UseCronjobFormReturn {
+  const { t } = useTranslation("cronjobs");
   const isEditMode = cronjob !== undefined;
 
   const initialFrequency: CronFrequency = cronjob?.frequency ?? "custom";
@@ -209,16 +211,20 @@ export function useCronjobForm({
     if (isLoading) return;
 
     if (!formData.name.trim()) {
-      setValidationError("El nombre es obligatorio");
+      setValidationError(t("form.validation.nameRequired"));
       return;
     }
     if (!formData.connectionId) {
-      setValidationError("La conexión es obligatoria");
+      setValidationError(t("form.validation.connectionRequired"));
       return;
     }
     const cronCheck = validateCronExpression(formData.cronExpression);
     if (!cronCheck.valid) {
-      setValidationError(cronCheck.error ?? "Expresión cron inválida");
+      setValidationError(
+        cronCheck.errorKey
+          ? t(cronCheck.errorKey, cronCheck.errorParams)
+          : t("form.validation.invalidCron"),
+      );
       return;
     }
 

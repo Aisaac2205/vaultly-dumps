@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Filters } from "@/shared/ui/filters";
 import type { Cronjob, JobStatus } from "../types";
 
@@ -13,19 +14,6 @@ interface CronjobFiltersProps {
   onChange: (filters: CronjobFiltersState) => void;
 }
 
-const STATUS_OPTIONS = [
-  { value: "", label: "Todos los estados" },
-  { value: "pending", label: "Pendiente" },
-  { value: "running", label: "En progreso" },
-  { value: "completed", label: "Completado" },
-  { value: "failed", label: "Fallido" },
-];
-
-const ACTIVE_OPTIONS = [
-  { value: "", label: "Todos" },
-  { value: "active", label: "Activos" },
-  { value: "inactive", label: "Inactivos" },
-];
 
 function filtersToRecord(f: CronjobFiltersState): Record<string, string> {
   const r: Record<string, string> = {};
@@ -47,6 +35,22 @@ export function CronjobFilters({
   filters,
   onChange,
 }: CronjobFiltersProps) {
+  const { t } = useTranslation("cronjobs");
+
+  const STATUS_OPTIONS = [
+    { value: "", label: t("filter.allStatuses") },
+    { value: "pending", label: t("filter.statusPending") },
+    { value: "running", label: t("filter.statusRunning") },
+    { value: "completed", label: t("filter.statusCompleted") },
+    { value: "failed", label: t("filter.statusFailed") },
+  ];
+
+  const ACTIVE_OPTIONS = [
+    { value: "", label: t("filter.all") },
+    { value: "active", label: t("filter.activeOnly") },
+    { value: "inactive", label: t("filter.inactiveOnly") },
+  ];
+
   const handleFiltersChange = useCallback(
     (next: Record<string, string>) => {
       onChange(recordToFilters(next));
@@ -66,20 +70,20 @@ export function CronjobFilters({
       <Filters.Popover>
         <Filters.Search
           filterKey="search"
-          label="Buscar"
-          placeholder="Nombre o conexión..."
+          label={t("filter.searchLabel")}
+          placeholder={t("filter.searchPlaceholder")}
         />
         <Filters.Select
           filterKey="status"
-          label="Estado"
+          label={t("filter.status")}
           options={STATUS_OPTIONS}
-          placeholder="Todos los estados"
+          placeholder={t("filter.allStatuses")}
         />
         <Filters.Select
           filterKey="active"
-          label="Activo"
+          label={t("filter.active")}
           options={ACTIVE_OPTIONS}
-          placeholder="Todos"
+          placeholder={t("filter.all")}
         />
       </Filters.Popover>
     </Filters.Root>
