@@ -1,4 +1,5 @@
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { StatusBadge } from "@/shared/ui/status-badge";
 
 type RestoreProgressStatus = "running" | "completed" | "failed";
@@ -10,6 +11,7 @@ interface RestoreProgressProps {
 }
 
 export function RestoreProgress({ jobId, status, progress = 0 }: RestoreProgressProps) {
+  const { t } = useTranslation("restore");
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -31,9 +33,9 @@ export function RestoreProgress({ jobId, status, progress = 0 }: RestoreProgress
           <div className="flex items-center gap-3 rounded-lg bg-muted/30 p-4">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <div className="space-y-1">
-              <p className="text-sm font-medium">Restaurando base de datos...</p>
+              <p className="text-sm font-medium">{t("progress.restoring")}</p>
               <p className="text-xs text-muted-foreground">
-                Esto puede tardar unos segundos. No cierres esta ventana.
+                {t("progress.wait")}
               </p>
             </div>
           </div>
@@ -51,14 +53,14 @@ export function RestoreProgress({ jobId, status, progress = 0 }: RestoreProgress
       {status === "completed" && (
         <div className="flex items-center gap-3 rounded-lg bg-green-500/10 p-4 text-green-700 dark:text-green-400">
           <CheckCircle2 className="h-5 w-5" />
-          <p className="text-sm font-medium">Restore completado exitosamente.</p>
+          <p className="text-sm font-medium">{t("progress.completed")}</p>
         </div>
       )}
 
       {status === "failed" && (
         <div className="flex items-center gap-3 rounded-lg bg-red-500/10 p-4 text-red-600 dark:text-red-400">
           <XCircle className="h-5 w-5" />
-          <p className="text-sm font-medium">El restore falló.</p>
+          <p className="text-sm font-medium">{t("progress.failed")}</p>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Connection } from "../types";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/button";
@@ -45,6 +46,7 @@ export function SourceConnectionCombobox({
   disabled = false,
   loading = false,
 }: SourceConnectionComboboxProps) {
+  const { t } = useTranslation("restore");
   const [open, setOpen] = useState(false);
 
   const selected = connections.find((c) => c.slug === value);
@@ -52,7 +54,7 @@ export function SourceConnectionCombobox({
   if (loading) {
     return (
       <div className="flex h-10 items-center rounded-xl bg-muted/40 px-3 text-sm text-muted-foreground">
-        Cargando bases de datos...
+        {t("source.loading")}
       </div>
     );
   }
@@ -64,7 +66,7 @@ export function SourceConnectionCombobox({
           variant="ghost"
           role="combobox"
           aria-expanded={open}
-          aria-label="Seleccionar base de datos"
+          aria-label={t("source.ariaSelect")}
           className="h-10 w-full justify-between rounded-xl bg-muted/40 font-normal hover:bg-muted/60"
           disabled={disabled}
         >
@@ -77,7 +79,7 @@ export function SourceConnectionCombobox({
               </span>
             </div>
           ) : (
-            <span className="text-muted-foreground">Seleccionar base de datos...</span>
+            <span className="text-muted-foreground">{t("source.placeholder")}</span>
           )}
           <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-50" />
         </Button>
@@ -85,11 +87,11 @@ export function SourceConnectionCombobox({
       <PopoverContent className="p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
         <Command shouldFilter={false}>
           <CommandInput
-            placeholder="Buscar base de datos..."
-            aria-label="Buscar base de datos"
+            placeholder={t("source.search")}
+            aria-label={t("source.searchAria")}
           />
           <CommandList>
-            <CommandEmpty>No se encontraron bases de datos</CommandEmpty>
+            <CommandEmpty>{t("source.empty")}</CommandEmpty>
             <CommandGroup>
               {connections.map((conn) => {
                 const isSelected = value === conn.slug;

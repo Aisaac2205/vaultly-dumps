@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ export function ConfirmRestoreDialog({
   isLoading,
   onConfirm,
 }: ConfirmRestoreDialogProps) {
+  const { t } = useTranslation("restore");
   const [typed, setTyped] = useState("");
 
   useEffect(() => {
@@ -52,11 +54,10 @@ export function ConfirmRestoreDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            Confirmar restore destructivo
+            {t("dialog.title")}
           </DialogTitle>
           <DialogDescription>
-            Esta operación va a sobrescribir datos en la conexión destino. No
-            se puede deshacer.
+            {t("dialog.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -65,7 +66,7 @@ export function ConfirmRestoreDialog({
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Conexión destino
+                  {t("dialog.targetLabel")}
                 </div>
                 <div
                   className="truncate font-medium"
@@ -99,8 +100,7 @@ export function ConfirmRestoreDialog({
           {isProd && (
             <Alert variant="destructive">
               <AlertDescription>
-                Estás por escribir sobre <strong>producción</strong>. Verificá
-                el nombre de la conexión dos veces.
+                {t("dialog.prodWarning")}
               </AlertDescription>
             </Alert>
           )}
@@ -110,11 +110,7 @@ export function ConfirmRestoreDialog({
               htmlFor="confirm-restore-input"
               className="text-sm text-muted-foreground"
             >
-              Escribí{" "}
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-                {targetName}
-              </code>{" "}
-              para confirmar:
+              {t("dialog.typeToConfirm", { name: targetName })}
             </label>
             <input
               id="confirm-restore-input"
@@ -145,14 +141,14 @@ export function ConfirmRestoreDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            Cancelar
+            {t("dialog.cancel")}
           </Button>
           <Button
             variant="destructive"
             onClick={handleConfirm}
             disabled={!matches || isLoading}
           >
-            {isLoading ? "Procesando…" : "Ejecutar restore"}
+            {isLoading ? t("action.processing") : t("action.execute")}
           </Button>
         </DialogFooter>
       </DialogContent>

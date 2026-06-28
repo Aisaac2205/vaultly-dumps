@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { RestoreDto, Connection } from "../types";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 import { ConnectionSelector } from "./ConnectionSelector";
@@ -61,6 +62,7 @@ export function RestoreForm({
   sourceConnections,
   sourceConnectionsLoading = false,
 }: RestoreFormProps) {
+  const { t } = useTranslation("restore");
   const [targetConnectionId, setTargetConnectionId] = useState("");
   const [isDryRun, setIsDryRun] = useState(true);
 
@@ -82,7 +84,7 @@ export function RestoreForm({
 
   function handleSimulate() {
     if (!hasSource) {
-      toast.warning("Seleccioná un dump antes de simular el restore");
+      toast.warning(t("toast.selectDump"));
       return;
     }
     if (!canSimulate) return;
@@ -97,7 +99,7 @@ export function RestoreForm({
 
   function handleExecute() {
     if (!hasSource) {
-      toast.warning("Seleccioná un dump antes de restaurar");
+      toast.warning(t("toast.selectDumpRestore"));
       return;
     }
     if (!targetConnectionId) return;
@@ -121,7 +123,7 @@ export function RestoreForm({
           {showR2Selector ? (
             <RestoreFormSection
               number={1}
-              title="Dump de R2"
+              title={t("section.r2Dump")}
               icon={<img src={cloudflareSvg} alt="Cloudflare R2" className="h-4 w-4" />}
             >
               <R2DumpPicker
@@ -135,7 +137,7 @@ export function RestoreForm({
           ) : (
             <RestoreFormSection
               number={1}
-              title="Dump seleccionado"
+              title={t("section.selectedDump")}
               icon={
                 effectiveDbType && DB_LOGOS[effectiveDbType] ? (
                   <img
@@ -192,21 +194,21 @@ export function RestoreForm({
           {/* Section 2: Connection */}
           <RestoreFormSection
             number={showR2Selector ? 2 : 1}
-            title="Conexión destino"
+            title={t("section.targetConnection")}
           >
             <div className="space-y-2.5">
               {!hasConnections && !connectionsLoading ? (
                 <div className="flex items-center justify-between gap-3 rounded-xl bg-muted/30 px-3 py-2.5 text-sm">
                   <span className="text-muted-foreground">
                     {effectiveDbType
-                      ? `No hay conexiones ${DB_LABELS[effectiveDbType] ?? effectiveDbType} disponibles`
-                      : "No hay conexiones disponibles"}
+                      ? t("target.noConnectionsType", { type: DB_LABELS[effectiveDbType] ?? effectiveDbType })
+                      : t("target.noConnections")}
                   </span>
                   <Link
                     to="/connections"
                     className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
                   >
-                    Crear conexión
+                    {t("target.createConnection")}
                     <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>
@@ -229,7 +231,7 @@ export function RestoreForm({
           {/* Section 3: Options */}
           <RestoreFormSection
             number={sectionCount}
-            title="Opciones"
+            title={t("section.options")}
             isLast
           >
             <RestoreOptions

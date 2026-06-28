@@ -1,4 +1,5 @@
 import type { DryRunResult as DryRunResultType, DryRunConnectionInfo } from "../types";
+import { useTranslation } from "react-i18next";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { formatNumber } from "@/lib/format";
@@ -52,6 +53,7 @@ export function DryRunResult({
   onCancel,
   isLoading,
 }: DryRunResultProps) {
+  const { t } = useTranslation("restore");
   const { source, target, diff } = result;
   const [excludedTables, setExcludedTables] = useState<Set<string>>(new Set());
 
@@ -133,23 +135,23 @@ export function DryRunResult({
                   <span className="mr-1.5 text-xs text-emerald-600">+</span>{name}
                 </td>
                 <td className="px-3 py-2.5 text-right font-mono text-xs">
-                  {formatNumber(source.tables.find((t) => t.name === name)?.estimatedRows ?? 0)}
+                  {formatNumber(source.tables.find((row) => row.name === name)?.estimatedRows ?? 0)}
                 </td>
                 <td className="px-3 py-2.5 text-right font-mono text-xs text-muted-foreground">—</td>
                 <td className="px-3 py-2.5 text-right text-xs text-emerald-600">new</td>
               </tr>
             ))}
-            {diff.common.map((t) => {
-              const delta = t.sourceRows - t.targetRows;
-              const isExcluded = excludedTables.has(t.name);
+            {diff.common.map((row) => {
+              const delta = row.sourceRows - row.targetRows;
+              const isExcluded = excludedTables.has(row.name);
               return (
-                <tr key={t.name} className={`border-t border-border/20 hover:bg-muted/40 ${isExcluded ? "opacity-40" : ""}`}>
+                <tr key={row.name} className={`border-t border-border/20 hover:bg-muted/40 ${isExcluded ? "opacity-40" : ""}`}>
                   <td className="px-3 py-2.5">
                     <button
                       type="button"
-                      onClick={() => toggleTable(t.name)}
+                      onClick={() => toggleTable(row.name)}
                       className="flex h-5 w-5 items-center justify-center rounded border border-border bg-background hover:bg-accent"
-                      aria-label={`Excluir tabla ${t.name}`}
+                      aria-label={`Excluir tabla ${row.name}`}
                     >
                       {isExcluded ? (
                         <X className="h-3 w-3 text-muted-foreground" />
@@ -158,12 +160,12 @@ export function DryRunResult({
                       )}
                     </button>
                   </td>
-                  <td className="px-3 py-2.5">{t.name}</td>
+                  <td className="px-3 py-2.5">{row.name}</td>
                   <td className="px-3 py-2.5 text-right font-mono text-xs">
-                    {formatNumber(t.sourceRows)}
+                    {formatNumber(row.sourceRows)}
                   </td>
                   <td className="px-3 py-2.5 text-right font-mono text-xs">
-                    {formatNumber(t.targetRows)}
+                    {formatNumber(row.targetRows)}
                   </td>
                   <td className={`px-3 py-2.5 text-right font-mono text-xs ${delta > 0 ? "text-emerald-600" : delta < 0 ? "text-red-500" : "text-muted-foreground"}`}>
                     {delta > 0 ? `+${formatNumber(delta)}` : delta < 0 ? formatNumber(delta) : "="}
@@ -205,14 +207,14 @@ export function DryRunResult({
         <span className="text-xs text-muted-foreground">
           {excludedTables.size > 0
             ? `${excludedTables.size} tabla(s) excluida(s)`
-            : "Todas las tablas serán restauradas"}
+            : t("dryRun.allTables")}
         </span>
         <div className="flex gap-3">
           <Button onClick={onCancel} disabled={isLoading} variant="ghost">
-            Cancelar
+            {t("cancel")}
           </Button>
           <Button onClick={() => onConfirm(Array.from(excludedTables))} disabled={isLoading} className="bg-black text-white hover:bg-black/90">
-            {isLoading ? "Procesando…" : "Confirmar restore"}
+            {isLoading ? t("action.processing") : t("action.confirm")}
           </Button>
         </div>
       </div>
