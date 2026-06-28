@@ -22,7 +22,7 @@ export function StoragePanel() {
     return (
       <StatCard
         variant="outlined"
-        label="Almacenamiento"
+        label={t("section.storage.title")}
         value="—"
         icon={<HardDrive className="h-4 w-4" />}
         loading={false}

@@ -1,4 +1,5 @@
 import { Loader2, AlertTriangle, CheckCircle2, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import {
@@ -68,6 +69,7 @@ function HealthRow({ label, count, severity }: HealthRowProps) {
 }
 
 export function ReconcilePanel() {
+  const { t } = useTranslation("cleanup");
   const {
     data,
     isLoading,
@@ -89,7 +91,7 @@ export function ReconcilePanel() {
       <Card>
         <CardContent className="flex items-center gap-2 p-5 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Analizando R2 y base…
+          {t("reconcile.loading")}
         </CardContent>
       </Card>
     );
@@ -100,14 +102,14 @@ export function ReconcilePanel() {
       <Card>
         <CardContent className="space-y-3 p-5 sm:p-6">
           <h3 className="text-sm font-semibold text-text-primary">
-            Sincronizar Almacenamiento y Base de Datos
+            {t("reconcile.title")}
           </h3>
           <div
             role="alert"
             className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           >
-            Error al analizar:{" "}
-            {error instanceof Error ? error.message : "Error desconocido"}
+            {t("reconcile.errorAnalysis")}{" "}
+            {error instanceof Error ? error.message : t("error.generic", { ns: "common" })}
           </div>
         </CardContent>
       </Card>
@@ -121,11 +123,10 @@ export function ReconcilePanel() {
       <CardContent className="space-y-4 p-5 sm:p-6">
         <div>
           <h3 className="text-sm font-semibold text-text-primary">
-            Sincronizar Almacenamiento y Base de Datos
+            {t("reconcile.title")}
           </h3>
           <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-            Detecta restos cuando R2 y la base se desincronizan. Lo que se puede
-            restaurar nunca se toca.
+            {t("reconcile.description")}
           </p>
         </div>
 
@@ -136,28 +137,28 @@ export function ReconcilePanel() {
               aria-hidden="true"
             />
             <span className="text-sm font-medium text-text-primary">
-              Todo sincronizado — no hay restos que limpiar.
+              {t("reconcile.allSynced")}
             </span>
           </div>
         ) : (
           <ul className="divide-y divide-border">
             <HealthRow
-              label="Registros que apuntan a dumps ya borrados"
+              label={t("reconcile.label.stale")}
               count={stale}
               severity={stale > 0 ? "critical" : "ok"}
             />
             <HealthRow
-              label="Archivos de metadatos sueltos"
+              label={t("reconcile.label.manifests")}
               count={manifests}
               severity={manifests > 0 ? "warning" : "ok"}
             />
             <HealthRow
-              label="Dumps incompletos de subidas fallidas"
+              label={t("reconcile.label.junk")}
               count={junkDumps}
               severity={junkDumps > 0 ? "warning" : "ok"}
             />
             <HealthRow
-              label="Dumps sin registrar pero restaurables (se conservan)"
+              label={t("reconcile.label.restorable")}
               count={restorable}
               severity="ok"
             />
@@ -171,8 +172,8 @@ export function ReconcilePanel() {
             className="text-xs text-muted-foreground"
           >
             {toClean === 0
-              ? "Nada por limpiar."
-              : `${toClean} resto(s) se limpiarían.`}
+              ? t("reconcile.statusNone")
+              : t("reconcile.statusFound", { count: toClean })}
           </p>
           <Button
             type="button"
@@ -180,7 +181,7 @@ export function ReconcilePanel() {
             disabled={toClean === 0 || isPending}
             onClick={() => setConfirmOpen(true)}
           >
-            {isPending ? "Limpiando..." : "Limpiar restos"}
+            {isPending ? t("reconcile.cleaning") : t("reconcile.clean")}
           </Button>
         </div>
       </CardContent>
@@ -193,13 +194,10 @@ export function ReconcilePanel() {
                 className="size-5 text-destructive"
                 aria-hidden="true"
               />
-              Limpiar restos
+              {t("reconcile.confirm.title")}
             </DialogTitle>
             <DialogDescription>
-              Vas a limpiar <strong>{toClean}</strong> resto(s) de la base y R2:
-              registros huérfanos, metadatos sueltos y dumps incompletos.{" "}
-              <strong>Los dumps restaurables no se tocan.</strong> Esta acción es{" "}
-              <strong>irreversible</strong>.
+              {t("reconcile.confirm.description", { count: toClean })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -209,7 +207,7 @@ export function ReconcilePanel() {
               onClick={() => setConfirmOpen(false)}
               disabled={isPending}
             >
-              Cancelar
+              {t("reconcile.confirm.cancel")}
             </Button>
             <Button
               type="button"
@@ -220,7 +218,7 @@ export function ReconcilePanel() {
               {isPending && (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               )}
-              Limpiar definitivamente
+              {t("reconcile.confirm.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

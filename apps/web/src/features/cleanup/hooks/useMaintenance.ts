@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { maintenanceApi } from "../api/maintenance-api";
 import type {
   StorageOverview,
@@ -59,6 +60,7 @@ export function useRunReconcile() {
 }
 
 export function useDbHygienePanel() {
+  const { t } = useTranslation("cleanup");
   const [days, setDays] = useState("30");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const daysNum = Number(days);
@@ -79,19 +81,19 @@ export function useDbHygienePanel() {
     run.mutate(daysNum, {
       onSuccess: (result) => {
         setConfirmOpen(false);
-        toast.success(`${result.deleted} registro(s) fallido(s) borrado(s)`);
+        toast.success(t("toast.hygieneSuccess", { count: result.deleted }));
       },
       onError: (error) => {
-        toast.error(error.message || "No se pudo limpiar la base");
+        toast.error(error.message || t("toast.hygieneError"));
       },
     });
   }
 
   const statusText = !valid
-    ? "Ingresá un número de días válido."
+    ? t("hygiene.statusInvalid")
     : count === 0
-      ? "No hay registros fallidos con esa antigüedad."
-      : `Se borrarían ${count} registro(s) fallido(s).`;
+      ? t("hygiene.statusNone")
+      : t("hygiene.statusFound", { count });
 
   return {
     days,
@@ -111,6 +113,7 @@ export function useDbHygienePanel() {
 }
 
 export function useReconcilePanel() {
+  const { t } = useTranslation("cleanup");
   const { data, isLoading, isError, error } = useReconcilePreview();
   const run = useRunReconcile();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -125,15 +128,23 @@ export function useReconcilePanel() {
     run.mutate(undefined, {
       onSuccess: (result) => {
         setConfirmOpen(false);
-        const summary = `${result.dbRowsDeleted} registros · ${result.manifestsDeleted} metadatos · ${result.dumpsDeleted} dumps incompletos`;
         if (result.errors.length > 0) {
-          toast.warning(`${summary} · ${result.errors.length} con error`);
+          toast.warning(t("toast.reconcileSuccessWithErrors", {
+            db: result.dbRowsDeleted,
+            manifests: result.manifestsDeleted,
+            dumps: result.dumpsDeleted,
+            count: result.errors.length,
+          }));
         } else {
-          toast.success(summary);
+          toast.success(t("toast.reconcileSuccess", {
+            db: result.dbRowsDeleted,
+            manifests: result.manifestsDeleted,
+            dumps: result.dumpsDeleted,
+          }));
         }
       },
       onError: (error) =>
-        toast.error(error.message || "No se pudo reconciliar"),
+        toast.error(error.message || t("toast.reconcileError")),
     });
   }
 

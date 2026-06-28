@@ -1,4 +1,5 @@
 import { Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Button } from "@/shared/ui/button";
 import {
@@ -18,6 +19,7 @@ const inputClass =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
 export function CleanupForm() {
+  const { t } = useTranslation("cleanup");
   const {
     connections,
     connectionsLoading,
@@ -52,7 +54,7 @@ export function CleanupForm() {
                 htmlFor="cleanup-connection"
                 className="block text-xs font-medium text-muted-foreground"
               >
-                Base de datos
+                {t("form.database")}
               </label>
               <select
                 id="cleanup-connection"
@@ -61,7 +63,7 @@ export function CleanupForm() {
                 disabled={connectionsLoading}
                 className={inputClass}
               >
-                <option value="">Seleccioná una conexión</option>
+                <option value="">{t("form.selectConnection")}</option>
                 {connections.map((connection) => (
                   <option key={connection.id} value={connection.slug}>
                     {connection.name} · {connection.environment}
@@ -73,7 +75,7 @@ export function CleanupForm() {
             {/* Criterion mode */}
             <fieldset className="space-y-1.5">
               <legend className="block text-xs font-medium text-muted-foreground">
-                Criterio
+                {t("form.criterion")}
               </legend>
               <div className="flex gap-4 pt-1">
                 <div className="flex items-center gap-2">
@@ -86,7 +88,7 @@ export function CleanupForm() {
                     onChange={() => handleModeChange("keepLast")}
                   />
                   <label htmlFor="cleanup-mode-keepLast" className="text-sm">
-                    Conservar últimos
+                    {t("form.keepLast")}
                   </label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -99,7 +101,7 @@ export function CleanupForm() {
                     onChange={() => handleModeChange("maxAgeDays")}
                   />
                   <label htmlFor="cleanup-mode-maxAgeDays" className="text-sm">
-                    Más viejos que
+                    {t("form.olderThan")}
                   </label>
                 </div>
               </div>
@@ -113,7 +115,7 @@ export function CleanupForm() {
                 id="cleanup-frequency-label"
                 className="block text-xs font-medium text-muted-foreground"
               >
-                Tipo de dump
+                {t("form.dumpType")}
               </label>
               <FrequencyTabs value={category} onChange={setCategory} />
             </div>
@@ -140,9 +142,7 @@ export function CleanupForm() {
               className={inputClass}
             />
             <p id="cleanup-amount-hint" className="text-[11px] text-muted-foreground">
-              {mode === "keepLast"
-                ? "Se eliminan todos los dumps salvo los más recientes."
-                : "Se eliminan los dumps con más días que el valor indicado."}
+              {mode === "keepLast" ? t("form.hint.keepLast") : t("form.hint.maxAge")}
             </p>
           </div>
 
@@ -164,17 +164,19 @@ export function CleanupForm() {
               onClick={() => setConfirmOpen(true)}
             >
               <Trash2 aria-hidden="true" />
-              Eliminar {hasItems ? `${preview?.count}` : ""} dump(s)
+              {hasItems
+                ? t("form.button.delete", { count: preview?.count })
+                : t("form.button.deleteEmpty")}
             </Button>
             {!hasItems && (
               <span id="cleanup-submit-hint" className="sr-only">
                 {!connectionSlug
-                  ? "Seleccioná una conexión y tipo de dump primero"
+                  ? t("form.hint.noConnection")
                   : !category
-                    ? "Seleccioná un tipo de dump"
+                    ? t("form.hint.noType")
                     : !amountValid
-                      ? "Ingresá una cantidad válida"
-                      : "No hay dumps para eliminar con estos criterios"}
+                      ? t("form.hint.invalidAmount")
+                      : t("form.hint.nothingToDelete")}
               </span>
             )}
           </div>
@@ -208,10 +210,12 @@ function CleanupPreviewPanel({
   totalSizeMb,
   items,
 }: PreviewPanelProps) {
+  const { t } = useTranslation("cleanup");
+
   if (!ready) {
     return (
       <div className="rounded-md bg-muted/30 px-3 py-3 text-sm text-muted-foreground">
-        Elegí conexión, tipo y criterio para ver qué se eliminaría.
+        {t("form.preview.choose")}
       </div>
     );
   }
@@ -224,10 +228,10 @@ function CleanupPreviewPanel({
       >
         <span className="font-medium text-text-primary">
           {loading
-            ? "Calculando…"
+            ? t("form.preview.calculating")
             : count === 0
-              ? "Nada para eliminar"
-              : `Se eliminarán ${count} dump(s)`}
+              ? t("form.preview.nothingToDelete")
+              : t("form.preview.willDelete", { count })}
         </span>
         {!loading && count > 0 && (
           <span className="font-mono text-xs text-muted-foreground">
@@ -271,17 +275,18 @@ function ConfirmCleanupDialog({
   pending,
   onConfirm,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation("cleanup");
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="size-5 text-error" aria-hidden="true" />
-            Eliminar dumps
+            {t("confirm.delete.title")}
           </DialogTitle>
           <DialogDescription>
-            Vas a eliminar <strong>{count}</strong> dump(s) ({totalSizeMb} MB) de R2 y
-            de la base de datos. Esta acción es <strong>irreversible</strong>.
+            {t("confirm.delete.description", { count, totalSizeMb })}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -291,7 +296,7 @@ function ConfirmCleanupDialog({
             onClick={() => onOpenChange(false)}
             disabled={pending}
           >
-            Cancelar
+            {t("confirm.delete.cancel")}
           </Button>
           <Button
             type="button"
@@ -300,7 +305,7 @@ function ConfirmCleanupDialog({
             disabled={pending}
           >
             {pending && <Loader2 className="animate-spin" aria-hidden="true" />}
-            Eliminar definitivamente
+            {t("confirm.delete.confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>
