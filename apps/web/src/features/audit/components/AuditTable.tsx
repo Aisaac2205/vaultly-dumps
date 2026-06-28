@@ -126,14 +126,13 @@ function AuditPagination({
   pageSize,
   total,
   onPageChange,
-  showingLabel,
 }: {
   page: number;
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
-  showingLabel: string;
 }) {
+  const { t } = useTranslation('audit');
   const totalPages = Math.ceil(total / pageSize);
   const startItem = (page - 1) * pageSize + 1;
   const endItem = Math.min(page * pageSize, total);
@@ -169,10 +168,7 @@ function AuditPagination({
   return (
     <div className="flex items-center justify-between px-4 py-3">
       <p className="text-sm text-muted-foreground">
-        {showingLabel
-          .replace('{{start}}', String(startItem))
-          .replace('{{end}}', String(endItem))
-          .replace('{{total}}', String(total))}
+        {t('showing', { start: startItem, end: endItem, total })}
       </p>
       <Pagination>
         <PaginationContent>
@@ -283,7 +279,6 @@ export default function AuditTable({
               pageSize={pageSize}
               total={total}
               onPageChange={onPageChange}
-              showingLabel={t('showing')}
             />
           }
         />

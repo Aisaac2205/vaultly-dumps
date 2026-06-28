@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Filters } from "@/shared/ui/filters";
 import type { AuditFilters } from "../types";
 
@@ -48,6 +49,8 @@ export default function AuditFilters({
   onApply,
   onReset,
 }: AuditFiltersProps) {
+  const { t } = useTranslation("audit");
+
   const handleFiltersChange = useCallback(
     (next: Record<string, string>) => {
       const converted = recordToFilters(next);
@@ -72,23 +75,23 @@ export default function AuditFilters({
       <Filters.Popover>
         <Filters.Search
           filterKey="username"
-          label="Usuario"
-          placeholder="nombre.usuario"
+          label={t("filter.user")}
+          placeholder={t("filter.userPlaceholder")}
         />
         <Filters.Select
           filterKey="environment"
-          label="Ambiente"
+          label={t("filter.environment")}
           options={ENV_OPTIONS}
-          placeholder="Todos"
+          placeholder={t("filter.all")}
         />
         <Filters.Select
           filterKey="resourceType"
-          label="Recurso"
+          label={t("filter.resource")}
           options={RESOURCE_OPTIONS}
-          placeholder="Todos"
+          placeholder={t("filter.all")}
         />
-        <Filters.DateRange filterKey="from" label="Desde" />
-        <Filters.DateRange filterKey="to" label="Hasta" />
+        <Filters.DateRange filterKey="from" label={t("filter.from")} />
+        <Filters.DateRange filterKey="to" label={t("filter.to")} />
       </Filters.Popover>
     </Filters.Root>
   );
