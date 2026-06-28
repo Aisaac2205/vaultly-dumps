@@ -35,17 +35,18 @@
 
 ### Tipos que disparan release
 
-Semantic-release lee SOLO estos tres:
-
 | Tipo | Bump | Cuándo usarlo |
 |------|------|---------------|
 | `fix:` | patch (0.1.0 → 0.1.1) | Corrección de bug |
-| `feat:` | minor (0.1.0 → 0.2.0) | Funcionalidad nueva |
+| `perf:` | patch (0.1.0 → 0.1.1) | Mejora de rendimiento sin cambio de API |
+| `feat:` | minor (0.1.0 → 0.2.0) | Funcionalidad nueva visible para el usuario |
 | `feat!:` | major (0.1.0 → 1.0.0) | Breaking change |
+
+**El test para `feat:`**: ¿puede el usuario hacer algo que ANTES NO PODÍA? Sí → `feat:`. No (wirear, extraer, migrar, polish) → `refactor:` (sin release).
 
 ### Tipos que NO disparan release (uso libre)
 
-`chore:`, `docs:`, `refactor:`, `build:`, `ci:`, `style:`, `test:`, `perf:` — útiles para historial limpio, pero no generan version bump.
+`chore:`, `docs:`, `refactor:`, `build:`, `ci:`, `style:`, `test:` — útiles para historial limpio, pero no generan version bump.
 
 ### Regla estricta: SIN paréntesis ni scopes
 
