@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Shield, Clock, Cloud, Monitor, Mail, Eye, EyeOff, Lock, Database, HardDrive, RefreshCw, Key, Server, Wifi } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { authClient } from "@/shared/lib/auth-client";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { Button } from "@/shared/ui/button";
 import { FadeIn } from "@/shared/ui/motion/FadeIn";
 
 function ShowcasePanel() {
+  const { t } = useTranslation('auth')
   return (
     <div className="relative hidden flex-1 flex-col items-center justify-center overflow-hidden bg-[#111] p-12 lg:flex">
       {/* Dot pattern */}
@@ -53,23 +55,23 @@ function ShowcasePanel() {
       <div className="relative z-10 w-full max-w-[480px]">
         <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-7 backdrop-blur-[10px]">
           <p className="mb-5 text-xs font-semibold uppercase tracking-[0.08em] text-white/50">
-            Panel de control
+            {t('showcase.controlPanel')}
           </p>
 
           <ShowcaseItem
             icon={<Shield className="h-5 w-5 text-white/70" />}
-            title="Backups automáticos"
-            subtitle="Programa y gestiona tus respaldos"
+            title={t('showcase.backups.title')}
+            subtitle={t('showcase.backups.subtitle')}
           />
           <ShowcaseItem
             icon={<Clock className="h-5 w-5 text-white/70" />}
-            title="Tareas programadas"
-            subtitle="Ejecución automatizada 24/7"
+            title={t('showcase.cronjobs.title')}
+            subtitle={t('showcase.cronjobs.subtitle')}
           />
           <ShowcaseItem
             icon={<Cloud className="h-5 w-5 text-white/70" />}
-            title="Almacenamiento R2"
-            subtitle="Respaldos seguros en la nube"
+            title={t('showcase.storage.title')}
+            subtitle={t('showcase.storage.subtitle')}
             last
           />
         </div>
@@ -79,9 +81,9 @@ function ShowcasePanel() {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04]">
             <Lock className="h-5 w-5 text-white/50" />
           </div>
-          <p className="text-sm font-semibold text-white">Conexiones cifradas</p>
+          <p className="text-sm font-semibold text-white">{t('showcase.security.title')}</p>
           <p className="mt-1 max-w-[280px] text-xs text-white/45">
-            Credenciales cifradas con AES-256, sesiones seguras y control de acceso por roles.
+            {t('showcase.security.subtitle')}
           </p>
         </div>
       </div>
@@ -116,6 +118,7 @@ function ShowcaseItem({
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation('auth')
   const navigate = useNavigate();
   const { data: session, isPending } = authClient.useSession();
   const [email, setEmail] = useState("");
@@ -141,7 +144,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (authError) {
-      setError(authError.message ?? "Credenciales inválidas");
+      setError(authError.message ?? t('error.invalidCredentials'));
       return;
     }
 
@@ -163,10 +166,10 @@ export default function LoginPage() {
         {/* Form — nudged up to align with showcase card */}
         <FadeIn className="mx-auto flex w-full max-w-[460px] flex-1 flex-col justify-center pb-32">
           <h1 className="mb-3 text-4xl font-bold tracking-tight text-[#111]">
-            Bienvenido de nuevo
+            {t('page.title')}
           </h1>
           <p className="mb-10 text-base text-[#666]">
-            Iniciá sesión para gestionar backups, restores y conexiones.
+            {t('page.subtitle')}
           </p>
 
           <form onSubmit={(e) => void handleSubmit(e)} aria-live="polite">
@@ -181,14 +184,14 @@ export default function LoginPage() {
                 htmlFor="email"
                 className="mb-2 block text-sm font-medium text-[#444]"
               >
-                Correo electrónico
+                {t('label.email')}
               </label>
               <div className="relative">
                 <input
                   id="email"
                   type="email"
                   required
-                  placeholder="nombre@empresa.com"
+                  placeholder={t('placeholder.email')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   aria-invalid={!!error}
@@ -208,14 +211,14 @@ export default function LoginPage() {
                 htmlFor="password"
                 className="mb-2 block text-sm font-medium text-[#444]"
               >
-                Contraseña
+                {t('label.password')}
               </label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  placeholder="Ingresá tu contraseña"
+                  placeholder={t('placeholder.password')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   aria-invalid={!!error}
@@ -243,14 +246,14 @@ export default function LoginPage() {
               disabled={loading}
               className="h-12 w-full rounded-lg bg-[#111] text-base font-semibold text-white hover:bg-[#111]/90"
             >
-              {loading ? "Ingresando..." : "Iniciar sesión"}
+              {loading ? t('action.submitting') : t('action.submit')}
             </Button>
           </form>
         </FadeIn>
 
         {/* Footer */}
         <p className="text-sm text-[#999]">
-          &copy; {new Date().getFullYear()} Vaultly. Todos los derechos reservados.
+          &copy; {new Date().getFullYear()} Vaultly. {t('footer')}
         </p>
       </div>
 

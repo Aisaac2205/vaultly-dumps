@@ -5,6 +5,7 @@ import { UsersTable } from "./components/UsersTable";
 import { CreateUserDialog } from "./components/CreateUserDialog";
 import { PageHeader } from "@/shared/ui/page-header";
 import { FadeIn } from "@/shared/ui/motion/FadeIn";
+import { useTranslation } from "react-i18next";
 
 function toQueryFilters(filters: { search: string; role: "" | "admin" | "user" }): UseUsersFilters {
   return {
@@ -14,6 +15,7 @@ function toQueryFilters(filters: { search: string; role: "" | "admin" | "user" }
 }
 
 export default function UsersPage() {
+  const { t } = useTranslation('users')
   const { filters, setFilters } = useUserFilters();
   const queryFilters = toQueryFilters(filters);
   const { data, isLoading } = useUsers(queryFilters);
@@ -23,8 +25,8 @@ export default function UsersPage() {
   return (
     <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
-        title="Usuarios"
-        subtitle="Gestión de usuarios y roles"
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
         actions={<CreateUserDialog />}
       />
       <UsersStats users={users} loading={isLoading} />

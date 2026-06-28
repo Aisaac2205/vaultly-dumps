@@ -23,7 +23,7 @@ export function useRetentionPreview(params: RetentionPreviewParams | null) {
         ? apiClient
             .get<RetentionPreview>("/maintenance/cleanup/preview", { params })
             .then((r) => r.data)
-        : Promise.reject(new Error("Política de retención incompleta")),
+        : Promise.reject(new Error("Incomplete retention policy")),
     enabled: params !== null,
     staleTime: 10_000,
   });

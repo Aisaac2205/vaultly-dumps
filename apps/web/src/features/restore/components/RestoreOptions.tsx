@@ -1,4 +1,5 @@
 import { Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { LeverSwitch } from "@/shared/ui/lever-switch";
 
 interface RestoreOptionsProps {
@@ -12,6 +13,7 @@ export function RestoreOptions({
   onDryRunChange,
   disabled = false,
 }: RestoreOptionsProps) {
+  const { t } = useTranslation("restore");
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3">
@@ -23,7 +25,7 @@ export function RestoreOptions({
             Dry Run
           </label>
           <p className="text-xs text-muted-foreground">
-            Simular sin modificar datos
+            {t("dryRun.description")}
           </p>
         </div>
 
@@ -38,10 +40,7 @@ export function RestoreOptions({
       {!isDryRun && (
         <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-600 dark:text-red-400">
           <Shield className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            Esto ejecutará un restore <strong>REAL</strong> sobre la base de
-            datos destino. Los datos existentes serán modificados.
-          </p>
+          <p>{t("dryRun.warningText")}</p>
         </div>
       )}
     </div>

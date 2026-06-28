@@ -1,8 +1,9 @@
 import { Check, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 import { cn } from "@/shared/lib/cn";
 import { formatSize } from "@/shared/lib/format";
-import { formatDate } from "@/features/dumps/lib/format";
+import { formatDateTimeShort as formatDate } from "@/lib/format";
 import postgresSvg from "@/shared/assets/PostgresSQL.svg";
 import mysqlSvg from "@/shared/assets/MySQL.svg";
 
@@ -31,13 +32,16 @@ export function DumpsList({
   onChange,
   loading = false,
   disabled = false,
-  label = "Volcados disponibles",
+  label,
 }: DumpsListProps) {
+  const { t } = useTranslation("restore");
+  const resolvedLabel = label ?? t("dumps.available");
+
   if (loading) {
     return (
       <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" />
-        Cargando volcados...
+        {t("dumps.loading")}
       </div>
     );
   }
@@ -48,14 +52,14 @@ export function DumpsList({
         role="status"
         className="rounded-xl bg-muted/30 px-3 py-3 text-sm text-muted-foreground"
       >
-        No hay volcados para esta combinación.
+        {t("dumps.empty")}
       </div>
     );
   }
 
   return (
     <ul
-      aria-label={label}
+      aria-label={resolvedLabel}
       className="flex max-h-72 flex-col gap-1 overflow-auto rounded-xl bg-muted/20 p-1"
     >
       {dumps.map((dump) => {

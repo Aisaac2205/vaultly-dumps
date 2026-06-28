@@ -7,6 +7,7 @@ import {
   CalendarCheck,
   Database,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { DashboardStats, ConnectionEntity, DailyBackupCount } from "../types";
 
 interface KpiGridProps {
@@ -16,6 +17,7 @@ interface KpiGridProps {
 }
 
 export function KpiGrid({ stats, connections, dailyCounts }: KpiGridProps) {
+  const { t } = useTranslation('dashboard')
   const active = connections.filter((c) => c.isActive).length;
 
   // Derive last-7-days sparkline data from dailyCounts
@@ -24,14 +26,14 @@ export function KpiGrid({ stats, connections, dailyCounts }: KpiGridProps) {
   const sevenDayTotal = sevenDaySeries.reduce((a, b) => a + b, 0);
   const sparklineLabel =
     sevenDaySeries.length >= 2
-      ? `Backups últimos 7 días: ${sevenDaySeries.join(", ")}`
+      ? t('kpi.backupsAria', { series: sevenDaySeries.join(', ') })
       : undefined;
 
   return (
     <Stagger className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StaggerItem>
         <StatCard
-          label="Tasa de éxito (30d)"
+          label={t('kpi.successRate')}
           value={stats ? `${stats.successRate30d}%` : "—"}
           icon={<CheckCircle className="h-4 w-4" />}
           variant="outlined"
@@ -39,7 +41,7 @@ export function KpiGrid({ stats, connections, dailyCounts }: KpiGridProps) {
       </StaggerItem>
       <StaggerItem>
         <StatCard
-          label="Backups últimos 7 días"
+          label={t('kpi.backups7d')}
           value={sevenDayTotal}
           aside={
             sevenDaySeries.length >= 2 ? (
@@ -57,7 +59,7 @@ export function KpiGrid({ stats, connections, dailyCounts }: KpiGridProps) {
       </StaggerItem>
       <StaggerItem>
         <StatCard
-          label="Fallidos (7d)"
+          label={t('kpi.failed7d')}
           value={stats?.failed7d ?? 0}
           icon={<XCircle className="h-4 w-4" />}
           statusColor={
@@ -68,7 +70,7 @@ export function KpiGrid({ stats, connections, dailyCounts }: KpiGridProps) {
       </StaggerItem>
       <StaggerItem>
         <StatCard
-          label="Conexiones activas"
+          label={t('kpi.activeConnections')}
           value={`${active}/${connections.length}`}
           icon={<Database className="h-4 w-4" />}
           variant="outlined"

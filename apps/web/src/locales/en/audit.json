@@ -1,0 +1,23 @@
+{
+  "page.title": "Audit",
+  "page.subtitle": "System activity log",
+  "column.date": "Date",
+  "column.user": "User",
+  "column.action": "Action",
+  "column.resource": "Resource",
+  "column.environment": "Environment",
+  "column.metadata": "Metadata",
+  "resource.connection": "connection",
+  "metadata.view": "View metadata",
+  "showing": "Showing {{start}}–{{end}} of {{total}}",
+  "empty.title": "No audit records",
+  "empty.description": "Adjust the filters or clear the search",
+  "empty.noRecords": "No audit records",
+  "filter.user": "User",
+  "filter.userPlaceholder": "username",
+  "filter.environment": "Environment",
+  "filter.resource": "Resource",
+  "filter.all": "All",
+  "filter.from": "From",
+  "filter.to": "To"
+}

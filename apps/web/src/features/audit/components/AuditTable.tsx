@@ -9,6 +9,8 @@ import {
   PaginationNext,
   PaginationEllipsis,
 } from "@/shared/ui/pagination";
+import { useTranslation } from "react-i18next";
+import { formatDateTimeShort } from "@/lib/format";
 import {
   Database,
   Trash2,
@@ -31,22 +33,6 @@ interface AuditTableProps {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-}
-
-function formatDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    return d.toLocaleString("es-AR", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
 }
 
 function shortenId(id: string): string {
@@ -78,7 +64,7 @@ function ActionCell({ action }: { action: string }) {
   );
 }
 
-function ResourceCell({ log }: { log: AuditLog }) {
+function ResourceCell({ log, resourceLabel }: { log: AuditLog; resourceLabel: string }) {
   const meta = log.metadata ?? {};
   const metaName =
     (typeof meta.name === "string" && meta.name) ||
@@ -89,7 +75,7 @@ function ResourceCell({ log }: { log: AuditLog }) {
     return (
       <div className="flex items-center gap-1.5">
         <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-          conexión
+          {resourceLabel}
         </span>
         <ConnectionLabel id={log.resourceId} name={metaName} className="text-sm" />
       </div>
@@ -117,7 +103,7 @@ function ResourceCell({ log }: { log: AuditLog }) {
   );
 }
 
-function MetadataCell({ metadata }: { metadata?: Record<string, unknown> }) {
+function MetadataCell({ metadata, viewLabel }: { metadata?: Record<string, unknown>; viewLabel: string }) {
   if (!metadata || Object.keys(metadata).length === 0) {
     return <span className="text-muted-foreground">—</span>;
   }
@@ -126,7 +112,7 @@ function MetadataCell({ metadata }: { metadata?: Record<string, unknown> }) {
     <details className="group">
       <summary className="cursor-pointer text-xs font-mono text-muted-foreground hover:text-foreground list-none flex items-center gap-1">
         <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
-        Ver metadata
+        {viewLabel}
       </summary>
       <pre className="mt-2 rounded-md bg-muted p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
         {JSON.stringify(metadata, null, 2)}
@@ -146,6 +132,7 @@ function AuditPagination({
   total: number;
   onPageChange: (page: number) => void;
 }) {
+  const { t } = useTranslation('audit');
   const totalPages = Math.ceil(total / pageSize);
   const startItem = (page - 1) * pageSize + 1;
   const endItem = Math.min(page * pageSize, total);
@@ -181,7 +168,7 @@ function AuditPagination({
   return (
     <div className="flex items-center justify-between px-4 py-3">
       <p className="text-sm text-muted-foreground">
-        Mostrando {startItem}–{endItem} de {total}
+        {t('showing', { start: startItem, end: endItem, total })}
       </p>
       <Pagination>
         <PaginationContent>
@@ -219,59 +206,6 @@ function AuditPagination({
   );
 }
 
-function AuditEmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-      <ClipboardList className="h-8 w-8 mb-3 text-muted-foreground/50" />
-      <p className="text-sm font-medium text-foreground">
-        No hay registros de auditoría
-      </p>
-      <p className="text-xs mt-1">
-        Ajustá los filtros o limpiá la búsqueda
-      </p>
-    </div>
-  );
-}
-
-const columns: Column<AuditLog>[] = [
-  {
-    header: "Fecha",
-    accessor: (log) => (
-      <span className="font-mono text-xs whitespace-nowrap">{formatDate(log.createdAt)}</span>
-    ),
-    className: "hidden sm:table-cell",
-    headerClassName: "hidden sm:table-cell",
-  },
-  {
-    header: "Usuario",
-    accessor: (log) => (
-      <span className="text-sm">{log.username}</span>
-    ),
-  },
-  {
-    header: "Acción",
-    accessor: (log) => <ActionCell action={log.action} />,
-  },
-  {
-    header: "Recurso",
-    accessor: (log) => <ResourceCell log={log} />,
-  },
-  {
-    header: "Entorno",
-    accessor: (log) => (
-      <span className="font-mono text-xs text-muted-foreground uppercase">{log.environment}</span>
-    ),
-    className: "hidden sm:table-cell",
-    headerClassName: "hidden sm:table-cell",
-  },
-  {
-    header: "Metadata",
-    accessor: (log) => <MetadataCell metadata={log.metadata} />,
-    className: "hidden sm:table-cell",
-    headerClassName: "hidden sm:table-cell",
-  },
-];
-
 export default function AuditTable({
   logs,
   isLoading,
@@ -280,16 +214,65 @@ export default function AuditTable({
   pageSize,
   onPageChange,
 }: AuditTableProps) {
+  const { t } = useTranslation('audit')
+
+  const columns: Column<AuditLog>[] = [
+    {
+      header: t('column.date'),
+      accessor: (log) => (
+        <span className="font-mono text-xs whitespace-nowrap">{formatDateTimeShort(log.createdAt)}</span>
+      ),
+      className: "hidden sm:table-cell",
+      headerClassName: "hidden sm:table-cell",
+    },
+    {
+      header: t('column.user'),
+      accessor: (log) => (
+        <span className="text-sm">{log.username}</span>
+      ),
+    },
+    {
+      header: t('column.action'),
+      accessor: (log) => <ActionCell action={log.action} />,
+    },
+    {
+      header: t('column.resource'),
+      accessor: (log) => <ResourceCell log={log} resourceLabel={t('resource.connection')} />,
+    },
+    {
+      header: t('column.environment'),
+      accessor: (log) => (
+        <span className="font-mono text-xs text-muted-foreground uppercase">{log.environment}</span>
+      ),
+      className: "hidden sm:table-cell",
+      headerClassName: "hidden sm:table-cell",
+    },
+    {
+      header: t('column.metadata'),
+      accessor: (log) => <MetadataCell metadata={log.metadata} viewLabel={t('metadata.view')} />,
+      className: "hidden sm:table-cell",
+      headerClassName: "hidden sm:table-cell",
+    },
+  ];
+
   return (
     <div className="space-y-2">
       {logs.length === 0 && !isLoading ? (
-        <AuditEmptyState />
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+          <ClipboardList className="h-8 w-8 mb-3 text-muted-foreground/50" />
+          <p className="text-sm font-medium text-foreground">
+            {t('empty.title')}
+          </p>
+          <p className="text-xs mt-1">
+            {t('empty.description')}
+          </p>
+        </div>
       ) : (
         <DataTable
           columns={columns}
           data={logs}
           loading={isLoading}
-          emptyMessage="No hay registros de auditoría"
+          emptyMessage={t('empty.title')}
           pagination={
             <AuditPagination
               page={page}

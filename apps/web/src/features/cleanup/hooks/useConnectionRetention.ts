@@ -5,7 +5,7 @@ import { useConnections } from "@/features/connections/hooks/useConnections";
 import { BACKUP_CATEGORIES } from "@/types/backup.types";
 import type { BackupCategory } from "@/types/backup.types";
 import { toast } from "sonner";
-import { CATEGORY_LABELS } from "../lib/labels";
+import { useTranslation } from "react-i18next";
 import type {
   ConnectionRetentionPolicyInput,
   RetentionPreviewItem,
@@ -85,6 +85,7 @@ function buildInitialRows(
 }
 
 export function useConnectionRetentionPanel() {
+  const { t } = useTranslation("cleanup");
   const { data: connections = [], isLoading: connectionsLoading } =
     useConnections();
 
@@ -136,7 +137,7 @@ export function useConnectionRetentionPanel() {
       const parsed = Number(row.days);
       if (!Number.isInteger(parsed) || parsed < 1) {
         setValidationError(
-          `El valor de "${CATEGORY_LABELS[row.category]}" debe ser un entero mayor o igual a 1.`,
+          t("toast.policyValidation", { category: t(`category.${row.category}`) }),
         );
         return;
       }
@@ -149,14 +150,13 @@ export function useConnectionRetentionPanel() {
 
     try {
       await updatePolicies.mutateAsync(payload);
-      toast.success("Política guardada", {
-        description:
-          "La retención se aplicará en el próximo barrido diario.",
+      toast.success(t("toast.policySaved"), {
+        description: t("toast.policySavedDesc"),
       });
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Error al guardar la política";
-      toast.error("No se pudo guardar la política", { description: message });
+        err instanceof Error ? err.message : t("toast.policyError");
+      toast.error(t("toast.policyError"), { description: message });
     }
   };
 
@@ -166,15 +166,17 @@ export function useConnectionRetentionPanel() {
       const deleted = summary.reduce((s, i) => s + i.deleted, 0);
       const freed = summary.reduce((s, i) => s + i.freedMb, 0);
       const errors = summary.reduce((s, i) => s + i.errors, 0);
-      toast.success("Limpieza ejecutada", {
-        description: `Se eliminaron ${deleted} dumps (${freed.toFixed(2)} MB).${
-          errors > 0 ? ` ${errors} con error.` : ""
-        }`,
+      toast.success(t("toast.cleanupExecuted"), {
+        description: t("toast.cleanupExecutedDesc", {
+          deleted,
+          freed: freed.toFixed(2),
+          errors: errors > 0 ? t("toast.cleanupExecutedErrors", { count: errors }) : "",
+        }),
       });
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Error al ejecutar la limpieza";
-      toast.error("No se pudo ejecutar la limpieza", { description: message });
+        err instanceof Error ? err.message : t("toast.cleanupRunError");
+      toast.error(t("toast.cleanupRunError"), { description: message });
     } finally {
       setConfirmOpen(false);
     }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useDashboard, useConnectionStats, useStorageStats } from "./hooks";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { dashboardApi } from "./api/dashboard-api";
 import { DashboardHeader } from "./components/DashboardHeader";
 import { KpiGrid } from "./components/KpiGrid";
@@ -14,6 +15,7 @@ import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { FadeIn } from "@/shared/ui/motion/FadeIn";
 
 export default function Dashboard() {
+  const { t } = useTranslation('dashboard')
   const {
     recentBackups,
     recentRestores,
@@ -76,7 +78,7 @@ export default function Dashboard() {
         className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6"
         role="status"
         aria-busy="true"
-        aria-label="Cargando dashboard"
+        aria-label={t('header.loading')}
       >
         <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -94,8 +96,7 @@ export default function Dashboard() {
       <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
         <Alert variant="destructive">
           <AlertDescription>
-            Error al cargar el dashboard:{" "}
-            {dashboardErrors[0]?.message ?? "Error desconocido"}
+            {t('error.load', { message: dashboardErrors[0]?.message ?? t('error.generic', { ns: 'common' }) })}
           </AlertDescription>
         </Alert>
       </div>
@@ -109,7 +110,7 @@ export default function Dashboard() {
         aria-atomic="true"
         className="sr-only"
       >
-        Dashboard actualizado (ciclo {refreshCycle})
+        {t('header.liveUpdate', { cycle: refreshCycle })}
       </div>
 
       <DashboardHeader lastUpdated={new Date()} />

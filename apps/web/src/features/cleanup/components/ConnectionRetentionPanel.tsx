@@ -1,4 +1,5 @@
 import { Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -17,12 +18,12 @@ import {
   DialogTitle,
 } from "@/shared/ui/dialog";
 import { useConnectionRetentionPanel } from "../hooks/useConnectionRetention";
-import { CATEGORY_LABELS } from "../lib/labels";
 
 const inputClass =
   "h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
 
 export function ConnectionRetentionPanel() {
+  const { t } = useTranslation("cleanup");
   const {
     connections,
     connectionSlug,
@@ -58,7 +59,7 @@ export function ConnectionRetentionPanel() {
               htmlFor="retention-connection"
               className="block text-xs font-medium text-muted-foreground"
             >
-              Base de datos (PROD)
+              {t("retention.database")}
             </label>
             <select
               id="retention-connection"
@@ -67,7 +68,7 @@ export function ConnectionRetentionPanel() {
               disabled={isLoading}
               className={inputClass}
             >
-              <option value="">Seleccioná una conexión PROD</option>
+              <option value="">{t("retention.selectConnection")}</option>
               {connections
                 .filter((c) => c.environment === "prod")
                 .map((connection) => (
@@ -80,7 +81,7 @@ export function ConnectionRetentionPanel() {
               connections.filter((c) => c.environment === "prod").length ===
                 0 && (
                 <p className="text-xs text-muted-foreground">
-                  No tenés conexiones PROD configuradas.
+                  {t("retention.noProdConnections")}
                 </p>
               )}
           </div>
@@ -91,15 +92,14 @@ export function ConnectionRetentionPanel() {
       {connectionSelected && (
         <Card>
           <CardHeader>
-            <CardTitle>Política de retención</CardTitle>
+            <CardTitle>{t("retention.title")}</CardTitle>
             <CardDescription>
-              Eliminá automáticamente los dumps por antigüedad según su tipo.
-              Esta política aplica solo a la conexión seleccionada.
+              {t("retention.description")}
             </CardDescription>
             {!isLoading && !isDirty && hasSavedPolicy && (
               <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600">
                 <CheckCircle2 className="size-3.5" aria-hidden="true" />
-                Política guardada — se aplica en el próximo barrido.
+                {t("retention.policyApplied")}
               </div>
             )}
           </CardHeader>
@@ -109,7 +109,7 @@ export function ConnectionRetentionPanel() {
               <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {policiesErrorObj instanceof Error
                   ? policiesErrorObj.message
-                  : "Error al cargar la política"}
+                  : t("retention.errorLoad")}
               </div>
             </CardContent>
           )}
@@ -134,10 +134,10 @@ export function ConnectionRetentionPanel() {
                     className="flex flex-wrap items-center gap-3 rounded-md border border-border px-4 py-3"
                   >
                     <legend className="sr-only">
-                      {CATEGORY_LABELS[row.category]}
+                      {t(`category.${row.category}`)}
                     </legend>
                     <span className="w-32 text-sm font-medium">
-                      {CATEGORY_LABELS[row.category]}
+                      {t(`category.${row.category}`)}
                     </span>
 
                     <label
@@ -155,14 +155,13 @@ export function ConnectionRetentionPanel() {
                         }
                         disabled={isSaving}
                       />
-                      Conservar para siempre
+                      {t("retention.keepForever")}
                     </label>
 
                     {!row.keepForever && (
                       <div className="flex items-center gap-2">
                         <label htmlFor={valueId} className="sr-only">
-                          Días de retención para{" "}
-                          {CATEGORY_LABELS[row.category]}
+                          {t("retention.daysLabel", { category: t(`category.${row.category}`) })}
                         </label>
                         <input
                           id={valueId}
@@ -179,7 +178,7 @@ export function ConnectionRetentionPanel() {
                           disabled={isSaving}
                         />
                         <span className="text-sm text-muted-foreground">
-                          días
+                          {t("retention.days")}
                         </span>
                       </div>
                     )}
@@ -205,14 +204,14 @@ export function ConnectionRetentionPanel() {
               {isRunning && (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               )}
-              Ejecutar limpieza ahora
+              {t("retention.runNow")}
             </Button>
             <Button
               type="button"
               onClick={handleSave}
               disabled={isLoading || isSaving || !isDirty}
             >
-              {isSaving ? "Guardando..." : "Guardar política"}
+              {isSaving ? t("retention.saving") : t("retention.savePolicy")}
             </Button>
           </CardFooter>
         </Card>
@@ -222,21 +221,19 @@ export function ConnectionRetentionPanel() {
       {connectionSelected && (
         <Card>
           <CardHeader>
-            <CardTitle>Impacto de la limpieza</CardTitle>
+            <CardTitle>{t("retention.impact.title")}</CardTitle>
             <CardDescription>
-              Lo que la política actual eliminaría si se ejecutara ahora. No
-              borra nada — es solo una previsualización.
+              {t("retention.impact.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {previewLoading ? (
               <p className="text-sm text-muted-foreground">
-                Calculando impacto...
+                {t("retention.impact.calculating")}
               </p>
             ) : prunable.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No hay dumps que superen la antigüedad configurada. Nada por
-                eliminar.
+                {t("retention.impact.empty")}
               </p>
             ) : (
               <div className="flex flex-col gap-3">
@@ -247,7 +244,7 @@ export function ConnectionRetentionPanel() {
                       className="rounded-md border border-border px-4 py-3"
                     >
                       <p className="text-xs font-medium text-muted-foreground">
-                        {CATEGORY_LABELS[item.category]}
+                        {t(`category.${item.category}`)}
                       </p>
                       <p className="text-lg font-semibold">
                         {item.count}{" "}
@@ -262,8 +259,7 @@ export function ConnectionRetentionPanel() {
                   ))}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Total: <strong>{totalCount}</strong> dumps ({totalMb.toFixed(2)}{" "}
-                  MB)
+                  {t("retention.impact.total", { count: totalCount, mb: totalMb.toFixed(2) })}
                 </p>
               </div>
             )}
@@ -280,12 +276,10 @@ export function ConnectionRetentionPanel() {
                 className="size-5 text-destructive"
                 aria-hidden="true"
               />
-              Ejecutar limpieza ahora
+              {t("retention.confirm.title")}
             </DialogTitle>
             <DialogDescription>
-              Se eliminarán de forma permanente los dumps que superen la
-              antigüedad configurada, tanto en R2 como su archivo. El registro
-              en el historial se conserva. ¿Continuar?
+              {t("retention.confirm.description")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -295,7 +289,7 @@ export function ConnectionRetentionPanel() {
               onClick={() => setConfirmOpen(false)}
               disabled={isRunning}
             >
-              Cancelar
+              {t("retention.confirm.cancel")}
             </Button>
             <Button
               type="button"
@@ -306,7 +300,7 @@ export function ConnectionRetentionPanel() {
               {isRunning && (
                 <Loader2 className="animate-spin" aria-hidden="true" />
               )}
-              Eliminar dumps viejos
+              {t("retention.confirm.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>

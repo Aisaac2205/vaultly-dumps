@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { AlertTriangle } from "lucide-react";
 import {
   Dialog,
@@ -27,23 +28,23 @@ export function DeleteUserDialog({
   isLoading,
   onConfirm,
 }: DeleteUserDialogProps) {
+  const { t } = useTranslation("users");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
-            Eliminar usuario
+            {t("deleteUser.title")}
           </DialogTitle>
           <DialogDescription>
-            Esta acción no se puede deshacer. El usuario perderá acceso al
-            sistema de forma inmediata.
+            {t("deleteUser.description")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="rounded-md bg-muted/40 p-3 text-sm">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">
-            Usuario
+            {t("deleteUser.userLabel")}
           </div>
           <div className="font-medium" title={userName}>
             {userName}
@@ -55,9 +56,7 @@ export function DeleteUserDialog({
 
         <Alert variant="destructive">
           <AlertDescription>
-            Se eliminarán también las sesiones activas del usuario. Si querés
-            mantener el historial, considerá <strong>banear</strong> al usuario
-            en su lugar (acción disponible en una próxima versión).
+            {t("deleteUser.warning")}
           </AlertDescription>
         </Alert>
 
@@ -67,14 +66,14 @@ export function DeleteUserDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            Cancelar
+            {t("deleteUser.button.cancel")}
           </Button>
           <Button
             variant="destructive"
             onClick={onConfirm}
             disabled={isLoading}
           >
-            {isLoading ? "Eliminando…" : "Eliminar"}
+            {isLoading ? t("deleteUser.button.confirming") : t("deleteUser.button.confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

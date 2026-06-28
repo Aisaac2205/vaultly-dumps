@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { manualRetentionApi } from "../api/retention-api";
 import type {
   ManualRetentionSettings,
@@ -56,6 +57,8 @@ export function useManualRetentionSettings() {
     setMaxSizeMb(toField(data.maxTotalSizeMb));
   }
 
+  const { t } = useTranslation("cleanup");
+
   function handleSave() {
     const dto: ManualRetentionUpdate = {
       enabled,
@@ -64,9 +67,9 @@ export function useManualRetentionSettings() {
       maxTotalSizeMb: parseField(maxSizeMb),
     };
     update.mutate(dto, {
-      onSuccess: () => toast.success("Retención de manuales guardada"),
+      onSuccess: () => toast.success(t("toast.manualSaved")),
       onError: (err) =>
-        toast.error(err.message || "No se pudo guardar la retención"),
+        toast.error(err.message || t("toast.manualError")),
     });
   }
 

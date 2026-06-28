@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { UserPlus, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -16,6 +17,7 @@ import { useCreateUser } from "../hooks/useUsers";
 import type { UserRole } from "../types";
 
 export function CreateUserDialog() {
+  const { t } = useTranslation("users");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -43,15 +45,14 @@ export function CreateUserDialog() {
       <DialogTrigger asChild>
         <Button size="sm">
           <UserPlus className="h-4 w-4" />
-          Agregar usuario
+          {t("createUser.trigger")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Crear usuario</DialogTitle>
+          <DialogTitle>{t("createUser.title")}</DialogTitle>
           <DialogDescription>
-            El usuario podrá iniciar sesión con el correo y la contraseña
-            definidos acá.
+            {t("createUser.description")}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -74,7 +75,7 @@ export function CreateUserDialog() {
               htmlFor="cu-name"
               className="text-sm font-medium text-foreground"
             >
-              Nombre
+              {t("createUser.field.name")}
             </label>
             <Input
               id="cu-name"
@@ -89,7 +90,7 @@ export function CreateUserDialog() {
               htmlFor="cu-email"
               className="text-sm font-medium text-foreground"
             >
-              Correo electrónico
+              {t("createUser.field.email")}
             </label>
             <Input
               id="cu-email"
@@ -105,7 +106,7 @@ export function CreateUserDialog() {
               htmlFor="cu-pass"
               className="text-sm font-medium text-foreground"
             >
-              Contraseña
+              {t("createUser.field.password")}
             </label>
             <div className="relative">
               <Input
@@ -123,7 +124,7 @@ export function CreateUserDialog() {
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={
-                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  showPassword ? t("createUser.hide") : t("createUser.show")
                 }
                 aria-pressed={showPassword}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -136,7 +137,7 @@ export function CreateUserDialog() {
               </button>
             </div>
             <p id="cu-pass-hint" className="text-xs text-muted-foreground">
-              Mínimo 8 caracteres.
+              {t("createUser.hint.minLength")}
             </p>
           </div>
           <div className="space-y-1.5">
@@ -144,7 +145,7 @@ export function CreateUserDialog() {
               htmlFor="cu-role"
               className="text-sm font-medium text-foreground"
             >
-              Rol
+              {t("createUser.field.role")}
             </label>
             <select
               id="cu-role"
@@ -152,18 +153,18 @@ export function CreateUserDialog() {
               onChange={(e) => setRole(e.target.value as UserRole)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <option value="user">Usuario</option>
-              <option value="admin">Administrador</option>
+              <option value="user">{t("createUser.role.user")}</option>
+              <option value="admin">{t("createUser.role.admin")}</option>
             </select>
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" type="button">
-                Cancelar
+                {t("createUser.button.cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Creando…" : "Crear"}
+              {mutation.isPending ? t("createUser.button.creating") : t("createUser.button.create")}
             </Button>
           </DialogFooter>
         </form>

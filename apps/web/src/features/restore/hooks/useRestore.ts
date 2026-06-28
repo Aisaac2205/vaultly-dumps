@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import apiClient from "@/shared/lib/api-client";
 import type {
   RestoreState,
@@ -23,6 +24,7 @@ interface UseRestoreReturn {
 }
 
 export function useRestore(): UseRestoreReturn {
+  const { t } = useTranslation("restore");
   const [state, setState] = useState<RestoreState>("idle");
   const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null);
   const [restoreJob, setRestoreJob] = useState<RestoreJob | null>(null);
@@ -63,7 +65,7 @@ export function useRestore(): UseRestoreReturn {
       setState("dry-run");
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Error ejecutando dry run";
+        err instanceof Error ? err.message : t("toast.dryRunError");
       setError(message);
     } finally {
       setIsLoading(false);
@@ -99,15 +101,15 @@ export function useRestore(): UseRestoreReturn {
           if (data.status === "completed") {
             setFinalStatus("completed");
             setState("done");
-            toast.success("Restore completado exitosamente");
+            toast.success(t("toast.restoreCompleted"));
             clearInterval(pollRef.current!);
             pollRef.current = null;
           } else if (data.status === "failed") {
             setFinalStatus("failed");
-            setError(data.errorMessage ?? "Error desconocido");
+            setError(data.errorMessage ?? t("toast.unknownError"));
             setState("done");
-            toast.error("El restore falló", {
-              description: data.errorMessage ?? "Error desconocido",
+            toast.error(t("toast.restoreFailed"), {
+              description: data.errorMessage ?? t("toast.unknownError"),
             });
             clearInterval(pollRef.current!);
             pollRef.current = null;
@@ -118,7 +120,7 @@ export function useRestore(): UseRestoreReturn {
       }, 1000);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Error ejecutando restore";
+        err instanceof Error ? err.message : t("toast.restoreError");
       setError(message);
     } finally {
       setIsLoading(false);

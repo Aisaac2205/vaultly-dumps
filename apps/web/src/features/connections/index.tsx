@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import {
   useConnections,
   useCreateConnection,
@@ -31,6 +32,7 @@ import type {
 } from "./types";
 
 export default function Connections() {
+  const { t } = useTranslation('connections')
   const {
     data: connections = [],
     isLoading: isQueryLoading,
@@ -70,10 +72,10 @@ export default function Connections() {
             id: editingConnection.id,
             dto: dto as UpdateConnectionDto,
           });
-          toast.success("Conexión actualizada correctamente");
+          toast.success(t('toast.updated'));
         } else {
           await createMutation.mutateAsync(dto as CreateConnectionDto);
-          toast.success("Conexión creada correctamente");
+          toast.success(t('toast.created'));
         }
         setShowForm(false);
         setEditingConnection(undefined);
@@ -93,14 +95,12 @@ export default function Connections() {
 
   const handleDelete = useCallback(
     async (id: string) => {
-      const confirmed = window.confirm(
-        "¿Estás seguro de que querés eliminar esta conexión?",
-      );
+      const confirmed = window.confirm(t('confirm.delete'));
       if (!confirmed) return;
 
       try {
         await deleteMutation.mutateAsync(id);
-        toast.success("Conexión eliminada");
+        toast.success(t('toast.deleted'));
         setTestResults((prev) => {
           const next = { ...prev };
           delete next[id];
@@ -131,12 +131,12 @@ export default function Connections() {
         const result = await testMutation.mutateAsync(id);
         setTestResults((prev) => ({ ...prev, [id]: result }));
         if (result.success) {
-          toast.success("Conexión exitosa", {
+          toast.success(t('toast.testSuccess'), {
             description: `Latencia: ${result.latencyMs}ms`,
           });
         } else {
-          toast.error("Conexión fallida", {
-            description: result.error ?? "No se pudo conectar",
+          toast.error(t('toast.testFailed'), {
+            description: result.error ?? t('error.generic', { ns: 'common' }),
           });
         }
       } catch {
@@ -145,10 +145,10 @@ export default function Connections() {
           [id]: {
             success: false,
             latencyMs: 0,
-            error: "Error al ejecutar el test",
+            error: t('toast.testError'),
           },
         }));
-        toast.error("Error al ejecutar el test de conexión");
+        toast.error(t('toast.testError'));
       } finally {
         setTestLoading((prev) => ({ ...prev, [id]: false }));
       }
@@ -184,13 +184,10 @@ export default function Connections() {
   if (queryError) {
     return (
       <div className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <PageHeader title="Conexiones" />
+        <PageHeader title={t('page.title')} />
         <Alert variant="destructive">
           <AlertDescription>
-            Error al cargar conexiones:{" "}
-            {queryError instanceof Error
-              ? queryError.message
-              : "Error desconocido"}
+            {t('error.load', { message: queryError instanceof Error ? queryError.message : t('error.generic', { ns: 'common' }) })}
           </AlertDescription>
         </Alert>
       </div>
@@ -202,15 +199,13 @@ export default function Connections() {
   if (connections.length === 0 && !showForm) {
     return (
       <div className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <PageHeader
-          title="Conexiones"
-        />
+        <PageHeader title={t('page.title')} />
         <EmptyState
           icon={<Database className="h-12 w-12" />}
-          title="No hay conexiones"
-          description="Creá tu primera conexión para empezar a gestionar bases de datos."
+          title={t('empty.title')}
+          description={t('empty.description')}
           action={
-            <Button onClick={handleNewClick}>Nueva conexión</Button>
+            <Button onClick={handleNewClick}>{t('action.new')}</Button>
           }
         />
       </div>
@@ -225,10 +220,10 @@ export default function Connections() {
   return (
     <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
-        title="Conexiones"
+        title={t('page.title')}
         actions={
           !showForm ? (
-            <Button onClick={handleNewClick}>Nueva conexión</Button>
+            <Button onClick={handleNewClick}>{t('action.new')}</Button>
           ) : undefined
         }
       />
@@ -238,7 +233,7 @@ export default function Connections() {
           <AlertDescription>
             {mutationError instanceof Error
               ? mutationError.message
-              : "Error inesperado"}
+              : t('error.unexpected', { ns: 'common' })}
           </AlertDescription>
         </Alert>
       )}

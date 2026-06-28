@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { cleanupApi } from "../api/cleanup-api";
 import { useConnections } from "@/features/connections/hooks/useConnections";
 import type { BackupCategory } from "@/types/backup.types";
@@ -12,7 +13,7 @@ export function useCleanupPreview(params: CleanupParams | null) {
     queryFn: () =>
       params
         ? cleanupApi.preview(params)
-        : Promise.reject(new Error("Parámetros de limpieza incompletos")),
+        : Promise.reject(new Error("Incomplete cleanup params")),
     enabled: params !== null,
     staleTime: 10_000,
   });
@@ -32,6 +33,7 @@ export function useRunCleanup() {
 }
 
 export function useCleanupForm() {
+  const { t } = useTranslation("cleanup");
   const { data: connections = [], isLoading: connectionsLoading } = useConnections();
 
   const [connectionSlug, setConnectionSlug] = useState<string>("");
@@ -73,22 +75,22 @@ export function useCleanupForm() {
     runCleanup.mutate(params, {
       onSuccess: (result) => {
         setConfirmOpen(false);
-        const summary = `${result.deleted} dump(s) · ${result.freedMb} MB liberados`;
+        const base = t("toast.cleanupSuccess", { count: result.deleted, freedMb: result.freedMb });
         if (result.errors.length > 0) {
-          toast.warning(`${summary} · ${result.errors.length} con error`);
+          toast.warning(`${base} · ${t("toast.cleanupPartial", { count: result.errors.length })}`);
         } else {
-          toast.success(summary);
+          toast.success(base);
         }
         onSuccess?.();
       },
       onError: (error) => {
-        toast.error(error.message || "No se pudo completar la limpieza");
+        toast.error(error.message || t("toast.cleanupError"));
       },
     });
   }
 
   const amountLabel =
-    mode === "keepLast" ? "Cantidad a conservar" : "Antigüedad mínima (días)";
+    mode === "keepLast" ? t("form.amountLabel.keepLast") : t("form.amountLabel.maxAge");
 
   return {
     connections,

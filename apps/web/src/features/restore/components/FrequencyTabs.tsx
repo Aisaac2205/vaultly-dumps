@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { BackupCategory } from "@/types/backup.types";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 
@@ -13,27 +14,32 @@ interface TabDef {
   shortLabel: string;
 }
 
-const TABS: readonly TabDef[] = [
-  { value: "hourly", label: "Horarios", shortLabel: "Hora" },
-  { value: "daily", label: "Diarios", shortLabel: "Día" },
-  { value: "weekly", label: "Semanales", shortLabel: "Semana" },
-  { value: "custom", label: "Personalizados", shortLabel: "Custom" },
-  { value: "manual", label: "Manuales", shortLabel: "Manual" },
-] as const;
+function getTabDefs(t: (key: string) => string): readonly TabDef[] {
+  return [
+    { value: "hourly", label: t("freq.hourly"), shortLabel: t("freq.hourShort") },
+    { value: "daily", label: t("freq.daily"), shortLabel: t("freq.dayShort") },
+    { value: "weekly", label: t("freq.weekly"), shortLabel: t("freq.weekShort") },
+    { value: "custom", label: t("freq.custom"), shortLabel: "Custom" },
+    { value: "manual", label: t("freq.manual"), shortLabel: "Manual" },
+  ] as const;
+}
 
 export function FrequencyTabs({
   value,
   onChange,
   disabled = false,
 }: FrequencyTabsProps) {
+  const { t } = useTranslation("restore");
+  const tabs = getTabDefs(t);
+
   return (
     <Tabs
       value={value ?? ""}
       onValueChange={(next) => onChange(next as BackupCategory)}
-      aria-label="Frecuencia de backup"
+      aria-label={t("freq.ariaLabel")}
     >
       <TabsList className="grid h-9 w-full grid-cols-5 gap-1 rounded-md p-1">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <TabsTrigger
             key={tab.value}
             value={tab.value}

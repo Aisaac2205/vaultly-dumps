@@ -6,7 +6,7 @@ const FIELD_RANGES: ReadonlyArray<readonly [number, number]> = [
   [0, 7], // day of week (0 and 7 both mean Sunday)
 ];
 
-const FIELD_NAMES = ["minuto", "hora", "día del mes", "mes", "día de semana"] as const;
+const FIELD_NAMES = ["minute", "hour", "day-of-month", "month", "day-of-week"] as const;
 
 function validateAtom(
   atom: string,
@@ -51,20 +51,22 @@ function validateField(field: string, min: number, max: number): boolean {
 
 export interface CronValidationResult {
   valid: boolean;
-  error?: string;
+  errorKey?: string;
+  errorParams?: Record<string, string | number>;
 }
 
 export function validateCronExpression(
   expression: string,
 ): CronValidationResult {
   const trimmed = expression.trim();
-  if (!trimmed) return { valid: false, error: "La expresión cron es obligatoria" };
+  if (!trimmed) return { valid: false, errorKey: "cron.errorRequired" };
 
   const parts = trimmed.split(/\s+/);
   if (parts.length !== 5) {
     return {
       valid: false,
-      error: `La expresión cron debe tener 5 campos (recibí ${parts.length})`,
+      errorKey: "cron.errorFieldCount",
+      errorParams: { count: parts.length },
     };
   }
 
@@ -73,7 +75,8 @@ export function validateCronExpression(
     if (!validateField(parts[i], min, max)) {
       return {
         valid: false,
-        error: `Campo "${FIELD_NAMES[i]}" inválido: "${parts[i]}" (rango ${min}-${max})`,
+        errorKey: "cron.errorField",
+        errorParams: { name: FIELD_NAMES[i], value: parts[i], min, max },
       };
     }
   }

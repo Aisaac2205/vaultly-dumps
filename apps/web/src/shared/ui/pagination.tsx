@@ -1,5 +1,6 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/cn";
 import { cva, type VariantProps } from "class-variance-authority";
 
@@ -31,10 +32,11 @@ export interface PaginationProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 function Pagination({ className, ...props }: PaginationProps) {
+  const { t } = useTranslation("common");
   return (
     <nav
       role="navigation"
-      aria-label="Paginación"
+      aria-label={t("pagination.ariaLabel")}
       className={cn("mx-auto flex w-full justify-center", className)}
       {...props}
     />
@@ -117,12 +119,14 @@ export interface PaginationPreviousProps
 
 function PaginationPrevious({
   className,
-  label = "Anterior",
+  label,
   ...props
 }: PaginationPreviousProps) {
+  const { t } = useTranslation("common");
+  const resolvedLabel = label ?? t("pagination.previous");
   return (
     <button
-      aria-label="Ir a la página anterior"
+      aria-label={t("pagination.ariaPrevious")}
       className={cn(
         paginationLinkVariants({ active: false }),
         "min-w-9 h-9 gap-1 px-2",
@@ -131,7 +135,7 @@ function PaginationPrevious({
       {...props}
     >
       <ChevronLeft className="h-4 w-4" />
-      <span className="hidden sm:inline">{label}</span>
+      <span className="hidden sm:inline">{resolvedLabel}</span>
     </button>
   );
 }
@@ -148,12 +152,14 @@ export interface PaginationNextProps
 
 function PaginationNext({
   className,
-  label = "Siguiente",
+  label,
   ...props
 }: PaginationNextProps) {
+  const { t } = useTranslation("common");
+  const resolvedLabel = label ?? t("pagination.next");
   return (
     <button
-      aria-label="Ir a la página siguiente"
+      aria-label={t("pagination.ariaNext")}
       className={cn(
         paginationLinkVariants({ active: false }),
         "min-w-9 h-9 gap-1 px-2",
@@ -161,7 +167,7 @@ function PaginationNext({
       )}
       {...props}
     >
-      <span className="hidden sm:inline">{label}</span>
+      <span className="hidden sm:inline">{resolvedLabel}</span>
       <ChevronRight className="h-4 w-4" />
     </button>
   );

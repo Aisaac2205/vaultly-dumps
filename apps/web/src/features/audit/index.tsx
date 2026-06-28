@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { FadeIn } from "@/shared/ui/motion/FadeIn";
@@ -8,6 +9,7 @@ import AuditFilters from "./components/AuditFilters";
 import AuditTable from "./components/AuditTable";
 
 export default function Audit() {
+  const { t } = useTranslation('audit')
   const {
     logs,
     total,
@@ -35,8 +37,8 @@ export default function Audit() {
   return (
     <FadeIn className="space-y-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
-        title="Auditoría"
-        subtitle="Registro de actividades del sistema"
+        title={t('page.title')}
+        subtitle={t('page.subtitle')}
       />
 
       {error && (

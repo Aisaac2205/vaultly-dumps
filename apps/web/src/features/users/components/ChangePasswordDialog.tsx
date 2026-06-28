@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { KeyRound, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -23,6 +24,7 @@ export function ChangePasswordDialog({
   userId,
   userName,
 }: ChangePasswordDialogProps) {
+  const { t } = useTranslation("users");
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -43,15 +45,15 @@ export function ChangePasswordDialog({
         <Button
           variant="ghost"
           size="icon"
-          title="Cambiar contraseña"
-          aria-label={`Cambiar contraseña de ${userName}`}
+          title={t("changePassword.title")}
+          aria-label={t("changePassword.ariaLabel", { name: userName })}
         >
           <KeyRound className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cambiar contraseña</DialogTitle>
+          <DialogTitle>{t("changePassword.title")}</DialogTitle>
           <DialogDescription>{userName}</DialogDescription>
         </DialogHeader>
         <form
@@ -75,7 +77,7 @@ export function ChangePasswordDialog({
               htmlFor="cp-pass"
               className="text-sm font-medium text-foreground"
             >
-              Nueva contraseña
+              {t("changePassword.field.newPassword")}
             </label>
             <div className="relative">
               <Input
@@ -93,7 +95,7 @@ export function ChangePasswordDialog({
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={
-                  showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+                  showPassword ? t("changePassword.hide") : t("changePassword.show")
                 }
                 aria-pressed={showPassword}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -106,17 +108,17 @@ export function ChangePasswordDialog({
               </button>
             </div>
             <p id="cp-pass-hint" className="text-xs text-muted-foreground">
-              Mínimo 8 caracteres.
+              {t("changePassword.hint.minLength")}
             </p>
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline" type="button">
-                Cancelar
+                {t("common.button.cancel")}
               </Button>
             </DialogClose>
             <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? "Guardando…" : "Guardar"}
+              {mutation.isPending ? t("common.button.saving") : t("common.button.save")}
             </Button>
           </DialogFooter>
         </form>

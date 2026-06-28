@@ -1,10 +1,12 @@
 import { Skeleton } from "@/shared/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 export function RouteFallback() {
+  const { t } = useTranslation("common");
   return (
     <div
       role="status"
-      aria-label="Cargando página"
+      aria-label={t("route.loading")}
       aria-live="polite"
       className="space-y-5 p-4 sm:p-6 lg:p-8"
     >

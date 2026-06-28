@@ -5,6 +5,7 @@ import { DataTable, type Column } from "@/shared/ui/data-table";
 import TestConnectionBadge from "./TestConnectionBadge";
 import PostgresSQL from "@/shared/assets/PostgresSQL.svg";
 import MySQL from "@/shared/assets/MySQL.svg";
+import { useTranslation } from "react-i18next";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { Ellipsis, ClipboardList } from "lucide-react";
 
@@ -32,14 +33,15 @@ export default function ConnectionsTable({
   testResults,
   testLoading,
 }: ConnectionsTableProps) {
+  const { t } = useTranslation('connections')
   const columns: Column<Connection>[] = [
     {
-      header: "Nombre",
+      header: t('column.name'),
       accessor: (c) => c.name,
       className: "font-medium",
     },
     {
-      header: "Ambiente",
+      header: t('column.environment'),
       accessor: (c) => (
         <span className="text-muted-foreground font-mono text-xs uppercase">
           {c.environment}
@@ -47,7 +49,7 @@ export default function ConnectionsTable({
       ),
     },
     {
-      header: "Tipo",
+      header: t('column.type'),
       accessor: (c) => (
         <div className="flex items-center justify-center gap-1.5">
           <img
@@ -64,7 +66,7 @@ export default function ConnectionsTable({
       headerClassName: "hidden sm:table-cell",
     },
     {
-      header: "Host",
+      header: t('column.host'),
       accessor: (c) => (
         <span className="truncate font-mono text-xs">{c.host}</span>
       ),
@@ -72,7 +74,7 @@ export default function ConnectionsTable({
       headerClassName: "hidden sm:table-cell",
     },
     {
-      header: "Puerto",
+      header: t('column.port'),
       accessor: (c) => (
         <span className="font-mono text-xs">{c.port}</span>
       ),
@@ -80,17 +82,17 @@ export default function ConnectionsTable({
       headerClassName: "hidden sm:table-cell",
     },
     {
-      header: "BD",
+      header: t('column.database'),
       accessor: (c) => c.database,
       className: "hidden sm:table-cell truncate",
       headerClassName: "hidden sm:table-cell",
     },
     {
-      header: "Estado",
+      header: t('column.status'),
       accessor: (c) => <ConnectionStateBadge isActive={c.isActive} />,
     },
     {
-      header: "Acciones",
+      header: t('column.actions'),
       accessor: (c) => {
         const isTesting = testLoading[c.id] ?? false;
         const testResult = testResults[c.id] ?? null;
@@ -100,10 +102,10 @@ export default function ConnectionsTable({
             {/* Desktop: full button row */}
             <div className="hidden sm:flex items-center justify-center gap-2 whitespace-nowrap">
               <Button variant="outline" size="sm" onClick={() => onEdit(c)}>
-                Editar
+                {t('action.edit')}
               </Button>
               <Button variant="outline" size="sm" onClick={() => onDelete(c.id)}>
-                Eliminar
+                {t('action.delete')}
               </Button>
               <Button
                 variant="outline"
@@ -111,7 +113,7 @@ export default function ConnectionsTable({
                 onClick={() => onTest(c.id)}
                 disabled={isTesting}
               >
-                {isTesting ? "Testeando..." : "Test"}
+                {isTesting ? t('action.testing') : t('action.test')}
               </Button>
               <TestConnectionBadge result={testResult} isLoading={isTesting} />
             </div>
@@ -123,7 +125,7 @@ export default function ConnectionsTable({
                   <button
                     type="button"
                     className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    aria-label="Acciones"
+                    aria-label={t('column.actions')}
                   >
                     <Ellipsis className="h-4 w-4" />
                   </button>
@@ -137,20 +139,20 @@ export default function ConnectionsTable({
                       className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
                       onSelect={() => onEdit(c)}
                     >
-                      Editar
+                      {t('action.edit')}
                     </DropdownMenuPrimitive.Item>
                     <DropdownMenuPrimitive.Item
                       className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
                       onSelect={() => onDelete(c.id)}
                     >
-                      Eliminar
+                      {t('action.delete')}
                     </DropdownMenuPrimitive.Item>
                     <DropdownMenuPrimitive.Item
                       className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent"
                       onSelect={() => onTest(c.id)}
                       disabled={isTesting}
                     >
-                      {isTesting ? "Testeando..." : "Test"}
+                      {isTesting ? t('action.testing') : t('action.test')}
                     </DropdownMenuPrimitive.Item>
                   </DropdownMenuPrimitive.Content>
                 </DropdownMenuPrimitive.Portal>
@@ -169,10 +171,10 @@ export default function ConnectionsTable({
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <ClipboardList className="mb-4 h-10 w-10 text-muted-foreground" />
         <h3 className="text-base font-medium text-text-primary">
-          No hay conexiones configuradas
+          {t('empty.filtered.title')}
         </h3>
         <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-          Los resultados de búsqueda o filtros no devolvieron conexiones.
+          {t('empty.filtered.description')}
         </p>
       </div>
     );
@@ -185,7 +187,7 @@ export default function ConnectionsTable({
       columns={columns}
       data={connections}
       loading={isLoading}
-      emptyMessage="No hay conexiones configuradas"
+      emptyMessage={t('empty.filtered.title')}
     />
   );
 }

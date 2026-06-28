@@ -1,4 +1,5 @@
-import { formatRelativeTime } from "../lib/format";
+import { formatRelativeTime } from "@/lib/format";
+import { useTranslation } from "react-i18next";
 
 interface AutoRefreshIndicatorProps {
   lastUpdated: Date | null;
@@ -7,6 +8,7 @@ interface AutoRefreshIndicatorProps {
 export function AutoRefreshIndicator({
   lastUpdated,
 }: AutoRefreshIndicatorProps) {
+  const { t } = useTranslation('dashboard')
   if (!lastUpdated) return null;
 
   return (
@@ -15,7 +17,7 @@ export function AutoRefreshIndicator({
       aria-live="polite"
       className="text-xs text-muted-foreground tabular-nums"
     >
-      Actualizado {formatRelativeTime(lastUpdated.toISOString())}
+      {t('header.updated')} {formatRelativeTime(lastUpdated.toISOString())}
     </p>
   );
 }

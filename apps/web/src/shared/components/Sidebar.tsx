@@ -1,5 +1,6 @@
 import { Children, createContext, useContext, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import type { AuthUser } from "../hooks/useAuth";
 import {
   LayoutDashboard,
@@ -45,16 +46,17 @@ interface NavItemConfig {
   end?: boolean;
 }
 
-const NAV_ITEMS: NavItemConfig[] = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard, routeKey: "dashboard", end: true },
-  { path: "/dumps", label: "Dumps", icon: Database, routeKey: "dumps", adminOnly: true },
-  { path: "/cleanup", label: "Limpieza", icon: Trash2, routeKey: "cleanup", adminOnly: true },
-  { path: "/restore", label: "Restaurar", icon: RotateCcw, routeKey: "restore" },
-  { path: "/cronjobs", label: "Cronjobs", icon: Clock, routeKey: "cronjobs" },
-  { path: "/connections", label: "Conexiones", icon: Link2, routeKey: "connections", adminOnly: true },
-  { path: "/users", label: "Usuarios", icon: Users, routeKey: "users", adminOnly: true },
-  { path: "/audit", label: "Auditoría", icon: FileText, routeKey: "audit" },
+const NAV_ITEM_DEFS: Omit<NavItemConfig, 'label'>[] = [
+  { path: "/", icon: LayoutDashboard, routeKey: "dashboard", end: true },
+  { path: "/dumps", icon: Database, routeKey: "dumps", adminOnly: true },
+  { path: "/cleanup", icon: Trash2, routeKey: "cleanup", adminOnly: true },
+  { path: "/restore", icon: RotateCcw, routeKey: "restore" },
+  { path: "/cronjobs", icon: Clock, routeKey: "cronjobs" },
+  { path: "/connections", icon: Link2, routeKey: "connections", adminOnly: true },
+  { path: "/users", icon: Users, routeKey: "users", adminOnly: true },
+  { path: "/audit", icon: FileText, routeKey: "audit" },
 ];
+
 
 /* -------------------------------------------------------------------------- */
 /*  Compound sub-components                                                   */
@@ -144,6 +146,7 @@ function SidebarUser({
   onLogout: () => Promise<void>;
 }) {
   const { collapsed } = useSidebarNavContext();
+  const { t } = useTranslation('common')
 
   return (
     <div className="flex flex-col gap-2 border-t border-sidebar-border p-4">
@@ -159,10 +162,10 @@ function SidebarUser({
         )}
         onClick={() => void onLogout()}
         type="button"
-        aria-label="Cerrar Sesión"
+        aria-label={t('action.logout')}
       >
         <LogOut className="h-3.5 w-3.5" />
-        {!collapsed && "Cerrar Sesión"}
+        {!collapsed && t('action.logout')}
       </button>
     </div>
   );
@@ -172,6 +175,17 @@ function SidebarUser({
 /*  Convenience composition (used by both desktop sidebar and mobile sheet)    */
 /* -------------------------------------------------------------------------- */
 
+const NAV_LABEL_KEYS: Record<string, string> = {
+  "/": "nav.dashboard",
+  "/dumps": "nav.dumps",
+  "/cleanup": "nav.cleanup",
+  "/restore": "nav.restore",
+  "/cronjobs": "nav.cronjobs",
+  "/connections": "nav.connections",
+  "/users": "nav.users",
+  "/audit": "nav.audit",
+};
+
 export function SidebarContent({
   user,
   onLogout,
@@ -179,9 +193,14 @@ export function SidebarContent({
   user: AuthUser | null;
   onLogout: () => Promise<void>;
 }) {
-  const visibleItems = NAV_ITEMS.filter(
+  const { t } = useTranslation('common')
+  const visibleDefs = NAV_ITEM_DEFS.filter(
     (item) => !item.adminOnly || user?.role === "admin",
   );
+  const visibleItems: NavItemConfig[] = visibleDefs.map((def) => ({
+    ...def,
+    label: t(NAV_LABEL_KEYS[def.path] ?? def.path),
+  }));
 
   return (
     <>
@@ -237,4 +256,3 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
 /* -------------------------------------------------------------------------- */
 
 export { SidebarRoot, SidebarHeader, SidebarNav, SidebarItem, SidebarUser };
-export { NAV_ITEMS };

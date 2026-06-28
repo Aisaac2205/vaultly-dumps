@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type {
   Cronjob,
   Connection,
@@ -42,6 +43,7 @@ export default function CronjobForm({
   onCancel,
   isLoading,
 }: CronjobFormProps) {
+  const { t } = useTranslation("cronjobs");
   const {
     formData,
     selectedPresetLabel,
@@ -69,10 +71,10 @@ export default function CronjobForm({
     <Card>
       <CardHeader>
         <CardTitle>
-          {isEditMode ? "Editar cronjob" : "Nuevo cronjob"}
+          {isEditMode ? t("form.title.edit") : t("form.title.new")}
         </CardTitle>
         <CardDescription>
-          Configurá la ejecución programada de un respaldo
+          {t("form.description")}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -84,7 +86,7 @@ export default function CronjobForm({
                 htmlFor="cronjob-name"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Nombre
+                {t("form.field.name")}
               </label>
               <input
                 id="cronjob-name"
@@ -93,7 +95,7 @@ export default function CronjobForm({
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Backup diario"
+                placeholder={t("form.placeholder.name")}
                 disabled={isLoading}
               />
             </div>
@@ -104,25 +106,25 @@ export default function CronjobForm({
                 htmlFor="cronjob-connection"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Conexión (producción)
+                {t("form.field.connection")}
               </label>
               {connectionsLoading ? (
                 <div
                   className={`${inputClass} animate-pulse text-muted-foreground`}
                   aria-busy="true"
                 >
-                  Cargando conexiones…
+                  {t("form.loadingConnections")}
                 </div>
               ) : connections.length === 0 ? (
                 <div className="flex items-center justify-between gap-3 rounded-md border border-dashed border-border bg-muted/30 px-3 py-2 text-sm">
                   <span className="text-muted-foreground">
-                    No hay conexiones de producción
+                    {t("form.noConnections")}
                   </span>
                   <Link
                     to="/connections"
                     className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary hover:underline"
                   >
-                    Crear conexión
+                    {t("form.createConnection")}
                     <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>
@@ -136,7 +138,7 @@ export default function CronjobForm({
                     onChange={handleChange}
                     disabled={isLoading}
                   >
-                    <option value="">Seleccionar conexión</option>
+                    <option value="">{t("form.selectConnection")}</option>
                     {connections.map((conn) => {
                       const isDuplicate = (nameCounts[conn.name] ?? 0) > 1;
                       const envSuffix = conn.environment
@@ -163,10 +165,9 @@ export default function CronjobForm({
                   </select>
                   {hasDuplicateNames && (
                     <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                      Hay conexiones con nombres repetidos — se muestra un ID
-                      corto para diferenciarlas. Considerá renombrarlas en{" "}
+                      {t("form.duplicateNamesHint")}{" "}
                       <Link to="/connections" className="underline">
-                        Conexiones
+                        Connections
                       </Link>
                       .
                     </p>
@@ -181,7 +182,7 @@ export default function CronjobForm({
                 htmlFor="cronjob-preset"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Frecuencia
+                {t("form.field.frequency")}
               </label>
               <select
                 id="cronjob-preset"
@@ -192,13 +193,13 @@ export default function CronjobForm({
               >
                 {CRON_PRESETS.map((p) => (
                   <option key={p.label} value={p.label}>
-                    {p.label}
+                    {t(`preset.${p.frequency}`)}
                   </option>
                 ))}
               </select>
               <p className="text-[11px] text-muted-foreground">
-                Categoría que se usa para clasificar el backup en el bucket
-                (<code className="font-mono">{formData.frequency}</code>).
+                {t("form.frequencyNote")}
+                {" "}(<code className="font-mono">{formData.frequency}</code>).
               </p>
             </div>
 
@@ -208,7 +209,7 @@ export default function CronjobForm({
                 htmlFor="cronjob-expression"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Expresión Cron
+                {t("form.field.expression")}
               </label>
               <input
                 id="cronjob-expression"
@@ -222,8 +223,7 @@ export default function CronjobForm({
               />
               {!isCustom && (
                 <p className="text-[11px] text-muted-foreground">
-                  Editá la frecuencia a <em>Personalizado</em> para escribir
-                  una expresión propia.
+                  {t("form.customNote")}
                 </p>
               )}
             </div>
@@ -231,17 +231,17 @@ export default function CronjobForm({
 
           {/* Cron helper text */}
           <div className="mt-3 font-mono text-xs leading-relaxed text-muted-foreground">
-            0 2 * * * = cada día a las 2am
+            0 2 * * * = {t("form.cronHint.daily")}
             <br />
-            0 2 * * 1 = cada lunes a las 2am
+            0 2 * * 1 = {t("form.cronHint.weekly")}
             <br />
-            0 */6 * * * = cada 6 horas
+            0 */6 * * * = {t("form.cronHint.every6h")}
           </div>
 
           {/* Retención */}
           <fieldset className="mt-4 rounded-md border border-border p-3">
             <legend className="px-1 text-xs font-semibold text-muted-foreground">
-              Retención
+              {t("form.field.retention")}
             </legend>
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -252,7 +252,7 @@ export default function CronjobForm({
                 }
                 disabled={isLoading}
               />
-              Podar dumps viejos automáticamente tras cada corrida
+              {t("form.pruneLabel")}
             </label>
 
             {retention.enabled && (
@@ -263,7 +263,7 @@ export default function CronjobForm({
                       htmlFor="ret-keep-last"
                       className="text-xs font-semibold text-muted-foreground"
                     >
-                      Conservar últimos
+                      {t("form.field.keepLast")}
                     </label>
                     <input
                       id="ret-keep-last"
@@ -274,7 +274,7 @@ export default function CronjobForm({
                       onChange={(e) =>
                         handleRetentionChange("keepLast", e.target.value)
                       }
-                      placeholder="Ej. 24"
+                      placeholder={t("form.placeholder.keepLast")}
                       disabled={isLoading}
                     />
                   </div>
@@ -283,7 +283,7 @@ export default function CronjobForm({
                       htmlFor="ret-max-age"
                       className="text-xs font-semibold text-muted-foreground"
                     >
-                      Máx. antigüedad (días)
+                      {t("form.field.maxAge")}
                     </label>
                     <input
                       id="ret-max-age"
@@ -294,7 +294,7 @@ export default function CronjobForm({
                       onChange={(e) =>
                         handleRetentionChange("maxAgeDays", e.target.value)
                       }
-                      placeholder="Ej. 30"
+                      placeholder={t("form.placeholder.maxAge")}
                       disabled={isLoading}
                     />
                   </div>
@@ -303,7 +303,7 @@ export default function CronjobForm({
                       htmlFor="ret-max-size"
                       className="text-xs font-semibold text-muted-foreground"
                     >
-                      Tope de tamaño (MB)
+                      {t("form.field.maxSize")}
                     </label>
                     <input
                       id="ret-max-size"
@@ -314,7 +314,7 @@ export default function CronjobForm({
                       onChange={(e) =>
                         handleRetentionChange("maxSizeMb", e.target.value)
                       }
-                      placeholder="Ej. 5000"
+                      placeholder={t("form.placeholder.maxSize")}
                       disabled={isLoading}
                     />
                   </div>
@@ -324,8 +324,8 @@ export default function CronjobForm({
                   className="mt-2 text-xs text-muted-foreground"
                 >
                   {retentionPreview
-                    ? `Ahora se podarían ${retentionPreview.count} dump(s) · ${retentionPreview.totalSizeMb} MB (siempre se conserva ≥1).`
-                    : "Indicá al menos un criterio y elegí la conexión para ver el impacto."}
+                    ? t("form.retentionPreview", { count: retentionPreview.count, size: retentionPreview.totalSizeMb })
+                    : t("form.retentionEmpty")}
                 </p>
               </>
             )}
@@ -344,14 +344,14 @@ export default function CronjobForm({
             onClick={onCancel}
             disabled={isLoading}
           >
-            Cancelar
+            {t("form.button.cancel")}
           </Button>
           <Button type="submit" disabled={isLoading}>
             {isLoading
-              ? "Guardando..."
+              ? t("form.button.saving")
               : isEditMode
-                ? "Guardar cambios"
-                : "Crear cronjob"}
+                ? t("form.button.save")
+                : t("form.button.create")}
           </Button>
         </CardFooter>
       </form>

@@ -8,6 +8,7 @@ import {
 } from "@/shared/ui/table";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/cn";
 
 export interface Column<T> {
@@ -32,11 +33,13 @@ export function DataTable<T>({
   columns,
   data,
   loading,
-  emptyMessage = "No hay datos",
+  emptyMessage,
   className,
   compact = false,
   pagination,
 }: DataTableProps<T>) {
+  const { t } = useTranslation("common");
+  const resolvedEmptyMessage = emptyMessage ?? t("empty.data");
   const headPadding = compact ? "px-3 py-2" : "px-6 py-4";
   const cellPadding = compact ? "px-3 py-2" : "px-6 py-5";
   const wrapperClass = className ?? "rounded-xl bg-card shadow-sm overflow-hidden";
@@ -88,7 +91,7 @@ export function DataTable<T>({
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <p className="text-sm">{emptyMessage}</p>
+        <p className="text-sm">{resolvedEmptyMessage}</p>
       </div>
     );
   }

@@ -1,7 +1,9 @@
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { useSidebar } from "./SidebarProvider";
 import { AnimatedThemeToggler } from "@/shared/ui/animated-theme-toggler";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 import { cn } from "@/shared/lib/cn";
 
 interface TopbarProps {
@@ -10,6 +12,7 @@ interface TopbarProps {
 
 export function Topbar({ className }: TopbarProps) {
   const { state, toggle } = useSidebar();
+  const { t } = useTranslation('common');
   const sidebarExpanded = state === "expanded";
 
   return (
@@ -23,7 +26,7 @@ export function Topbar({ className }: TopbarProps) {
         <button
           type="button"
           onClick={toggle}
-          aria-label={sidebarExpanded ? "Colapsar sidebar" : "Expandir sidebar"}
+          aria-label={sidebarExpanded ? t('sidebar.collapse') : t('sidebar.expand')}
           className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           {sidebarExpanded ? (
@@ -36,6 +39,7 @@ export function Topbar({ className }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-2">
+        <LanguageSwitcher />
         <AnimatedThemeToggler />
       </div>
     </header>

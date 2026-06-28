@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Check, ChevronsUpDown, Wifi } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Connection } from "../types";
 import { cn } from "@/shared/lib/cn";
 import { Button } from "@/shared/ui/button";
@@ -89,6 +90,7 @@ export function ConnectionSelector({
   disabled = false,
   loading = false,
 }: ConnectionSelectorProps) {
+  const { t } = useTranslation("restore");
   const [open, setOpen] = useState(false);
 
   const selected = connections.find((c) => c.id === value);
@@ -96,7 +98,7 @@ export function ConnectionSelector({
   if (loading) {
     return (
       <div className="flex h-10 items-center rounded-xl bg-muted/40 px-3 text-sm text-muted-foreground">
-        Cargando conexiones...
+        {t("target.loading")}
       </div>
     );
   }
@@ -108,7 +110,7 @@ export function ConnectionSelector({
           variant="ghost"
           role="combobox"
           aria-expanded={open}
-          aria-label="Seleccionar conexión destino"
+          aria-label={t("target.ariaSelect")}
           className="h-10 w-full justify-between rounded-xl bg-muted/40 font-normal hover:bg-muted/60"
           disabled={disabled}
         >
@@ -123,21 +125,21 @@ export function ConnectionSelector({
               )}
               <span className="ml-auto flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
                 <Wifi className="h-3 w-3" />
-                Conectado
+                {t("target.connected")}
               </span>
             </div>
           ) : (
-            <span className="text-muted-foreground">Buscar conexión...</span>
+            <span className="text-muted-foreground">{t("target.placeholder")}</span>
           )}
           <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-0" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
         <Command shouldFilter={false}>
-          <CommandInput placeholder="Buscar por nombre, host o base de datos..." />
+          <CommandInput placeholder={t("target.search")} />
           <CommandList>
             <CommandEmpty>
-              No se encontraron conexiones que coincidan con la búsqueda
+              {t("target.empty")}
             </CommandEmpty>
             <CommandGroup>
               {connections.map((conn) => (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -16,7 +17,7 @@ import { DryRunResult } from "./components/DryRunResult";
 import { RestoreProgress } from "./components/RestoreProgress";
 import { RestoreHistory } from "./components/RestoreHistory";
 import { ConfirmRestoreDialog } from "./components/ConfirmRestoreDialog";
-import { formatDate } from "@/features/dumps/lib/format";
+import { formatDateTimeShort as formatDate } from "@/lib/format";
 import { PageHeader } from "@/shared/ui/page-header";
 import { FadeIn } from "@/shared/ui/motion/FadeIn";
 import type { RestoreDto } from "./types";
@@ -33,6 +34,7 @@ interface NavState {
 }
 
 export default function Restore() {
+  const { t } = useTranslation('restore')
   const location = useLocation();
   const navState = (location.state as NavState | null) ?? {};
   const sourceBackupIdFromNav = navState.sourceBackupId;
@@ -152,18 +154,18 @@ export default function Restore() {
 
   const subtitle =
     state === "idle"
-      ? "Restaurá una base de datos desde Producción a entornos de Desarrollo o QA de forma segura."
+      ? t('subtitle.idle')
       : state === "dry-run"
-      ? "Revisá los cambios y confirmá para restaurar el dump en el destino."
+      ? t('subtitle.dryRun')
       : state === "running"
-      ? "Restaurando base de datos..."
+      ? t('subtitle.running')
       : state === "done" && finalStatus === "completed"
-      ? "Restore completado exitosamente."
-      : "El restore falló. Revisá los detalles e intentá de nuevo.";
+      ? t('subtitle.completed')
+      : t('subtitle.failed');
 
   return (
     <FadeIn className="space-y-6 p-4 sm:p-6 lg:p-8">
-      <PageHeader title="Restaurar" subtitle={subtitle} />
+      <PageHeader title={t('page.title')} subtitle={subtitle} />
 
       {displayError && (
         <Alert variant="destructive" className="rounded-xl">
@@ -261,22 +263,22 @@ export default function Restore() {
                 {finalStatus === "completed" ? (
                   <Alert className="rounded-xl border-green-500/30 bg-green-500/5 text-green-700 dark:text-green-400">
                     <AlertDescription>
-                      El restore se completó exitosamente
+                      {t('result.success')}
                     </AlertDescription>
                   </Alert>
                 ) : (
                   <Alert variant="destructive" className="rounded-xl">
-                    <AlertDescription>El restore falló</AlertDescription>
+                    <AlertDescription>{t('result.failure')}</AlertDescription>
                   </Alert>
                 )}
                 <div className="flex gap-3">
                   {finalStatus === "failed" && (
                     <Button onClick={handleRetry} variant="ghost" className="text-red-500 hover:bg-red-500/10 hover:text-red-600">
-                      Reintentar
+                      {t('action.retry')}
                     </Button>
                   )}
                   <Button onClick={handleBackToHome} variant="default">
-                    Volver al inicio
+                    {t('action.backToHome')}
                   </Button>
                 </div>
               </div>

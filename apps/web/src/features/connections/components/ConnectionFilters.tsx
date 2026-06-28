@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Filters, type FilterOption } from "@/shared/ui/filters";
 import type { Connection } from "../types";
 
@@ -13,24 +14,6 @@ interface ConnectionFiltersProps {
   filters: ConnectionFiltersState;
   onChange: (filters: ConnectionFiltersState) => void;
 }
-
-// ─── Filter Options ───────────────────────────────────────
-
-const ENVIRONMENT_OPTIONS: FilterOption[] = [
-  { value: "dev", label: "dev" },
-  { value: "qa", label: "qa" },
-  { value: "prod", label: "prod" },
-];
-
-const DB_TYPE_OPTIONS: FilterOption[] = [
-  { value: "postgres", label: "PostgreSQL" },
-  { value: "mysql", label: "MySQL" },
-];
-
-const STATUS_OPTIONS: FilterOption[] = [
-  { value: "active", label: "Activas" },
-  { value: "inactive", label: "Inactivas" },
-];
 
 // ─── State Mappers ────────────────────────────────────────
 
@@ -58,6 +41,24 @@ export function ConnectionFilters({
   filters,
   onChange,
 }: ConnectionFiltersProps) {
+  const { t } = useTranslation("connections");
+
+  const ENVIRONMENT_OPTIONS: FilterOption[] = [
+    { value: "dev", label: "dev" },
+    { value: "qa", label: "qa" },
+    { value: "prod", label: "prod" },
+  ];
+
+  const DB_TYPE_OPTIONS: FilterOption[] = [
+    { value: "postgres", label: "PostgreSQL" },
+    { value: "mysql", label: "MySQL" },
+  ];
+
+  const STATUS_OPTIONS: FilterOption[] = [
+    { value: "active", label: t("filter.active") },
+    { value: "inactive", label: t("filter.inactive") },
+  ];
+
   const handleChange = (recordFilters: Record<string, string>) => {
     onChange(fromRecord(recordFilters));
   };
@@ -71,7 +72,7 @@ export function ConnectionFilters({
         <div className="w-full sm:min-w-[220px] sm:w-auto sm:flex-1">
           <Filters.Search
             filterKey="search"
-            placeholder="Buscar por nombre, host o BD..."
+            placeholder={t("filter.searchPlaceholder")}
           />
         </div>
         <Filters.Trigger />
@@ -80,21 +81,21 @@ export function ConnectionFilters({
       <Filters.Popover>
         <Filters.Select
           filterKey="environment"
-          label="Ambiente"
+          label={t("filter.environment")}
           options={ENVIRONMENT_OPTIONS}
-          placeholder="Todos los ambientes"
+          placeholder={t("filter.allEnvironments")}
         />
         <Filters.Select
           filterKey="dbType"
-          label="Tipo de BD"
+          label={t("filter.dbType")}
           options={DB_TYPE_OPTIONS}
-          placeholder="Todos los tipos"
+          placeholder={t("filter.allTypes")}
         />
         <Filters.Select
           filterKey="status"
-          label="Estado"
+          label={t("filter.status")}
           options={STATUS_OPTIONS}
-          placeholder="Todos los estados"
+          placeholder={t("filter.allStatuses")}
         />
       </Filters.Popover>
     </Filters.Root>
