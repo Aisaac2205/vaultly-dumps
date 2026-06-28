@@ -28,7 +28,7 @@ void i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
-    fallbackLng: 'es',
+    fallbackLng: 'en',
     supportedLngs: ['es', 'en'],
     defaultNS: 'common',
     ns: [
@@ -44,7 +44,7 @@ void i18n
       'audit',
     ],
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       caches: ['localStorage'],
     },
     interpolation: {
