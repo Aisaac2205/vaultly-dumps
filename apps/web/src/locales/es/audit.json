@@ -12,5 +12,12 @@
   "showing": "Mostrando {{start}}–{{end}} de {{total}}",
   "empty.title": "No hay registros de auditoría",
   "empty.description": "Ajustá los filtros o limpiá la búsqueda",
-  "empty.noRecords": "No hay registros de auditoría"
+  "empty.noRecords": "No hay registros de auditoría",
+  "filter.user": "Usuario",
+  "filter.userPlaceholder": "nombre.usuario",
+  "filter.environment": "Ambiente",
+  "filter.resource": "Recurso",
+  "filter.all": "Todos",
+  "filter.from": "Desde",
+  "filter.to": "Hasta"
 }

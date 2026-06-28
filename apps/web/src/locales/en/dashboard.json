@@ -42,7 +42,14 @@
   "upcoming.title": "Upcoming Runs",
   "upcoming.empty": "No scheduled runs",
   "upcoming.noNext": "No next run",
+  "upcoming.more": "+{{count}} more",
   "upcoming.paused_one": "{{count}} paused",
   "upcoming.paused_other": "{{count}} paused",
-  "error.load": "Error loading dashboard: {{message}}"
+  "error.load": "Error loading dashboard: {{message}}",
+  "chart.completed": "Completed",
+  "chart.failed": "Failed",
+  "chart.running": "Running",
+  "chart.pending": "Pending",
+  "chart.backupDistribution": "Backup Distribution",
+  "chart.noBackupData": "No backup data available"
 }

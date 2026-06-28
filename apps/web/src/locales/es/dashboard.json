@@ -42,7 +42,14 @@
   "upcoming.title": "Próximas Ejecuciones",
   "upcoming.empty": "No hay ejecuciones programadas",
   "upcoming.noNext": "Sin próxima ejecución",
+  "upcoming.more": "+{{count}} más",
   "upcoming.paused_one": "{{count}} pausado",
   "upcoming.paused_other": "{{count}} pausados",
-  "error.load": "Error al cargar el dashboard: {{message}}"
+  "error.load": "Error al cargar el dashboard: {{message}}",
+  "chart.completed": "Completados",
+  "chart.failed": "Fallidos",
+  "chart.running": "En progreso",
+  "chart.pending": "Pendientes",
+  "chart.backupDistribution": "Distribución de Backups",
+  "chart.noBackupData": "No hay datos de backups disponibles"
 }

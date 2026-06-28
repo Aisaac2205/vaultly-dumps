@@ -36,5 +36,19 @@
   "time.tomorrow": "Mañana",
   "time.in": "En",
   "time.ago": "Hace",
-  "time.yesterday": "ayer a las"
+  "time.yesterday": "ayer a las",
+  "sidebar.collapse": "Colapsar sidebar",
+  "sidebar.expand": "Expandir sidebar",
+  "pagination.ariaLabel": "Paginación",
+  "pagination.previous": "Anterior",
+  "pagination.next": "Siguiente",
+  "pagination.ariaPrevious": "Ir a la página anterior",
+  "pagination.ariaNext": "Ir a la página siguiente",
+  "route.loading": "Cargando página",
+  "connection.active": "Activa",
+  "connection.inactive": "Inactiva",
+  "connection.loading": "Cargando…",
+  "connection.unavailable": "Conexión no disponible ({{id}})",
+  "connection.deleted": "Conexión eliminada",
+  "empty.data": "Sin datos"
 }

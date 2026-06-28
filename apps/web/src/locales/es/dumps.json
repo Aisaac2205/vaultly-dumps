@@ -24,5 +24,16 @@
   "label.noRecords": "Sin registros",
   "toast.created": "Backup creado correctamente",
   "toast.createError": "Error al crear el backup",
-  "confirm.create": "¿Estás seguro de que querés crear un nuevo backup?"
+  "confirm.create": "¿Estás seguro de que querés crear un nuevo backup?",
+  "filter.connection": "Conexión",
+  "filter.environment": "Ambiente",
+  "filter.status": "Estado",
+  "filter.from": "Desde",
+  "filter.to": "Hasta",
+  "filter.allEnvs": "Todos",
+  "filter.allStatuses": "Todos",
+  "status.completed": "Completado",
+  "status.running": "En progreso",
+  "status.pending": "Pendiente",
+  "status.failed": "Fallido"
 }

@@ -12,5 +12,12 @@
   "showing": "Showing {{start}}–{{end}} of {{total}}",
   "empty.title": "No audit records",
   "empty.description": "Adjust the filters or clear the search",
-  "empty.noRecords": "No audit records"
+  "empty.noRecords": "No audit records",
+  "filter.user": "User",
+  "filter.userPlaceholder": "username",
+  "filter.environment": "Environment",
+  "filter.resource": "Resource",
+  "filter.all": "All",
+  "filter.from": "From",
+  "filter.to": "To"
 }

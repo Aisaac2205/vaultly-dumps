@@ -36,5 +36,19 @@
   "time.tomorrow": "Tomorrow",
   "time.in": "In",
   "time.ago": "Ago",
-  "time.yesterday": "yesterday at"
+  "time.yesterday": "yesterday at",
+  "sidebar.collapse": "Collapse sidebar",
+  "sidebar.expand": "Expand sidebar",
+  "pagination.ariaLabel": "Pagination",
+  "pagination.previous": "Previous",
+  "pagination.next": "Next",
+  "pagination.ariaPrevious": "Go to previous page",
+  "pagination.ariaNext": "Go to next page",
+  "route.loading": "Loading page",
+  "connection.active": "Active",
+  "connection.inactive": "Inactive",
+  "connection.loading": "Loading…",
+  "connection.unavailable": "Connection unavailable ({{id}})",
+  "connection.deleted": "Deleted connection",
+  "empty.data": "No data"
 }
