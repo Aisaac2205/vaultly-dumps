@@ -35,17 +35,18 @@
 
 ### Types that trigger a release
 
-Semantic-release reads ONLY these three:
-
 | Type | Bump | When to use it |
 |------|------|----------------|
 | `fix:` | patch (0.1.0 → 0.1.1) | Bug fix |
-| `feat:` | minor (0.1.0 → 0.2.0) | New functionality |
+| `perf:` | patch (0.1.0 → 0.1.1) | Performance improvement, no API change |
+| `feat:` | minor (0.1.0 → 0.2.0) | New user-visible functionality |
 | `feat!:` | major (0.1.0 → 1.0.0) | Breaking change |
+
+**The test for `feat:`**: can the user do something they COULDN'T do before? Yes → `feat:`. No (wiring, extraction, migration, polish) → `refactor:` (no release).
 
 ### Types that do NOT trigger a release (free use)
 
-`chore:`, `docs:`, `refactor:`, `build:`, `ci:`, `style:`, `test:`, `perf:` — useful for a clean history but they do not bump the version.
+`chore:`, `docs:`, `refactor:`, `build:`, `ci:`, `style:`, `test:` — useful for a clean history but they do not bump the version.
 
 ### Strict rule: NO parentheses or scopes
 
