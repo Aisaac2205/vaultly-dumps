@@ -85,7 +85,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
         )}
         {remaining > 0 && (
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            +{remaining} más
+            {t("upcoming.more", { count: remaining })}
           </p>
         )}
         {paused.length > 0 && (

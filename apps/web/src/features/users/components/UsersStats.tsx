@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { StatCard } from "@/shared/ui/stat-card";
 import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { Users, ShieldCheck, UserCheck, UserPlus } from "lucide-react";
@@ -12,6 +13,7 @@ interface UsersStatsProps {
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function UsersStats({ users, loading = false }: UsersStatsProps) {
+  const { t } = useTranslation("users");
   const total = users.length;
   const admins = users.filter((u) => u.role === "admin").length;
   const active = users.filter((u) => !u.banned).length;
@@ -27,7 +29,7 @@ export function UsersStats({ users, loading = false }: UsersStatsProps) {
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Total usuarios"
+          label={t("stats.totalUsers")}
           value={total}
           icon={<Users className="h-4 w-4" />}
           loading={loading}
@@ -36,7 +38,7 @@ export function UsersStats({ users, loading = false }: UsersStatsProps) {
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Administradores"
+          label={t("stats.admins")}
           value={admins}
           icon={<ShieldCheck className="h-4 w-4" />}
           loading={loading}
@@ -45,7 +47,7 @@ export function UsersStats({ users, loading = false }: UsersStatsProps) {
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Activos"
+          label={t("stats.active")}
           value={active}
           icon={<UserCheck className="h-4 w-4" />}
           loading={loading}
@@ -54,7 +56,7 @@ export function UsersStats({ users, loading = false }: UsersStatsProps) {
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label="Nuevos (7 días)"
+          label={t("stats.recent")}
           value={recent}
           icon={<UserPlus className="h-4 w-4" />}
           loading={loading}

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { Shield, Trash2, MoreHorizontal } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -27,6 +28,7 @@ const NEXT_ROLE: Record<UserRole, UserRole> = {
  * deviation in the users-ui spec.
  */
 export function UserActions({ user }: UserActionsProps) {
+  const { t } = useTranslation("users");
   const { user: currentUser } = useAuth();
   const toggleRole = useToggleRole();
   const deleteUser = useDeleteUser();
@@ -49,8 +51,8 @@ export function UserActions({ user }: UserActionsProps) {
         <Button
           variant="ghost"
           size="icon"
-          title={`Cambiar a ${nextRole}`}
-          aria-label={`Cambiar rol de ${user.name} a ${nextRole}`}
+          title={t("actions.changeRole", { role: nextRole })}
+          aria-label={t("actions.changeRoleAria", { name: user.name, role: nextRole })}
           onClick={() => toggleRole.mutate({ userId: user.id, role: nextRole })}
           disabled={toggleRole.isPending}
         >
@@ -61,8 +63,8 @@ export function UserActions({ user }: UserActionsProps) {
         <Button
           variant="ghost"
           size="icon"
-          title={isSelf ? "No podés eliminarte a vos mismo" : "Eliminar usuario"}
-          aria-label={`Eliminar a ${user.name}`}
+          title={isSelf ? t("actions.deleteSelf") : t("actions.deleteUser")}
+          aria-label={t("actions.deleteAria", { name: user.name })}
           onClick={() => setDeleteOpen(true)}
           disabled={deleteUser.isPending || isSelf}
           className="text-destructive hover:text-destructive"
@@ -78,7 +80,7 @@ export function UserActions({ user }: UserActionsProps) {
             <button
               type="button"
               className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              aria-label={`Acciones de ${user.name}`}
+              aria-label={t("actions.actionsAria", { name: user.name })}
             >
               <MoreHorizontal className="h-4 w-4" />
             </button>
@@ -96,7 +98,7 @@ export function UserActions({ user }: UserActionsProps) {
                 disabled={toggleRole.isPending}
               >
                 <Shield className="h-4 w-4" />
-                Cambiar a {nextRole}
+                {t("actions.changeRole", { role: nextRole })}
               </DropdownMenuPrimitive.Item>
               <DropdownMenuPrimitive.Separator className="my-1 h-px bg-border" />
               <DropdownMenuPrimitive.Item
@@ -108,7 +110,7 @@ export function UserActions({ user }: UserActionsProps) {
                 disabled={isSelf || deleteUser.isPending}
               >
                 <Trash2 className="h-4 w-4" />
-                {isSelf ? "No podés eliminarte" : "Eliminar usuario"}
+                {isSelf ? t("actions.deleteSelf") : t("actions.deleteUser")}
               </DropdownMenuPrimitive.Item>
             </DropdownMenuPrimitive.Content>
           </DropdownMenuPrimitive.Portal>

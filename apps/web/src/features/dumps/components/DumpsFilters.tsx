@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Filters } from "@/shared/ui/filters";
 import type { DumpsFilters, JobStatus } from "../types";
 
@@ -13,13 +14,6 @@ const ENV_OPTIONS = [
   { value: "prod", label: "prod" },
   { value: "dev", label: "dev" },
   { value: "qa", label: "qa" },
-];
-
-const STATUS_OPTIONS = [
-  { value: "completed", label: "Completado" },
-  { value: "running", label: "En progreso" },
-  { value: "pending", label: "Pendiente" },
-  { value: "failed", label: "Fallido" },
 ];
 
 function filtersToRecord(f: DumpsFilters): Record<string, string> {
@@ -48,6 +42,18 @@ export default function DumpsFilters({
   onApply,
   onReset,
 }: DumpsFiltersProps) {
+  const { t } = useTranslation("dumps");
+
+  const statusOptions = useMemo(
+    () => [
+      { value: "completed", label: t("status.completed") },
+      { value: "running", label: t("status.running") },
+      { value: "pending", label: t("status.pending") },
+      { value: "failed", label: t("status.failed") },
+    ],
+    [t],
+  );
+
   const connectionOptions = useMemo(
     () =>
       connections.map((c) => ({ value: c.id, label: c.name })),
@@ -78,24 +84,24 @@ export default function DumpsFilters({
       <Filters.Popover>
         <Filters.Select
           filterKey="connectionId"
-          label="Conexión"
+          label={t("filter.connection")}
           options={connectionOptions}
-          placeholder="Todas"
+          placeholder={t("filter.allEnvs")}
         />
         <Filters.Select
           filterKey="environment"
-          label="Ambiente"
+          label={t("filter.environment")}
           options={ENV_OPTIONS}
-          placeholder="Todos"
+          placeholder={t("filter.allEnvs")}
         />
         <Filters.Select
           filterKey="status"
-          label="Estado"
-          options={STATUS_OPTIONS}
-          placeholder="Todos"
+          label={t("filter.status")}
+          options={statusOptions}
+          placeholder={t("filter.allStatuses")}
         />
-        <Filters.DateRange filterKey="from" label="Desde" />
-        <Filters.DateRange filterKey="to" label="Hasta" />
+        <Filters.DateRange filterKey="from" label={t("filter.from")} />
+        <Filters.DateRange filterKey="to" label={t("filter.to")} />
       </Filters.Popover>
     </Filters.Root>
   );

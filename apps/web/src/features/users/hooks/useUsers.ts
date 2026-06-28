@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/shared/lib/auth-client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import type { User, UserRole } from "../types";
 
 export interface UseUsersFilters {
@@ -51,6 +52,7 @@ export function useUsers(filters: UseUsersFilters = {}) {
 }
 
 export function useCreateUser() {
+  const { t } = useTranslation("users");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (body: {
@@ -63,7 +65,7 @@ export function useCreateUser() {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Usuario creado");
+      toast.success(t("toast.userCreated"));
       void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -71,6 +73,7 @@ export function useCreateUser() {
 }
 
 export function useToggleRole() {
+  const { t } = useTranslation("users");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -84,7 +87,7 @@ export function useToggleRole() {
       if (error) throw new Error(error.message);
     },
     onSuccess: (_data, variables) => {
-      toast.success(`Rol cambiado a ${variables.role}`);
+      toast.success(t("toast.roleChanged", { role: variables.role }));
       void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -92,6 +95,7 @@ export function useToggleRole() {
 }
 
 export function useDeleteUser() {
+  const { t } = useTranslation("users");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId }: { userId: string }) => {
@@ -99,7 +103,7 @@ export function useDeleteUser() {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Usuario eliminado");
+      toast.success(t("toast.userDeleted"));
       void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -107,6 +111,7 @@ export function useDeleteUser() {
 }
 
 export function useUpdateUser() {
+  const { t } = useTranslation("users");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -120,7 +125,7 @@ export function useUpdateUser() {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Usuario actualizado");
+      toast.success(t("toast.userUpdated"));
       void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -128,6 +133,7 @@ export function useUpdateUser() {
 }
 
 export function useChangePassword() {
+  const { t } = useTranslation("users");
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -144,7 +150,7 @@ export function useChangePassword() {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Contraseña actualizada");
+      toast.success(t("toast.passwordChanged"));
       void queryClient.invalidateQueries({ queryKey: USERS_QUERY_KEY });
     },
     onError: (err: Error) => toast.error(err.message),

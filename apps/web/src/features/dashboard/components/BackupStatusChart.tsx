@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import {
   PieChart,
@@ -23,6 +24,7 @@ const COLORS = {
 
 
 export function BackupStatusChart({ summary }: BackupStatusChartProps) {
+  const { t } = useTranslation("dashboard");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -31,17 +33,17 @@ export function BackupStatusChart({ summary }: BackupStatusChartProps) {
 
   const data = summary
     ? [
-        { name: "Completados", value: summary.completed, type: "completed" },
-        { name: "Fallidos", value: summary.failed, type: "failed" },
-        { name: "En progreso", value: summary.running, type: "running" },
-        { name: "Pendientes", value: summary.pending, type: "pending" },
+        { name: t("chart.completed"), value: summary.completed, type: "completed" },
+        { name: t("chart.failed"), value: summary.failed, type: "failed" },
+        { name: t("chart.running"), value: summary.running, type: "running" },
+        { name: t("chart.pending"), value: summary.pending, type: "pending" },
       ].filter((d) => d.value > 0)
     : [];
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Distribución de Backups</CardTitle>
+        <CardTitle className="text-base">{t("chart.backupDistribution")}</CardTitle>
       </CardHeader>
       <CardContent>
         {data.length > 0 ? (
@@ -80,7 +82,7 @@ export function BackupStatusChart({ summary }: BackupStatusChartProps) {
           )
         ) : (
           <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
-            No hay datos de backups disponibles
+            {t("chart.noBackupData")}
           </div>
         )}
       </CardContent>
