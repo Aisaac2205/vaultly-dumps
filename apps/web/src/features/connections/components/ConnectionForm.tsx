@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent, ChangeEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   Connection,
   CreateConnectionDto,
@@ -39,6 +40,7 @@ export default function ConnectionForm({
   isLoading,
   testRaw,
 }: ConnectionFormProps) {
+  const { t } = useTranslation("connections");
   const isEditMode = connection !== undefined;
 
   const [formData, setFormData] = useState({
@@ -77,23 +79,23 @@ export default function ConnectionForm({
     if (!testRaw) return;
 
     if (!formData.host.trim()) {
-      setValidationError("Ingresá el host para probar la conexión");
+      setValidationError(t("form.validation.testHost"));
       return;
     }
     if (!formData.port.trim() || isNaN(Number(formData.port))) {
-      setValidationError("Ingresá un puerto válido para probar la conexión");
+      setValidationError(t("form.validation.testPort"));
       return;
     }
     if (!formData.database.trim()) {
-      setValidationError("Ingresá la base de datos para probar la conexión");
+      setValidationError(t("form.validation.testDatabase"));
       return;
     }
     if (!formData.username.trim()) {
-      setValidationError("Ingresá el usuario para probar la conexión");
+      setValidationError(t("form.validation.testUsername"));
       return;
     }
     if (!formData.password.trim()) {
-      setValidationError("Ingresá la contraseña para probar la conexión");
+      setValidationError(t("form.validation.testPassword"));
       return;
     }
 
@@ -105,7 +107,7 @@ export default function ConnectionForm({
       const result = await testRaw(currentTestDto());
       setTestResult(result);
     } catch {
-      setTestResult({ success: false, latencyMs: 0, error: "Error al ejecutar el test" });
+      setTestResult({ success: false, latencyMs: 0, error: t("form.testError") });
     } finally {
       setIsTesting(false);
     }
@@ -115,27 +117,27 @@ export default function ConnectionForm({
     e.preventDefault();
 
     if (!formData.name.trim()) {
-      setValidationError("El nombre es obligatorio");
+      setValidationError(t("form.validation.name"));
       return;
     }
     if (!formData.host.trim()) {
-      setValidationError("El host es obligatorio");
+      setValidationError(t("form.validation.host"));
       return;
     }
     if (!formData.port.trim() || isNaN(Number(formData.port))) {
-      setValidationError("El puerto debe ser un número válido");
+      setValidationError(t("form.validation.port"));
       return;
     }
     if (!formData.database.trim()) {
-      setValidationError("La base de datos es obligatoria");
+      setValidationError(t("form.validation.database"));
       return;
     }
     if (!formData.username.trim()) {
-      setValidationError("El usuario es obligatorio");
+      setValidationError(t("form.validation.username"));
       return;
     }
     if (!isEditMode && !formData.password.trim()) {
-      setValidationError("La contraseña es obligatoria");
+      setValidationError(t("form.validation.password"));
       return;
     }
 
@@ -166,7 +168,7 @@ export default function ConnectionForm({
     <Card>
       <CardHeader>
         <CardTitle>
-          {isEditMode ? "Editar conexión" : "Nueva conexión"}
+          {isEditMode ? t("form.title.edit") : t("form.title.new")}
         </CardTitle>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -178,7 +180,7 @@ export default function ConnectionForm({
                 htmlFor="conn-name"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Nombre
+                {t("form.field.name")}
               </label>
               <input
                 id="conn-name"
@@ -187,7 +189,7 @@ export default function ConnectionForm({
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Mi base de datos"
+                placeholder={t("form.placeholder.name")}
                 disabled={isLoading}
               />
             </div>
@@ -195,7 +197,7 @@ export default function ConnectionForm({
             {/* DB Type */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-muted-foreground">
-                Tipo de base de datos
+                {t("form.field.dbType")}
               </label>
               <div className="flex gap-3">
                 <button
@@ -245,7 +247,7 @@ export default function ConnectionForm({
                 htmlFor="conn-environment"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Ambiente
+                {t("form.field.environment")}
               </label>
               <select
                 id="conn-environment"
@@ -267,7 +269,7 @@ export default function ConnectionForm({
                 htmlFor="conn-host"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Host
+                {t("form.field.host")}
               </label>
               <input
                 id="conn-host"
@@ -287,7 +289,7 @@ export default function ConnectionForm({
                 htmlFor="conn-port"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Puerto
+                {t("form.field.port")}
               </label>
               <input
                 id="conn-port"
@@ -307,7 +309,7 @@ export default function ConnectionForm({
                 htmlFor="conn-database"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Nombre de la base de datos (Ej: mydb)
+                {t("form.field.database")}
               </label>
               <input
                 id="conn-database"
@@ -327,7 +329,7 @@ export default function ConnectionForm({
                 htmlFor="conn-username"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Usuario
+                {t("form.field.username")}
               </label>
               <input
                 id="conn-username"
@@ -347,7 +349,7 @@ export default function ConnectionForm({
                 htmlFor="conn-password"
                 className="text-xs font-semibold text-muted-foreground"
               >
-                Contraseña
+                {t("form.field.password")}
               </label>
               <input
                 id="conn-password"
@@ -358,7 +360,7 @@ export default function ConnectionForm({
                 onChange={handleChange}
                 placeholder={
                   isEditMode
-                    ? "Dejar vacío para mantener la actual"
+                    ? t("form.placeholder.passwordEdit")
                     : "••••••••"
                 }
                 disabled={isLoading}
@@ -389,7 +391,7 @@ export default function ConnectionForm({
               onClick={() => void handleTestConnection()}
               disabled={isLoading || isTesting}
             >
-              {isTesting ? "Testeando..." : "Probar conexión"}
+              {isTesting ? t("form.button.testing") : t("form.button.test")}
             </Button>
           )}
           <Button
@@ -398,14 +400,14 @@ export default function ConnectionForm({
             onClick={onCancel}
             disabled={isLoading}
           >
-            Cancelar
+            {t("form.button.cancel")}
           </Button>
           <Button type="submit" disabled={isLoading}>
             {isLoading
-              ? "Guardando..."
+              ? t("form.button.saving")
               : isEditMode
-                ? "Guardar cambios"
-                : "Crear conexión"}
+                ? t("form.button.save")
+                : t("form.button.create")}
           </Button>
         </CardFooter>
       </form>

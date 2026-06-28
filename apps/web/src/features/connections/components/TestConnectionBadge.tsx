@@ -1,5 +1,6 @@
 import type { ConnectionTestResult } from "../types";
 import { Badge, BadgeDot } from "@/shared/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface TestConnectionBadgeProps {
   result: ConnectionTestResult | null;
@@ -10,11 +11,13 @@ export default function TestConnectionBadge({
   result,
   isLoading,
 }: TestConnectionBadgeProps) {
+  const { t } = useTranslation("connections");
+
   if (isLoading) {
     return (
       <Badge variant="outline" className="text-text-secondary">
         <BadgeDot tone="info" pulse />
-        Testeando...
+        {t("test.testing")}
       </Badge>
     );
   }
@@ -27,7 +30,7 @@ export default function TestConnectionBadge({
     return (
       <Badge variant="outline" className="text-text-secondary">
         <BadgeDot tone="success" />
-        Conectado · <span className="font-mono">{result.latencyMs}ms</span>
+        {t("test.connected")} · <span className="font-mono">{result.latencyMs}ms</span>
       </Badge>
     );
   }
@@ -35,7 +38,7 @@ export default function TestConnectionBadge({
   return (
     <Badge variant="outline" className="text-text-secondary">
       <BadgeDot tone="error" />
-      Error: {result.error ?? "Error desconocido"}
+      {t("test.error", { message: result.error ?? t("error.generic") })}
     </Badge>
   );
 }
