@@ -57,17 +57,6 @@ const NAV_ITEM_DEFS: Omit<NavItemConfig, 'label'>[] = [
   { path: "/audit", icon: FileText, routeKey: "audit" },
 ];
 
-/** For compatibility with legacy exports. Labels are in Spanish (display layer should use t()). */
-const NAV_ITEMS: NavItemConfig[] = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard, routeKey: "dashboard", end: true },
-  { path: "/dumps", label: "Dumps", icon: Database, routeKey: "dumps", adminOnly: true },
-  { path: "/cleanup", label: "Limpieza", icon: Trash2, routeKey: "cleanup", adminOnly: true },
-  { path: "/restore", label: "Restaurar", icon: RotateCcw, routeKey: "restore" },
-  { path: "/cronjobs", label: "Cronjobs", icon: Clock, routeKey: "cronjobs" },
-  { path: "/connections", label: "Conexiones", icon: Link2, routeKey: "connections", adminOnly: true },
-  { path: "/users", label: "Usuarios", icon: Users, routeKey: "users", adminOnly: true },
-  { path: "/audit", label: "Auditoría", icon: FileText, routeKey: "audit" },
-];
 
 /* -------------------------------------------------------------------------- */
 /*  Compound sub-components                                                   */
@@ -267,4 +256,3 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
 /* -------------------------------------------------------------------------- */
 
 export { SidebarRoot, SidebarHeader, SidebarNav, SidebarItem, SidebarUser };
-export { NAV_ITEMS };

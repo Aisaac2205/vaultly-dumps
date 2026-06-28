@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useConnections } from "@/features/connections/hooks/useConnections";
 import { cn } from "@/shared/lib/cn";
 
@@ -18,6 +19,7 @@ export function ConnectionLabel({
   environment,
   className,
 }: ConnectionLabelProps) {
+  const { t } = useTranslation("common");
   const { data: connections, isLoading } = useConnections();
   const match = connections?.find((c) => c.id === id);
 
@@ -41,7 +43,7 @@ export function ConnectionLabel({
         className={cn("text-muted-foreground italic", className)}
         title={id}
       >
-        Cargando…
+        {t("connection.loading")}
       </span>
     );
   }
@@ -49,9 +51,9 @@ export function ConnectionLabel({
   return (
     <span
       className={cn("text-muted-foreground italic", className)}
-      title={`Conexión no disponible (${id})`}
+      title={t("connection.unavailable", { id })}
     >
-      Conexión eliminada
+      {t("connection.deleted")}
       <span className="ml-1 font-mono not-italic text-xs opacity-60">
         #{shortId(id)}
       </span>

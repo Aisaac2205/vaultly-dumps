@@ -1,20 +1,7 @@
 import { useLocation, Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/cn";
-
-const ROUTE_LABELS: Record<string, string> = {
-  dumps: "Dumps",
-  cleanup: "Limpieza",
-  restore: "Restaurar",
-  cronjobs: "Cronjobs",
-  connections: "Conexiones",
-  users: "Usuarios",
-  audit: "Auditoría",
-};
-
-function segmentLabel(segment: string): string {
-  return ROUTE_LABELS[segment] ?? segment.charAt(0).toUpperCase() + segment.slice(1);
-}
 
 interface BreadcrumbsProps {
   className?: string;
@@ -22,17 +9,24 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ className }: BreadcrumbsProps) {
   const { pathname } = useLocation();
+  const { t } = useTranslation("common");
   const segments = pathname.split("/").filter(Boolean);
+
+  const segmentLabel = (segment: string): string => {
+    const key = `nav.${segment}` as const;
+    const translated = t(key, { defaultValue: "" });
+    return translated || segment.charAt(0).toUpperCase() + segment.slice(1);
+  };
 
   const isRoot = segments.length === 0;
 
   return (
     <nav aria-label="Breadcrumbs" className={cn("flex items-center gap-1 text-sm", className)}>
       {isRoot ? (
-        <span className="font-medium text-foreground">Dashboard</span>
+        <span className="font-medium text-foreground">{t("nav.dashboard")}</span>
       ) : (
         <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
-          Dashboard
+          {t("nav.dashboard")}
         </Link>
       )}
 
