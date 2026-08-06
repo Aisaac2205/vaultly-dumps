@@ -149,7 +149,7 @@ CORS_ORIGIN: Joi.string().when('NODE_ENV', {
 - **Producción**: si `CORS_ORIGIN` no está definido, **la app no arranca**. Sin defaults silenciosos.
 - **Desarrollo/test**: default `*` para no fricción local.
 
-Configurar en producción con el dominio exacto del frontend (ej: `https://vaultly.coide.online`). No usar wildcards.
+Configurar en producción con el dominio exacto del frontend (ej: `https://app.example.com`). No usar wildcards.
 
 ---
 

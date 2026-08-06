@@ -61,8 +61,8 @@ La capa Web es **GitOps-friendly por diseño**: lee la config runtime de `window
 
 | Variable | Requerida | Notas |
 |----------|-----------|-------|
-| `VITE_API_URL` | sí | URL del backend (ej: `https://api.vaultly.example.com`) |
-| `VITE_APP_BASE_URL` | sí | URL pública del web (ej: `https://vaultly.example.com`) |
+| `VITE_API_URL` | sí | URL del backend (ej: `https://api.example.com`) |
+| `VITE_APP_BASE_URL` | sí | URL pública del web (ej: `https://app.example.com`) |
 
 > El prefijo `VITE_` es histórico (eran vars de build-time de Vite). En runtime se leen con los mismos nombres como env vars del container desde `entrypoint.sh`. No hace falta rebuildear la imagen para cambiarlas — solo reiniciá el container con valores nuevos.
 

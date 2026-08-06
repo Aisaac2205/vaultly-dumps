@@ -99,14 +99,14 @@ PORT=3000
 # Required by env validation, but with the web's nginx in front (see
 # docker-compose.yml) the browser only ever reaches the api same-origin —
 # this has no effect on real traffic, it's just satisfying the check.
-CORS_ORIGIN=https://vaultly-control.mycompany.com
+CORS_ORIGIN=https://app.mycompany.com
 
 # ── Better Auth (mandatory) ────────────────────────────────────
 BETTER_AUTH_SECRET=<64-char-hex-string>
 # Bare origin, no path. Better Auth appends its own /api/auth basePath —
 # a URL that already has a path (e.g. ".../api") makes it skip that
 # append and silently breaks every auth route.
-BETTER_AUTH_URL=https://vaultly-control.mycompany.com
+BETTER_AUTH_URL=https://app.mycompany.com
 BETTER_AUTH_ADMIN_EMAIL=admin@mycompany.com
 BETTER_AUTH_ADMIN_PASSWORD=<strong-password>
 
