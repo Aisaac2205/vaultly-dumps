@@ -1,4 +1,9 @@
-import { Module, ClassSerializerInterceptor } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+} from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
@@ -11,6 +16,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { AuthModule } from './auth/auth.module';
 import { ConnectionsModule } from './modules/connections/connections.module';
 import { BackupModule } from './modules/backup/backup.module';
@@ -85,4 +91,8 @@ import { HealthModule } from './health/health.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestLoggerMiddleware).forRoutes('{*splat}');
+  }
+}
