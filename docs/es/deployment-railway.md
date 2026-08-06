@@ -17,8 +17,10 @@ Esta guía muestra cómo deployar Vaultly Control en [Railway](https://railway.c
 | Service | Origen | Builder | Dockerfile | Puerto público |
 |---------|--------|---------|------------|----------------|
 | `vaultly-web` | GitHub repo (`main`) | Dockerfile | `apps/web/Dockerfile` | `80` |
-| `vaultly-api` | GitHub repo (`main`) | Dockerfile | `apps/api/Dockerfile` | `3000` |
+| `vaultly-api` | GitHub repo (`main`) | Dockerfile | `apps/api/Dockerfile` | (interno) |
 | `Postgres` | Plugin Railway | — | — | (interno) |
+
+> **`vaultly-api` no tiene puerto público.** El browser nunca le habla directo — el nginx de `vaultly-web` proxea `/api/*` hacia ella por la red privada de Railway (`vaultly-api.railway.internal`, zero-config dentro de un mismo project environment). Sólo `vaultly-web` tiene dominio público.
 
 ### Config común para los dos services GitHub
 
@@ -32,8 +34,8 @@ En **Settings → Build**:
 
 En **Settings → Networking**:
 
-- Generate Domain → asigna `https://<service>-production.up.railway.app`
-- Target Port: `80` para web, `3000` para api
+- `vaultly-web`: Generate Domain → asigna `https://<service>-production.up.railway.app`, Target Port `80`.
+- `vaultly-api`: sin dominio, sin networking público. Sólo necesita ser alcanzable en `vaultly-api.railway.internal:3000`, que Railway conecta automáticamente en cuanto ambos services existen en el mismo project environment.
 
 ### Variables — `vaultly-api`
 
@@ -51,11 +53,16 @@ DB_PASSWORD=${{Postgres.PGPASSWORD}}
 
 # Better Auth
 BETTER_AUTH_SECRET=<string-hex-de-64-chars>
-BETTER_AUTH_URL=https://${{vaultly-api.RAILWAY_PUBLIC_DOMAIN}}
+# El dominio del web, no el de la api — la api no tiene. Es la dirección
+# que usa el BROWSER para llegar a /api/auth/*, que nginx proxea.
+BETTER_AUTH_URL=https://${{vaultly-web.RAILWAY_PUBLIC_DOMAIN}}
 BETTER_AUTH_ADMIN_EMAIL=admin@example.com
 BETTER_AUTH_ADMIN_PASSWORD=<password-fuerte>
 
-# CORS — permite al web hablarle al api
+# La exige la validación de env, y queda para cualquier deploy que no use
+# el proxy de nginx (ej. dev local hablándole directo a la api). Con el
+# proxy en el medio el browser nunca llega a la api cross-origin, así que
+# acá no tiene efecto sobre tráfico real — queda inerte, no es load-bearing.
 CORS_ORIGIN=https://${{vaultly-web.RAILWAY_PUBLIC_DOMAIN}}
 
 # Cloudflare R2 (storage de dumps)
@@ -74,16 +81,23 @@ R2_BUCKET_NAME=vaultly-dumps
 Las `VITE_*` deben estar **disponibles en build time** porque Vite las hornea en el bundle. Railway las pasa como build args automáticamente cuando están en la pestaña Variables del service.
 
 ```bash
-VITE_API_URL=https://${{vaultly-api.RAILWAY_PUBLIC_DOMAIN}}
+# Sin setear (o vacía) a propósito: la SPA llama a /api/* relativo,
+# y nginx lo proxea a vaultly-api por la red privada.
+# VITE_API_URL=
 VITE_APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
+
+# La lee apps/web/docker/10-resolve-nameserver.envsh +
+# templates/default.conf.template al arrancar el container — no es una
+# VITE_*, así que es una Service Variable de runtime común, no un build arg.
+API_UPSTREAM=vaultly-api.railway.internal:3000
 ```
 
 ### Orden de creación
 
 1. Agregar el plugin **Postgres** al project.
-2. Crear service **vaultly-api**, conectarlo al repo, configurar variables, generar dominio.
-3. Crear service **vaultly-web**, conectarlo al repo, configurar variables, generar dominio.
-4. Volver al `vaultly-api` y agregar `CORS_ORIGIN` apuntando al dominio del web.
+2. Crear service **vaultly-api**, conectarlo al repo, configurar variables. No generarle dominio.
+3. Crear service **vaultly-web**, conectarlo al repo, configurar variables (incluido `API_UPSTREAM` apuntando a `vaultly-api.railway.internal:3000`), generar su dominio.
+4. Volver al `vaultly-api` y setear `BETTER_AUTH_URL` y `CORS_ORIGIN` al dominio del web, que ya existe.
 
 
 > **Better Auth corre dentro de la API — no se necesita ningún servicio de auth externo.** La API gestiona todo el auth en `/api/auth/*`. Los usuarios y sesiones se almacenan en la misma instancia de PostgreSQL que el resto de los datos de Vaultly.
@@ -95,7 +109,7 @@ VITE_APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 | Síntoma | Causa real | Fix |
 |---------|------------|-----|
 | nginx en web devuelve 404 en `/` | Target port en Railway ≠ puerto del Dockerfile | Settings → Networking → cambiar target port a `80` |
-| `host not found in upstream` en logs de nginx | nginx.conf hardcodea un hostname que no existe en Railway | Sacar el `proxy_pass`; el web habla directo al dominio público del api |
+| `/api/*` devuelve `502 Bad Gateway`, sin crash al arrancar | `API_UPSTREAM` no está seteada, o `vaultly-api` todavía no existe en este environment | Setear `API_UPSTREAM=vaultly-api.railway.internal:3000` en `vaultly-web` y redeployar `vaultly-web` una vez que `vaultly-api` esté arriba. Antes esto tumbaba nginx al arrancar el container (`host not found in upstream`) y obligaba a sacar el proxy entero — ya no, porque el upstream ahora resuelve por request en vez de al cargar la config (ver `apps/web/templates/default.conf.template`) |
 | `EPROTO ... SSL alert 40` desde api | `R2_ACCOUNT_ID` mal seteado → endpoint inexistente | Confirmar account ID en Cloudflare Dashboard, no confundir con access key |
 | SPA carga con strings vacíos en URLs | Variables `VITE_*` no llegaron al build | Confirmar que están como Service Variables (no Shared) y disparar redeploy |
 | `flag '--mount=type=cache,...' is missing the cacheKey prefix` | BuildKit de Railway exige `id=s/<service>-...` | Sacar los cache mounts — Railway tiene layer cache propio |

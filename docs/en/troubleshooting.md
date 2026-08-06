@@ -260,7 +260,7 @@ head -1 entrypoint.sh | od -c | head -1
 sed -i 's/\r$//' apps/web/entrypoint.sh
 ```
 
-**Preventive**: the repo's `.gitattributes` already forces LF for `*.sh`, `Dockerfile`, `nginx.conf`, `docker-compose*.yml`. Make sure new contributors clone with that file present.
+**Preventive**: the repo's `.gitattributes` already forces LF for `*.sh`, `*.envsh`, `Dockerfile`, `nginx.conf`, `*.conf.template`, `docker-compose*.yml`. Make sure new contributors clone with that file present.
 
 ---
 
