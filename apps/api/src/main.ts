@@ -2,7 +2,7 @@
 // at import time (auth.config.ts) and needs DATABASE_URL available.
 import 'dotenv/config';
 
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -66,6 +66,18 @@ async function bootstrap(): Promise<void> {
   app.use((req: express.Request, res: express.Response, next: express.NextFunction) => {
     if (req.originalUrl.startsWith('/api/auth')) return next();
     urlencodedParser(req, res, next);
+  });
+
+  // Global /api prefix so a same-origin reverse proxy can route everything
+  // under /api/* to this service with a single rule. The Better Auth
+  // catch-all already declares its own full path (`api/auth/*` — see
+  // auth.config.ts basePath) and /health is probed directly by Docker
+  // and Railway, so both are excluded to avoid a doubled /api/api/* path.
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'api/auth/{*path}', method: RequestMethod.ALL },
+      { path: 'health', method: RequestMethod.GET },
+    ],
   });
 
   const config = app.get(ConfigService);
