@@ -35,6 +35,10 @@ services:
       dockerfile: apps/web/Dockerfile
       target: production
     env_file: .env
+    environment:
+      # Sigue el PORT real de la API en vez de asumir 3000 si alguien
+      # lo cambia en .env — ver Dockerfile ENV API_UPSTREAM default.
+      API_UPSTREAM: api:${PORT:-3000}
     ports:
       - "5173:80"
     depends_on:

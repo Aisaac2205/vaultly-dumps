@@ -51,14 +51,30 @@ RUN pnpm --filter @vaultly-control/web build
 # nginx:alpine ya viene con:
 # - user `nginx` (UID 101) — workers corren como non-root por default
 # - signal handling propio en el master process (no necesita tini)
-# - su propio entrypoint con templating runtime
+# - su propio entrypoint con templating runtime (envsubst sobre
+#   /etc/nginx/templates/*.template) y soporte para scripts .envsh en
+#   /docker-entrypoint.d/, sourced ANTES del paso de templating — es
+#   como resolvemos el DNS interno (Docker embebido vs. Railway) sin
+#   hardcodear una IP de resolver específica de plataforma.
 FROM nginx:alpine AS production
 
 # Copy built SPA
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+# nginx config vive como template: /api/* se resuelve a runtime, no al
+# arrancar el container (esa resolución al arrancar es justo lo que
+# tumbaba este proxy antes — ver docs/en/deployment-railway.md).
+COPY apps/web/templates/default.conf.template /etc/nginx/templates/default.conf.template
+COPY apps/web/docker/10-resolve-nameserver.envsh /docker-entrypoint.d/10-resolve-nameserver.envsh
+
+# Restringe el envsubst del templating oficial a estas dos variables,
+# para no tocar por accidente los $variables de nginx (ej. $remote_addr)
+# que aparecen dentro del template.
+ENV NGINX_ENVSUBST_FILTER=^(NGINX_RESOLVER|API_UPSTREAM)$
+# Default para docker-compose, donde el servicio de la API se llama
+# literalmente "api". En Railway se sobreescribe con
+# vaultly-api.railway.internal:<puerto>.
+ENV API_UPSTREAM=api:3000
 
 EXPOSE 80
 
