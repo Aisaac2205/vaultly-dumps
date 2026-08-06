@@ -197,3 +197,9 @@ pnpm --filter @vaultly-control/web build
 | [environment-variables.md](docs/es/environment-variables.md) | Todas las variables con tipos y defaults  |
 | [database-migrations.md](docs/es/database-migrations.md)     | TypeORM migrations: generate, run, revert |
 | [conventions.md](docs/es/conventions.md)                     | Nombrado, imports, commits, TypeScript    |
+
+---
+
+## Licencia
+
+[PolyForm Noncommercial License 1.0.0](LICENSE.md) — libre para cualquier uso no comercial. El uso comercial requiere una licencia separada del titular del copyright.

@@ -61,8 +61,8 @@ The Web layer is **GitOps-friendly by design**: it reads runtime config from `wi
 
 | Variable | Required | Notes |
 |----------|----------|-------|
-| `VITE_API_URL` | yes | Backend URL (e.g., `https://api.vaultly.example.com`) |
-| `VITE_APP_BASE_URL` | yes | Public URL of the web (e.g., `https://vaultly.example.com`) |
+| `VITE_API_URL` | yes | Backend URL (e.g., `https://api.example.com`) |
+| `VITE_APP_BASE_URL` | yes | Public URL of the web (e.g., `https://app.example.com`) |
 
 > The `VITE_*` prefix is historical (these were Vite build-time vars). At runtime they are read from the same names as container env vars by `entrypoint.sh`. You do not need to rebuild the image to change them — just restart the container with new env values.
 

@@ -100,14 +100,14 @@ PORT=3000
 # La exige la validación de env, pero con el nginx del web adelante (ver
 # docker-compose.yml) el browser sólo llega a la api same-origin — no
 # tiene efecto sobre tráfico real, sólo conforma al chequeo.
-CORS_ORIGIN=https://vaultly-control.miempresa.com
+CORS_ORIGIN=https://app.miempresa.com
 
 # ── Better Auth (obligatorias) ─────────────────────────────────
 BETTER_AUTH_SECRET=<string-hex-de-64-chars>
 # Origen sin path. Better Auth agrega su propio basePath /api/auth — una
 # URL que ya trae path (ej. ".../api") hace que se saltee ese append y
 # rompe todas las rutas de auth en silencio.
-BETTER_AUTH_URL=https://vaultly-control.miempresa.com
+BETTER_AUTH_URL=https://app.miempresa.com
 BETTER_AUTH_ADMIN_EMAIL=admin@miempresa.com
 BETTER_AUTH_ADMIN_PASSWORD=<password-fuerte>
 

@@ -19,7 +19,7 @@ export const envValidationSchema = Joi.object({
   BETTER_AUTH_ADMIN_PASSWORD: Joi.string().min(8).optional(),
   // Comma-separated list of allowed origins. No wildcard default — if you
   // forget to set it in production you open the API to any browser. Force
-  // an explicit value (e.g. "http://localhost:5173,https://app.vaultly.io").
+  // an explicit value (e.g. "http://localhost:5173,https://app.example.com").
   // AES-256-GCM key for encrypting connection passwords at rest.
   // Must be a 64-character hex string (32 bytes).
   ENCRYPTION_KEY: Joi.string().hex().length(64).required(),
