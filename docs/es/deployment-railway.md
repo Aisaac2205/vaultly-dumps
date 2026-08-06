@@ -86,10 +86,16 @@ Las `VITE_*` deben estar **disponibles en build time** porque Vite las hornea en
 # VITE_API_URL=
 VITE_APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 
-# La lee apps/web/docker/10-resolve-nameserver.envsh +
-# templates/default.conf.template al arrancar el container — no es una
-# VITE_*, así que es una Service Variable de runtime común, no un build arg.
-API_UPSTREAM=vaultly-api.railway.internal:3000
+# La lee templates/default.conf.template al arrancar el container — no
+# es una VITE_*, así que es una Service Variable de runtime común, no
+# un build arg.
+#
+# Usá la reference variable, no un hostname escrito a mano: el nombre
+# DNS privado de un service en Railway NO es siempre <service-name>.railway.internal
+# — algunos environments tienen un dominio privado más viejo, con otro
+# nombre. ${{vaultly-api.RAILWAY_PRIVATE_DOMAIN}} resuelve siempre al
+# dominio privado real de ese service, sea cual sea.
+API_UPSTREAM=${{vaultly-api.RAILWAY_PRIVATE_DOMAIN}}:3000
 ```
 
 ### Orden de creación

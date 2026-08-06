@@ -63,8 +63,9 @@ DB_PASSWORD=changeme
 # Never include secrets — they are public in the client.
 
 # Backend API URL (axios + SSE hook). Leave unset/empty for a same-origin
-# deployment behind the web's nginx (see docker/10-resolve-nameserver.envsh
-# + templates/default.conf.template) — the SPA then calls a relative /api/*.
+# deployment behind the web's nginx (see templates/default.conf.template,
+# which uses nginx:alpine's own built-in local-resolver detection) — the
+# SPA then calls a relative /api/*.
 VITE_API_URL=http://localhost:3000
 
 # App base URL

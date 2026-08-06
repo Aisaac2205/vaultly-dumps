@@ -86,10 +86,15 @@ R2_BUCKET_NAME=vaultly-dumps
 # VITE_API_URL=
 VITE_APP_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 
-# Read at container start by apps/web/docker/10-resolve-nameserver.envsh
-# + templates/default.conf.template — NOT a VITE_* var, so it's a plain
-# runtime Service Variable, not a build arg.
-API_UPSTREAM=vaultly-api.railway.internal:3000
+# Read at container start by templates/default.conf.template — NOT a
+# VITE_* var, so it's a plain runtime Service Variable, not a build arg.
+#
+# Use the reference variable, not a hand-typed hostname: Railway's
+# private DNS name for a service is NOT reliably <service-name>.railway.internal
+# in every project — some environments carry an older, differently-named
+# private domain. ${{vaultly-api.RAILWAY_PRIVATE_DOMAIN}} always resolves
+# to whatever that service's actual private domain really is.
+API_UPSTREAM=${{vaultly-api.RAILWAY_PRIVATE_DOMAIN}}:3000
 ```
 
 ### Creation order

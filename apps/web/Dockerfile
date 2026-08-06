@@ -39,8 +39,11 @@ FROM nginx:alpine AS production
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 
 COPY apps/web/templates/default.conf.template /etc/nginx/templates/default.conf.template
-COPY apps/web/docker/10-resolve-nameserver.envsh /docker-entrypoint.d/10-resolve-nameserver.envsh
-ENV NGINX_ENVSUBST_FILTER=^(NGINX_RESOLVER|API_UPSTREAM)$
+
+# Activates the official image's own /docker-entrypoint.d/15-local-resolvers.envsh,
+# which exports NGINX_LOCAL_RESOLVERS from /etc/resolv.conf (off by default).
+ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
+ENV NGINX_ENVSUBST_FILTER=^(NGINX_LOCAL_RESOLVERS|API_UPSTREAM)$
 ENV API_UPSTREAM=api:3000
 
 EXPOSE 80

@@ -64,8 +64,9 @@ DB_PASSWORD=changeme
 
 # Backend API URL (axios + SSE hook). Dejar vacía/sin setear para un
 # deploy same-origin detrás del nginx del web (ver
-# docker/10-resolve-nameserver.envsh + templates/default.conf.template)
-# — la SPA pasa a llamar a /api/* relativo.
+# templates/default.conf.template, que usa la detección de resolver
+# local que trae de fábrica nginx:alpine) — la SPA pasa a llamar a
+# /api/* relativo.
 VITE_API_URL=http://localhost:3000
 
 # App base URL
