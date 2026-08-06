@@ -26,10 +26,17 @@ export const auth = betterAuth({
     },
   },
   advanced: {
+    // 'none' + partitioned only exists to support a browser that talks to
+    // the api on a different origin than the web app. The supported
+    // deployment path is the nginx reverse proxy (see
+    // apps/web/templates/default.conf.template), which puts both behind
+    // one origin — 'lax' is the correct, less CSRF-exposed default for
+    // that, and localhost dev already qualifies too: SameSite compares
+    // registrable domains, not ports, so localhost:5173 and
+    // localhost:3000 count as the same site.
     defaultCookieAttributes: {
       secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      partitioned: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
     },
   },
 });

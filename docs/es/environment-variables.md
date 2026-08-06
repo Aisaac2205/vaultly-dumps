@@ -50,6 +50,8 @@ DB_PASSWORD=changeme
 ```
 
 > En Docker Compose, `DATABASE_URL` usa el nombre del servicio como host (`db` en lugar de `localhost`).
+>
+> `CORS_ORIGIN` la sigue exigiendo la validación de env aunque las topologías same-origin de Docker Compose / Railway de más abajo hagan que el browser nunca llegue a la API cross-origin — ver la nota al lado, ahí abajo.
 
 ---
 
@@ -60,14 +62,19 @@ DB_PASSWORD=changeme
 # Se inyectan en el bundle estático en el momento del build.
 # Nunca incluir secretos — son públicas en el cliente.
 
-# Backend API URL (axios + SSE hook)
+# Backend API URL (axios + SSE hook). Dejar vacía/sin setear para un
+# deploy same-origin detrás del nginx del web (ver
+# docker/10-resolve-nameserver.envsh + templates/default.conf.template)
+# — la SPA pasa a llamar a /api/* relativo.
 VITE_API_URL=http://localhost:3000
 
 # App base URL
 VITE_APP_BASE_URL=http://localhost:5173
 ```
 
-> En producción, estos valores se pasan como `ARG` en el Dockerfile y se queman en el build estático. El contenedor nginx no tiene variables de entorno en runtime.
+> Se pasan como `ARG` en el Dockerfile y se queman en el build estático — la SPA no las puede volver a leer en runtime.
+>
+> El contenedor web también lee `API_UPSTREAM` — a dónde su nginx proxea `/api/*` — pero es un valor de runtime, no uno de build-time de Vite, así que no es parte de `apps/web/.env`. Ver la sección de Docker Compose de abajo y, para Railway, `docs/es/deployment-railway.md`.
 
 ---
 
@@ -89,11 +96,17 @@ DATABASE_URL=postgresql://vaultly_control:CHANGE_ME@db:5432/vaultly_control
 # ── Server ─────────────────────────────────────────────────────
 NODE_ENV=production
 PORT=3000
-CORS_ORIGIN=https://vaultly-control.miempresa.com  # required en production
+# La exige la validación de env, pero con el nginx del web adelante (ver
+# docker-compose.yml) el browser sólo llega a la api same-origin — no
+# tiene efecto sobre tráfico real, sólo conforma al chequeo.
+CORS_ORIGIN=https://vaultly-control.miempresa.com
 
 # ── Better Auth (obligatorias) ─────────────────────────────────
 BETTER_AUTH_SECRET=<string-hex-de-64-chars>
-BETTER_AUTH_URL=https://vaultly-control.miempresa.com/api
+# Origen sin path. Better Auth agrega su propio basePath /api/auth — una
+# URL que ya trae path (ej. ".../api") hace que se saltee ese append y
+# rompe todas las rutas de auth en silencio.
+BETTER_AUTH_URL=https://vaultly-control.miempresa.com
 BETTER_AUTH_ADMIN_EMAIL=admin@miempresa.com
 BETTER_AUTH_ADMIN_PASSWORD=<password-fuerte>
 

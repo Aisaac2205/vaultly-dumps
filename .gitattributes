@@ -4,7 +4,9 @@
 # porque Linux interpreta el `\r` final de la shebang como parte
 # del path al intérprete.
 *.sh           text eol=lf
+*.envsh        text eol=lf
 Dockerfile     text eol=lf
 *.Dockerfile   text eol=lf
 docker-compose*.yml text eol=lf
 nginx.conf     text eol=lf
+*.conf.template text eol=lf
