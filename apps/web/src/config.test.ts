@@ -40,4 +40,16 @@ describe("APP_CONFIG", () => {
 
     expect(APP_CONFIG.apiBaseUrl).toBe("https://api.example.com/api");
   });
+
+  it("throws loudly instead of silently breaking auth when VITE_API_URL carries a path", async () => {
+    await expect(loadConfig("https://api.example.com/api")).rejects.toThrow(
+      /bare origin with no path/,
+    );
+  });
+
+  it("throws loudly when VITE_API_URL is not a valid absolute URL", async () => {
+    await expect(loadConfig("not-a-url")).rejects.toThrow(
+      /not a valid absolute URL/,
+    );
+  });
 });
