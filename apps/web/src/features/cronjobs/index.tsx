@@ -86,7 +86,7 @@ export default function Cronjobs() {
         setFormLoading(false);
       }
     },
-    [editingCronjob, createMutation, updateMutation],
+    [editingCronjob, createMutation, updateMutation, t],
   );
 
   const handleEdit = useCallback((cronjob: Cronjob) => {
@@ -106,7 +106,7 @@ export default function Cronjobs() {
         // Error surfaced via mutation state
       }
     },
-    [deleteMutation],
+    [deleteMutation, t],
   );
 
   const handleToggle = useCallback(
@@ -124,7 +124,7 @@ export default function Cronjobs() {
         setToggleLoading((prev) => ({ ...prev, [id]: false }));
       }
     },
-    [toggleMutation, cronjobs],
+    [toggleMutation, cronjobs, t],
   );
 
   // ─── Loading state ──────────────────────────────────────

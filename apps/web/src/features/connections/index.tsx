@@ -85,7 +85,7 @@ export default function Connections() {
         setFormLoading(false);
       }
     },
-    [editingConnection, createMutation, updateMutation],
+    [editingConnection, createMutation, updateMutation, t],
   );
 
   const handleEdit = useCallback((connection: Connection) => {
@@ -115,7 +115,7 @@ export default function Connections() {
         // Error surfaced via mutation state
       }
     },
-    [deleteMutation],
+    [deleteMutation, t],
   );
 
   const handleTest = useCallback(
@@ -153,7 +153,7 @@ export default function Connections() {
         setTestLoading((prev) => ({ ...prev, [id]: false }));
       }
     },
-    [testMutation],
+    [testMutation, t],
   );
 
   const testRaw = useCallback(

@@ -77,6 +77,7 @@ export function SidebarProvider({ children }: { children: ReactNode }) {
  * `{ state: "expanded", toggle: noop, setState: noop }` so compound
  * sidebar sub-components can render normally without a provider.
  */
+// eslint-disable-next-line react-refresh/only-export-components -- co-located context hook; splitting into its own file only for Fast Refresh is out of scope here
 export function useSidebar(): SidebarContextValue {
   const ctx = use(SidebarStateContext);
 

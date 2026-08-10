@@ -21,7 +21,6 @@ function createWrapper() {
       queries: { retry: false },
     },
   });
-  // eslint-disable-next-line react-refresh/only-export-components
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>

@@ -14,9 +14,12 @@ import {
   LazyAudit,
 } from "./shared/lib/lazy-routes";
 
+// eslint-disable-next-line react-refresh/only-export-components -- route-level lazy import, not a co-located constant
 const LazyLoginPage = lazy(() => import("./features/auth/LoginPage"));
+// eslint-disable-next-line react-refresh/only-export-components -- route-level lazy import, not a co-located constant
 const LazyUsers = lazy(() => import("./features/users"));
 
+// eslint-disable-next-line react-refresh/only-export-components -- route layout wrapper, not itself part of the router's public export
 function AuthenticatedLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   return (

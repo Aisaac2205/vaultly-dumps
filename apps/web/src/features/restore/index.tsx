@@ -123,7 +123,7 @@ export default function Restore() {
     setConfirmDialogOpen(true);
   }
 
-  function handleConfirmedRestore(excludedTables: string[] = []) {
+  function handleConfirmedRestore(_excludedTables: string[] = []) {
     if (!currentDto) return;
     setConfirmDialogOpen(false);
     // TODO: Pass excludedTables to backend when API supports it

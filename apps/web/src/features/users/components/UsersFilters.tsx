@@ -66,6 +66,7 @@ export function UsersFilters({ filters, onChange }: UsersFiltersProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- co-located filter hook; splitting into its own file only for Fast Refresh is out of scope here
 export function useUserFilters() {
   const [filters, setFilters] = useState<UserFiltersState>({
     search: "",

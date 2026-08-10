@@ -42,12 +42,6 @@ const STATUS_CONFIG_KEYS: Record<RestoreJob["status"], string> = {
   pending: 'status.pending',
 };
 
-const STATUS_DOT_CLASSES: Record<RestoreJob["status"], string> = {
-  completed: "bg-green-500",
-  failed: "bg-red-500",
-  running: "bg-blue-500 animate-pulse",
-  pending: "bg-muted-foreground/40",
-};
 
 const ENV_FILTERS = ["all", "dev", "qa", "prod"] as const;
 const STATUS_FILTERS = ["all", "completed", "failed"] as const;
