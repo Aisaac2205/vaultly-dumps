@@ -68,7 +68,7 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
             <DataTable columns={columns} data={visible} compact />
             {remaining > 0 && (
               <p className="py-2.5 text-center text-xs text-muted-foreground">
-                +{remaining}
+                {t('label.more', { count: remaining, ns: 'common' })}
               </p>
             )}
           </>
