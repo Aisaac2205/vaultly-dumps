@@ -92,6 +92,7 @@ export function CronjobFilters({
 
 // ─── Filter Hook ───────────────────────────────────────────
 
+// eslint-disable-next-line react-refresh/only-export-components -- co-located filter hook; splitting into its own file only for Fast Refresh is out of scope here
 export function useCronjobFilters(cronjobs: Cronjob[]) {
   const [filters, setFilters] = useState<CronjobFiltersState>({
     search: "",

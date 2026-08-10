@@ -87,5 +87,6 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
+  // eslint-disable-next-line react-refresh/only-export-components -- shadcn/ui pattern: variant helper co-located with its component; splitting the design system only for Fast Refresh is out of scope here
   cardVariants,
 };

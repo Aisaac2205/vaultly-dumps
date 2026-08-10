@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- compound-component pattern: sub-components are exported together as the `Filters` namespace object, not individually; splitting the design system only for Fast Refresh is out of scope here */
 import * as React from "react";
 import { X, Filter } from "lucide-react";
 import { Popover as PopoverPrimitive, Select as SelectPrimitive } from "radix-ui";

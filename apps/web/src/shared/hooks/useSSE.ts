@@ -28,6 +28,7 @@ export function useSse<T = unknown>(url: string | null): UseSseReturn<T> {
 
     // Reset state when URL changes
     eventsRef.current = [];
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clears stale stream state before opening a new EventSource for the new url
     setEvents([]);
     setData(null);
 

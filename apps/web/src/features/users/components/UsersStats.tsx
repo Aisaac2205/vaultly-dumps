@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { StatCard } from "@/shared/ui/stat-card";
 import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
@@ -17,12 +17,13 @@ export function UsersStats({ users, loading = false }: UsersStatsProps) {
   const total = users.length;
   const admins = users.filter((u) => u.role === "admin").length;
   const active = users.filter((u) => !u.banned).length;
+  const [now] = useState(() => Date.now());
   const recent = useMemo(() => {
-    const threshold = Date.now() - SEVEN_DAYS_MS;
+    const threshold = now - SEVEN_DAYS_MS;
     return users.filter(
       (u) => new Date(u.createdAt).getTime() > threshold,
     ).length;
-  }, [users]);
+  }, [users, now]);
 
   return (
     <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

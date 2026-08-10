@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, In, LessThan, LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
+import {
+  Between,
+  FindOptionsWhere,
+  In,
+  LessThan,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { BackupJobEntity } from '../../database/entities/backup-job.entity';
 import { JobStatus } from '../../database/enums/job-status.enum';
 import { Environment } from '../../database/enums/environment.enum';
@@ -25,7 +33,7 @@ export class BackupRepository {
     from?: string;
     to?: string;
   }): Promise<{ data: BackupJobEntity[]; total: number }> {
-    const where: any = {};
+    const where: FindOptionsWhere<BackupJobEntity> = {};
     if (options?.connectionId) {
       where.connectionId = options.connectionId;
     }

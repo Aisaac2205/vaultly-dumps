@@ -28,6 +28,7 @@ export function BackupStatusChart({ summary }: BackupStatusChartProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- defers chart rendering to after mount so recharts' ResponsiveContainer can measure real DOM dimensions
     setMounted(true);
   }, []);
 

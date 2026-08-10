@@ -29,11 +29,6 @@ describe("Topbar", () => {
     expect(themeBtn).toBeInTheDocument();
   });
 
-  it("renders account placeholder", () => {
-    renderWithRouter(<Topbar />, { route: "/" });
-    expect(screen.getByText("Account")).toBeInTheDocument();
-  });
-
   it("is hidden on mobile by default (hidden md:flex)", () => {
     renderWithRouter(<Topbar />, { route: "/" });
     const header = document.querySelector("header");

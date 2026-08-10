@@ -37,6 +37,7 @@ export function ConfirmRestoreDialog({
   const [typed, setTyped] = useState("");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the typed confirmation text when the dialog closes, keyed on the `open` prop
     if (!open) setTyped("");
   }, [open]);
 
