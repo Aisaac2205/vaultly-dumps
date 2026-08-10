@@ -152,7 +152,7 @@ function SidebarUser({
     <div className="flex flex-col gap-2 border-t border-sidebar-border p-4">
       {!collapsed && user && (
         <span className="truncate text-xs text-sidebar-text/60">
-          {user.name}
+          {user.email}
         </span>
       )}
       <button
