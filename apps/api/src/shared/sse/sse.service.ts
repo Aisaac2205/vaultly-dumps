@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { Observable, ReplaySubject } from 'rxjs';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { EMPTY, Observable, ReplaySubject } from 'rxjs';
 
 export interface SseEvent {
   type: 'progress' | 'log' | 'completed' | 'failed';
@@ -25,33 +25,52 @@ export interface SseFailedPayload {
   error: string;
 }
 
+const REPLAY_BUFFER_SIZE = 500;
+
+const COMPLETED_GRACE_MS = 60_000;
+
+interface StreamEntry {
+  subject: ReplaySubject<SseEvent>;
+  cleanupTimer?: ReturnType<typeof setTimeout>;
+}
+
 @Injectable()
-export class SseService {
-  private readonly streams = new Map<string, ReplaySubject<SseEvent>>();
+export class SseService implements OnModuleDestroy {
+  private readonly streams = new Map<string, StreamEntry>();
 
-  register(jobId: string): Observable<SseEvent> {
-    const existing = this.streams.get(jobId);
-    if (existing) {
-      return existing.asObservable();
+  register(jobId: string): void {
+    if (this.streams.has(jobId)) {
+      return;
     }
+    this.streams.set(jobId, {
+      subject: new ReplaySubject<SseEvent>(REPLAY_BUFFER_SIZE),
+    });
+  }
 
-    const subject = new ReplaySubject<SseEvent>();
-    this.streams.set(jobId, subject);
-    return subject.asObservable();
+  subscribe(jobId: string): Observable<SseEvent> {
+    return this.streams.get(jobId)?.subject.asObservable() ?? EMPTY;
   }
 
   emit(jobId: string, event: SseEvent): void {
-    const subject = this.streams.get(jobId);
-    if (subject) {
-      subject.next(event);
-    }
+    this.streams.get(jobId)?.subject.next(event);
   }
 
   complete(jobId: string): void {
-    const subject = this.streams.get(jobId);
-    if (subject) {
-      subject.complete();
+    const entry = this.streams.get(jobId);
+    if (!entry) {
+      return;
+    }
+    entry.subject.complete();
+    entry.cleanupTimer = setTimeout(() => {
       this.streams.delete(jobId);
+    }, COMPLETED_GRACE_MS);
+  }
+
+  onModuleDestroy(): void {
+    for (const entry of this.streams.values()) {
+      if (entry.cleanupTimer) {
+        clearTimeout(entry.cleanupTimer);
+      }
     }
   }
 }
