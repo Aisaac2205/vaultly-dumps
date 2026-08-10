@@ -1,18 +1,27 @@
 export interface AppConfig {
-  /**
-   * Bare API origin. Better Auth appends its own `/api/auth` base path,
-   * so this must NOT carry the global prefix.
-   */
   apiUrl: string;
-  /**
-   * Base URL for domain endpoints, which the API mounts under a global
-   * `/api` prefix. Empty `apiUrl` yields a relative `/api`, letting the
-   * SPA talk to a same-origin reverse proxy.
-   */
   apiBaseUrl: string;
 }
 
 const apiUrl = (import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "");
+
+if (apiUrl) {
+  let pathname: string;
+  try {
+    pathname = new URL(apiUrl).pathname;
+  } catch {
+    throw new Error(
+      `VITE_API_URL is not a valid absolute URL: "${apiUrl}". It must be a bare origin, e.g. "https://api.example.com" — or empty for a same-origin deployment.`,
+    );
+  }
+  if (pathname !== "" && pathname !== "/") {
+    throw new Error(
+      `VITE_API_URL must be a bare origin with no path, got "${apiUrl}". ` +
+        `Better Auth appends its own /api/auth to this value — a path here (like "/api") ` +
+        `makes it skip that and silently breaks every auth request.`,
+    );
+  }
+}
 
 export const APP_CONFIG: AppConfig = {
   apiUrl,

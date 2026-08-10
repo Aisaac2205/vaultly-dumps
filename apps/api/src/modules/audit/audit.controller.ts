@@ -1,10 +1,12 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { BetterAuthGuard } from '../../auth/auth.guard';
+import { RolesGuard, Roles } from '../../auth/roles.guard';
 import { AuditService } from './audit.service';
 import { ListAuditLogsQueryDto } from './dto/list-audit-logs-query.dto';
 
 @Controller('audit')
-@UseGuards(BetterAuthGuard)
+@UseGuards(BetterAuthGuard, RolesGuard)
+@Roles('admin')
 export class AuditController {
   constructor(private readonly service: AuditService) {}
 

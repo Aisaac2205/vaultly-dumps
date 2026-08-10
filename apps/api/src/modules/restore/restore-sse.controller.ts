@@ -37,7 +37,7 @@ export class RestoreSseController {
       );
     }
 
-    return this.sseService.register(id).pipe(
+    return this.sseService.subscribe(id).pipe(
       map((event: SseEvent): MessageEvent => ({ data: event })),
     );
   }
