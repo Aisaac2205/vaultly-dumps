@@ -18,7 +18,7 @@ export function Topbar({ className }: TopbarProps) {
   return (
     <header
       className={cn(
-        "hidden md:flex h-12 shrink-0 items-center justify-between bg-sidebar text-sidebar-text px-4 md:px-6",
+        "hidden md:flex h-16 shrink-0 items-center justify-between bg-sidebar text-sidebar-text px-4 md:px-6",
         className,
       )}
     >

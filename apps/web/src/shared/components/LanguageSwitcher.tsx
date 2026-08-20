@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
-import translateIcon from "@/shared/assets/traslate.png";
+import { Languages } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 
 interface LanguageSwitcherProps {
@@ -20,24 +20,19 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps) {
     <motion.button
       type="button"
       onClick={toggleLanguage}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.96 }}
       className={cn(
-        "group flex h-8 items-center gap-1.5 rounded-md border border-border/60 bg-muted/30 px-2.5 text-xs font-semibold text-muted-foreground shadow-xs transition-colors hover:border-border hover:bg-muted hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+        "group flex h-8 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring select-none cursor-pointer",
         className
       )}
-      aria-label={`Cambiar idioma (actual: ${currentLang.toUpperCase()})`}
-      title={`Cambiar a ${nextLang.toUpperCase()}`}
+      aria-label={currentLang === "es" ? "Cambiar idioma (actual: ES)" : "Change language (current: EN)"}
+      title={currentLang === "es" ? "Cambiar a EN" : "Switch to ES"}
     >
-      <img
-        src={translateIcon}
-        alt=""
-        className="h-4 w-4 object-contain opacity-70 transition-opacity group-hover:opacity-100 dark:invert"
-      />
-      <span className="uppercase tracking-wider font-mono text-[11px] font-bold">
+      <Languages className="size-4 shrink-0 opacity-70 transition-opacity group-hover:opacity-100" />
+      <span className="uppercase tracking-wider font-mono text-[11px] font-semibold">
         {currentLang}
       </span>
     </motion.button>
   );
 }
-

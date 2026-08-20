@@ -74,7 +74,7 @@ describe("Sidebar", () => {
 
   it("renders Vaultly branding", () => {
     renderWithRouter(<Sidebar user={mockUser} onLogout={mockLogout} />);
-    expect(screen.getByText("Vaultly")).toBeInTheDocument();
+    expect(screen.getByAltText("Vaultly")).toBeInTheDocument();
   });
 });
 
@@ -154,7 +154,7 @@ describe("SidebarContent", () => {
         <SidebarContent user={mockUser} onLogout={mockLogout} />
       </SidebarRoot>,
     );
-    expect(screen.getByText("Vaultly")).toBeInTheDocument();
+    expect(screen.getByAltText("Vaultly")).toBeInTheDocument();
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
   });
@@ -286,7 +286,7 @@ describe("Sidebar — collapsible icon mode", () => {
     // All labels should be visible
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Dumps")).toBeInTheDocument();
-    expect(screen.getByText("Vaultly")).toBeInTheDocument();
+    expect(screen.getByAltText("Vaultly")).toBeInTheDocument();
     expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
   });
 
@@ -297,7 +297,6 @@ describe("Sidebar — collapsible icon mode", () => {
     // Labels are hidden
     expect(screen.queryByText("Dashboard")).not.toBeInTheDocument();
     expect(screen.queryByText("Dumps")).not.toBeInTheDocument();
-    expect(screen.queryByText("Vaultly")).not.toBeInTheDocument();
     // Logout text hidden, but the icon button still exists
     expect(screen.queryByText("Cerrar Sesión")).not.toBeInTheDocument();
     // The nav links exist (icons rendered with aria-label)
@@ -305,7 +304,7 @@ describe("Sidebar — collapsible icon mode", () => {
     expect(screen.getByLabelText("Dumps")).toBeInTheDocument();
   });
 
-  it("uses 56px width when collapsed, 240px when expanded", () => {
+  it("uses 56px width when collapsed, 216px when expanded", () => {
     const { unmount } = renderWithProvider(
       <Sidebar user={mockUser} onLogout={mockLogout} collapsible="icon" />,
       { storedState: "collapsed" },
@@ -319,7 +318,7 @@ describe("Sidebar — collapsible icon mode", () => {
     renderWithProvider(
       <Sidebar user={mockUser} onLogout={mockLogout} collapsible="icon" />,
     );
-    expect(document.querySelector("aside")?.className).toContain("w-[240px]");
+    expect(document.querySelector("aside")?.className).toContain("w-[216px]");
   });
 
   it("collapsed items have aria-label for accessibility", () => {
@@ -360,7 +359,7 @@ describe("Sidebar — collapsible offcanvas (mobile sheet)", () => {
 
     // Labels are always visible in offcanvas mode (collapsed computation is false)
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Vaultly")).toBeInTheDocument();
+    expect(screen.getByAltText("Vaultly")).toBeInTheDocument();
     expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
   });
 });

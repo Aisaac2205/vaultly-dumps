@@ -1,4 +1,4 @@
-import { Children, createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { AuthUser } from "../hooks/useAuth";
@@ -13,14 +13,10 @@ import {
   Users,
   LogOut,
 } from "lucide-react";
-import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { lazyRoutes, type RouteKey } from "@/shared/lib/lazy-routes";
 import { cn } from "@/shared/lib/cn";
 import { useSidebar } from "./SidebarProvider";
 
-/* -------------------------------------------------------------------------- */
-/*  Sidebar context (compound component foundation)                           */
-/* -------------------------------------------------------------------------- */
 
 interface SidebarContextValue {
   onNavigate?: () => void;
@@ -32,10 +28,6 @@ const SidebarContext = createContext<SidebarContextValue>({});
 function useSidebarNavContext(): SidebarContextValue {
   return useContext(SidebarContext);
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Navigation item config                                                    */
-/* -------------------------------------------------------------------------- */
 
 interface NavItemConfig {
   path: string;
@@ -58,18 +50,12 @@ const NAV_ITEM_DEFS: Omit<NavItemConfig, 'label'>[] = [
 ];
 
 
-/* -------------------------------------------------------------------------- */
-/*  Compound sub-components                                                   */
-/* -------------------------------------------------------------------------- */
-
 interface SidebarRootProps {
   children: ReactNode;
   onNavigate?: () => void;
-  /** Collapse mode. Defaults to `"none"` (always expanded with labels). */
   collapsible?: "icon" | "offcanvas" | "none";
 }
 
-/** Provides `onNavigate` and `collapsed` to all descendant compound components. */
 function SidebarRoot({ children, onNavigate, collapsible = "none" }: SidebarRootProps) {
   const sidebarState = useSidebar();
   const collapsed = collapsible === "icon" && sidebarState.state === "collapsed";
@@ -81,29 +67,25 @@ function SidebarRoot({ children, onNavigate, collapsible = "none" }: SidebarRoot
   );
 }
 
-/** Logo / branding section. In collapsed mode only the first child (logo) is rendered. */
 function SidebarHeader({ children }: { children: ReactNode }) {
   const { collapsed } = useSidebarNavContext();
-  const childArray = Children.toArray(children);
 
   return (
     <div
       className={cn(
-        "flex items-center gap-3 transition-all duration-200",
-        collapsed ? "justify-center px-2 py-5" : "px-4 py-5",
+        "flex h-16 items-center transition-all duration-200",
+        collapsed ? "justify-center px-2" : "px-4",
       )}
     >
-      {collapsed ? childArray.slice(0, 1) : children}
+      {children}
     </div>
   );
 }
 
-/** Scrollable navigation wrapper. */
 function SidebarNav({ children }: { children: ReactNode }) {
   return <nav className="flex-1 overflow-y-auto px-1 py-2 space-y-0.5">{children}</nav>;
 }
 
-/** Single navigation link with token-based active state. Collapse-aware macOS pill styling. */
 function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) {
   const { onNavigate, collapsed } = useSidebarNavContext();
 
@@ -137,7 +119,6 @@ function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) 
   );
 }
 
-/** User info + logout in the sidebar footer. Collapse-aware macOS card style. */
 function SidebarUser({
   user,
   onLogout,
@@ -177,10 +158,6 @@ function SidebarUser({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Convenience composition (used by both desktop sidebar and mobile sheet)    */
-/* -------------------------------------------------------------------------- */
-
 const NAV_LABEL_KEYS: Record<string, string> = {
   "/": "nav.dashboard",
   "/dumps": "nav.dumps",
@@ -211,10 +188,11 @@ export function SidebarContent({
   return (
     <>
       <SidebarHeader>
-        <img src={logoSidebar} alt="Vaultly" className="h-8 w-8" />
-        <span className="text-lg font-bold tracking-wide text-sidebar-text">
-          Vaultly
-        </span>
+        <img
+          src="/logo.png"
+          alt="Vaultly"
+          className="h-10 w-auto max-w-[40px] object-contain invert dark:invert-0 transition-[filter] duration-200"
+        />
       </SidebarHeader>
 
       <SidebarNav>
@@ -228,14 +206,10 @@ export function SidebarContent({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Desktop sidebar wrapper                                                   */
-/* -------------------------------------------------------------------------- */
 
 interface SidebarProps {
   user: AuthUser | null;
   onLogout: () => Promise<void>;
-  /** Collapse mode. Defaults to `"none"` (always expanded with labels). */
   collapsible?: "icon" | "offcanvas" | "none";
 }
 
@@ -247,7 +221,7 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
     <aside
       className={cn(
         "fixed left-0 top-0 z-30 hidden h-screen flex-col bg-sidebar font-medium transition-[width] duration-200 ease-out md:flex",
-        isCollapsed ? "w-[56px]" : "w-[240px]",
+        isCollapsed ? "w-[56px]" : "w-[216px]",
       )}
     >
       <SidebarRoot collapsible={collapsible}>
@@ -257,8 +231,5 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Compound exports                                                          */
-/* -------------------------------------------------------------------------- */
 
 export { SidebarRoot, SidebarHeader, SidebarNav, SidebarItem, SidebarUser };

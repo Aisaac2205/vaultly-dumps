@@ -9,7 +9,6 @@ import { Menu } from "lucide-react";
 import { Toaster } from "sonner";
 import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "@/shared/lib/cn";
-import logoSidebar from "@/shared/assets/logo_sidebar.png";
 
 interface LayoutProps {
   children: ReactNode;
@@ -50,7 +49,7 @@ function LayoutInner({ children, user, onLogout }: LayoutProps) {
         <SheetContent
           side="left"
           showCloseButton={false}
-          className="w-[240px] bg-sidebar p-0 border-r-0"
+          className="w-[216px] bg-sidebar p-0 border-r-0"
         >
           <SidebarRoot onNavigate={closeMobileSidebar}>
             <SidebarContent user={user} onLogout={onLogout} />
@@ -68,23 +67,27 @@ function LayoutInner({ children, user, onLogout }: LayoutProps) {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <img src={logoSidebar} alt="Vaultly" className="h-7 w-7" />
+        <img
+          src="/logo.png"
+          alt="Vaultly"
+          className="h-7 w-7 object-contain invert dark:invert-0 transition-[filter] duration-200"
+        />
         <span className="text-sm font-bold tracking-wide text-sidebar-text">
           Vaultly
         </span>
       </header>
 
-      {/* Main content area — margin adapts to sidebar width, canvas floats as macOS window */}
+      {/* Main content area */}
       <div
         className={cn(
           "flex min-h-screen flex-1 flex-col pt-14 md:pt-0 overflow-hidden bg-sidebar transition-[margin] duration-200 ease-out",
-          sidebarCollapsed ? "md:ml-[56px]" : "md:ml-[240px]",
+          sidebarCollapsed ? "md:ml-[56px]" : "md:ml-[216px]",
         )}
       >
-        {/* Desktop topbar — seamlessly integrated with bg-sidebar frame */}
+        {/* Desktop topbar */}
         <Topbar />
 
-        {/* Page content with macOS floating canvas slot */}
+        {/* Page content */}
         <AnimatePresence mode="wait">
           <motion.main
             key={pathname}
