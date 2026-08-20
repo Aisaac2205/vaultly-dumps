@@ -4,18 +4,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
   <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Vaultly" />
+  <link rel="manifest" href="/site.webmanifest" />
   <title>Vaultly</title>
   <script>
-    // Apply theme before first paint to prevent flash.
     (function () {
       var t;
       try {
         t = localStorage.getItem("vaultly:theme");
       } catch (_) {
-        /* localStorage unavailable */
       }
       var d =
         t === "dark"
@@ -24,7 +25,12 @@
               window.matchMedia("(prefers-color-scheme: dark)").matches
             ? "dark"
             : null;
-      if (d) document.documentElement.setAttribute("data-theme", d);
+      if (d) {
+        document.documentElement.setAttribute("data-theme", d);
+        document.documentElement.style.backgroundColor = "#121214";
+      } else {
+        document.documentElement.style.backgroundColor = "#FFFFFF";
+      }
     })();
   </script>
 </head>
