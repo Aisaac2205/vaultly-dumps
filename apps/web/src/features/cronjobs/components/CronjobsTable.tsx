@@ -74,7 +74,7 @@ export default function CronjobsTable({
     {
       header: t('column.nextRun'),
       accessor: (cronjob) => (
-        <span className="font-mono text-xs whitespace-nowrap">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
           {formatDate(cronjob.nextRunAt)}
         </span>
       ),
@@ -87,7 +87,7 @@ export default function CronjobsTable({
         cronjob.lastStatus ? (
           <StatusBadge status={cronjob.lastStatus} />
         ) : (
-          <span className="font-mono text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-muted-foreground">—</span>
         ),
     },
     {

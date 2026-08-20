@@ -79,7 +79,7 @@ export function CronjobsStats({
       <StaggerItem>
         <StatCard
           variant="outlined"
-          label={t('stats.mainStatus')}
+          label={t('stats.topStatus')}
           value={
             topStatus ? (
               <ValueWithUnit

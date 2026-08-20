@@ -49,7 +49,7 @@ export function UsersTable({ users, loading, filtered = false }: UsersTableProps
       header: t('column.email'),
       accessor: (u) => (
         <span
-          className="font-mono text-xs text-muted-foreground"
+          className="text-xs text-muted-foreground"
           title={u.email}
         >
           {u.email}

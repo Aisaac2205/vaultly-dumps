@@ -220,7 +220,7 @@ export default function AuditTable({
     {
       header: t('column.date'),
       accessor: (log) => (
-        <span className="font-mono text-xs whitespace-nowrap">{formatDateTimeShort(log.createdAt)}</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTimeShort(log.createdAt)}</span>
       ),
       className: "hidden sm:table-cell",
       headerClassName: "hidden sm:table-cell",

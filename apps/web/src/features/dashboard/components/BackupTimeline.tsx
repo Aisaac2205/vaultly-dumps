@@ -49,7 +49,7 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
     {
       header: t('column.when'),
       accessor: (job) => (
-        <span className="font-mono text-xs whitespace-nowrap tabular-nums">
+        <span className="text-xs whitespace-nowrap text-muted-foreground">
           {formatDate(job.createdAt)}
         </span>
       ),
