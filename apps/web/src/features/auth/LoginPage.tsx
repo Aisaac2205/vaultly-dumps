@@ -9,6 +9,8 @@ import { Button } from "@/shared/ui/button";
 import { FadeIn } from "@/shared/ui/motion/FadeIn";
 
 function LoginBrandPanel() {
+  const { t } = useTranslation("auth");
+
   return (
     <div className="relative hidden overflow-hidden rounded-xl bg-black lg:flex items-end p-8 lg:p-12 xl:p-14">
       {/* Paper Design Grain Shader in monochrome white */}
@@ -27,7 +29,7 @@ function LoginBrandPanel() {
       {/* Bottom Editorial Statement */}
       <div className="relative z-10 flex flex-col gap-4">
         <h2 className="max-w-[480px] text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl leading-[1.12]">
-          Control y resguardo inteligente para tus bases de datos
+          {t("brand.title")}
         </h2>
       </div>
     </div>
