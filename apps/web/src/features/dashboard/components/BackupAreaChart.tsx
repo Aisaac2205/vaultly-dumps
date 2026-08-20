@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { useMemo } from "react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
@@ -9,8 +9,6 @@ import {
 } from "@/shared/ui/card";
 import {
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
@@ -23,114 +21,117 @@ interface BackupAreaChartProps {
   data: DailyBackupCount[];
 }
 
-type TimeRange = "90d" | "30d" | "7d";
-
 export function BackupAreaChart({ data }: BackupAreaChartProps) {
-  const { t } = useTranslation('dashboard')
-  const [timeRange, setTimeRange] = useState<TimeRange>("30d");
-
-  const RANGE_LABELS: Record<TimeRange, string> = {
-    "90d": t('chart.range.90d'),
-    "30d": t('chart.range.30d'),
-    "7d": t('chart.range.7d'),
-  };
+  const { t } = useTranslation('dashboard');
 
   const chartConfig: ChartConfig = {
-    scheduled: { label: t('chart.scheduled'), color: "var(--color-chart-scheduled)" },
-    manual: { label: t('chart.manual'), color: "var(--color-chart-manual)" },
+    total: {
+      label: t('chart.title', { defaultValue: 'Backups' }),
+      color: "#bfe70a",
+    },
+    scheduled: {
+      label: t('chart.scheduled', { defaultValue: 'Programados' }),
+      color: "#bfe70a",
+    },
+    manual: {
+      label: t('chart.manual', { defaultValue: 'Manuales' }),
+      color: "#a1a1aa",
+    },
   };
 
-  const daysMap: Record<TimeRange, number> = { "90d": 90, "30d": 30, "7d": 7 };
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - daysMap[timeRange]);
-
-  const filteredData = data.filter(
-    (d) => new Date(d.date) >= cutoff,
-  );
+  const chartData = useMemo(() => {
+    return data.map((d) => ({
+      ...d,
+      total: (d.scheduled ?? 0) + (d.manual ?? 0),
+    }));
+  }, [data]);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-base">{t('chart.title')}</CardTitle>
-            <CardDescription>
-              {t('chart.description', { range: RANGE_LABELS[timeRange] })}
-            </CardDescription>
-          </div>
-          <div className="flex gap-1">
-            {(Object.keys(RANGE_LABELS) as TimeRange[]).map((range) => (
-              <button
-                key={range}
-                type="button"
-                onClick={() => setTimeRange(range)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                  timeRange === range
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {RANGE_LABELS[range]}
-              </button>
-            ))}
-          </div>
-        </div>
+    <Card className="overflow-hidden border-border/80 shadow-xs">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold text-text-primary">
+          {t('chart.title')}
+        </CardTitle>
+        <CardDescription className="text-xs text-muted-foreground">
+          {t('chart.description', { defaultValue: 'Historial reciente de ejecuciones' })}
+        </CardDescription>
       </CardHeader>
-      <CardContent>
-        {filteredData.length === 0 ? (
-          <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
+      <CardContent className="px-2 pt-2 pb-4 sm:px-6">
+        {chartData.length === 0 ? (
+          <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
             {t('chart.noData')}
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[250px] w-full">
-            <AreaChart data={filteredData} height={250}>
+          <ChartContainer config={chartConfig} className="h-[200px] sm:h-[220px] w-full">
+            <AreaChart
+              data={chartData}
+              height={220}
+              margin={{ top: 12, right: 12, left: 12, bottom: 4 }}
+            >
               <defs>
-                <linearGradient id="fillScheduled" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-scheduled)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-scheduled)" stopOpacity={0.1} />
-                </linearGradient>
-                <linearGradient id="fillManual" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="var(--color-manual)" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="var(--color-manual)" stopOpacity={0.1} />
+                <linearGradient id="fillBackupTotal" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="#bfe70a"
+                    stopOpacity={0.24}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="#bfe70a"
+                    stopOpacity={0.0}
+                  />
                 </linearGradient>
               </defs>
-              <CartesianGrid vertical={false} />
+              <CartesianGrid
+                vertical={false}
+                strokeDasharray="3 3"
+                className="stroke-border/40"
+              />
               <XAxis
                 dataKey="date"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                minTickGap={32}
+                minTickGap={36}
                 tickFormatter={(value: string) =>
                   formatDate(value, { day: '2-digit', month: 'short' })
                 }
+                className="text-[11px] font-mono fill-muted-foreground"
+              />
+              <YAxis
+                hide
+                domain={['dataMin - 1', 'dataMax + 1']}
               />
               <ChartTooltip
-                cursor={false}
+                cursor={{
+                  stroke: "#bfe70a",
+                  strokeWidth: 1,
+                  strokeDasharray: "4 4",
+                  strokeOpacity: 0.6,
+                }}
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value: string) =>
                       formatDate(value, { day: '2-digit', month: 'short', year: 'numeric' })
                     }
-                    indicator="dot"
+                    indicator="line"
                   />
                 }
               />
               <Area
-                dataKey="scheduled"
-                type="monotone"
-                fill="url(#fillScheduled)"
-                stroke="var(--color-scheduled)"
-                stackId="a"
+                dataKey="total"
+                type="natural"
+                fill="url(#fillBackupTotal)"
+                stroke="#bfe70a"
+                strokeWidth={2}
+                dot={false}
+                activeDot={{
+                  r: 4,
+                  fill: "#bfe70a",
+                  stroke: "var(--color-card, #1C1C20)",
+                  strokeWidth: 2,
+                }}
               />
-              <Area
-                dataKey="manual"
-                type="monotone"
-                fill="url(#fillManual)"
-                stroke="var(--color-manual)"
-                stackId="a"
-              />
-              <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
           </ChartContainer>
         )}

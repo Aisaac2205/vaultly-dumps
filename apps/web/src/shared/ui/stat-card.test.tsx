@@ -27,11 +27,10 @@ describe('StatCard', () => {
     expect(trendEl.className).not.toContain('bg-error-bg');
   });
 
-  it('renders loading skeleton', () => {
-    render(<StatCard label="Loading" value="--" loading />);
+  it('renders label and value directly', () => {
+    render(<StatCard label="Loading" value="--" />);
 
-    // Skeleton elements should be present (they don't have accessible text,
-    // but the card wrapper should still exist)
-    expect(screen.queryByText('Loading')).not.toBeInTheDocument();
+    expect(screen.getByText('Loading')).toBeInTheDocument();
+    expect(screen.getByText('--')).toBeInTheDocument();
   });
 });
