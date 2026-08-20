@@ -7,7 +7,7 @@ import { DbHygienePanel } from "./components/DbHygienePanel";
 import { ReconcilePanel } from "./components/ReconcilePanel";
 
 export default function CleanupPage() {
-  const { t } = useTranslation('cleanup')
+  const { t } = useTranslation('cleanup');
   return (
     <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -15,45 +15,20 @@ export default function CleanupPage() {
         subtitle={t('page.subtitle')}
       />
 
-      {/* ── Stats ────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-sm font-semibold text-text-primary">
-            {t('section.storage.title')}
-          </h2>
-          <p className="max-w-2xl text-xs text-muted-foreground">
-            {t('section.storage.description')}
-          </p>
-        </div>
+      {/* ── Storage Overview & Connection Breakdown ── */}
+      <section>
         <StoragePanel />
       </section>
 
-      {/* ── Política de retención ────────────────────── */}
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold text-text-primary">
-            {t('section.retention.title')}
-          </h2>
-          <p className="max-w-2xl text-xs text-muted-foreground">
-            {t('section.retention.description')}
-          </p>
-        </div>
+      {/* ── Retention & System Maintenance 2-Column Grid ── */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <ConnectionRetentionPanel />
-      </section>
 
-      {/* ── Salud del sistema ────────────────────────── */}
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold text-text-primary">
-            {t('section.health.title')}
-          </h2>
-          <p className="max-w-2xl text-xs text-muted-foreground">
-            {t('section.health.description')}
-          </p>
+        <div className="space-y-6">
+          <DbHygienePanel />
+          <ReconcilePanel />
         </div>
-        <DbHygienePanel />
-        <ReconcilePanel />
-      </section>
+      </div>
     </FadeIn>
   );
 }

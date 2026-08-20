@@ -46,7 +46,7 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
     {
       header: t('column.date'),
       accessor: (job) => (
-        <span className="font-mono text-xs whitespace-nowrap">{formatDate(job.createdAt)}</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(job.createdAt)}</span>
       ),
       className: "w-28",
     },

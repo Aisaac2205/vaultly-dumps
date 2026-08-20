@@ -1,4 +1,4 @@
-import { Children, createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { AuthUser } from "../hooks/useAuth";
@@ -13,14 +13,10 @@ import {
   Users,
   LogOut,
 } from "lucide-react";
-import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { lazyRoutes, type RouteKey } from "@/shared/lib/lazy-routes";
 import { cn } from "@/shared/lib/cn";
 import { useSidebar } from "./SidebarProvider";
 
-/* -------------------------------------------------------------------------- */
-/*  Sidebar context (compound component foundation)                           */
-/* -------------------------------------------------------------------------- */
 
 interface SidebarContextValue {
   onNavigate?: () => void;
@@ -32,10 +28,6 @@ const SidebarContext = createContext<SidebarContextValue>({});
 function useSidebarNavContext(): SidebarContextValue {
   return useContext(SidebarContext);
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Navigation item config                                                    */
-/* -------------------------------------------------------------------------- */
 
 interface NavItemConfig {
   path: string;
@@ -58,18 +50,12 @@ const NAV_ITEM_DEFS: Omit<NavItemConfig, 'label'>[] = [
 ];
 
 
-/* -------------------------------------------------------------------------- */
-/*  Compound sub-components                                                   */
-/* -------------------------------------------------------------------------- */
-
 interface SidebarRootProps {
   children: ReactNode;
   onNavigate?: () => void;
-  /** Collapse mode. Defaults to `"none"` (always expanded with labels). */
   collapsible?: "icon" | "offcanvas" | "none";
 }
 
-/** Provides `onNavigate` and `collapsed` to all descendant compound components. */
 function SidebarRoot({ children, onNavigate, collapsible = "none" }: SidebarRootProps) {
   const sidebarState = useSidebar();
   const collapsed = collapsible === "icon" && sidebarState.state === "collapsed";
@@ -81,29 +67,25 @@ function SidebarRoot({ children, onNavigate, collapsible = "none" }: SidebarRoot
   );
 }
 
-/** Logo / branding section. In collapsed mode only the first child (logo) is rendered. */
 function SidebarHeader({ children }: { children: ReactNode }) {
   const { collapsed } = useSidebarNavContext();
-  const childArray = Children.toArray(children);
 
   return (
     <div
       className={cn(
-        "flex items-center gap-3 transition-all duration-200",
-        collapsed ? "justify-center px-2 py-5" : "px-4 py-5",
+        "flex h-16 items-center transition-all duration-200",
+        collapsed ? "justify-center px-2" : "px-4",
       )}
     >
-      {collapsed ? childArray.slice(0, 1) : children}
+      {children}
     </div>
   );
 }
 
-/** Scrollable navigation wrapper. */
 function SidebarNav({ children }: { children: ReactNode }) {
-  return <nav className="flex-1 overflow-y-auto py-3">{children}</nav>;
+  return <nav className="flex-1 overflow-y-auto px-1 py-2 space-y-0.5">{children}</nav>;
 }
 
-/** Single navigation link with token-based active state. Collapse-aware. */
 function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) {
   const { onNavigate, collapsed } = useSidebarNavContext();
 
@@ -122,22 +104,21 @@ function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) 
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
+          "flex items-center gap-3 mx-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
           "focus-visible:ring-2 focus-visible:ring-sidebar-indicator focus-visible:ring-inset focus-visible:outline-none",
           isActive
-            ? "border-l-2 border-sidebar-indicator bg-sidebar-active text-sidebar-text"
+            ? "border-sidebar-indicator bg-sidebar-active text-sidebar-text shadow-xs font-semibold"
             : "text-sidebar-text/70 hover:bg-sidebar-hover hover:text-sidebar-text",
-          collapsed && "justify-center px-2",
+          collapsed && "justify-center mx-1 px-2",
         )
       }
     >
       <Icon className="h-4 w-4 shrink-0" aria-hidden={collapsed ? true : undefined} />
-      {!collapsed && <span>{label}</span>}
+      {!collapsed && <span className="truncate">{label}</span>}
     </NavLink>
   );
 }
 
-/** User info + logout in the sidebar footer. Collapse-aware. */
 function SidebarUser({
   user,
   onLogout,
@@ -146,18 +127,24 @@ function SidebarUser({
   onLogout: () => Promise<void>;
 }) {
   const { collapsed } = useSidebarNavContext();
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('common');
 
   return (
-    <div className="flex flex-col gap-2 border-t border-sidebar-border p-4">
+    <div className="flex flex-col gap-2 border-t border-sidebar-border/70 p-3">
       {!collapsed && user && (
-        <span className="truncate text-xs text-sidebar-text/60">
-          {user.email}
-        </span>
+        <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-xs text-sidebar-text/80">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground shadow-xs">
+            {user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-semibold text-sidebar-text text-xs">{user.name ?? user.email}</div>
+            <div className="truncate text-[10px] text-sidebar-text/60">{user.email}</div>
+          </div>
+        </div>
       )}
       <button
         className={cn(
-          "flex items-center gap-2 text-left text-xs text-sidebar-text/50 transition-colors hover:text-sidebar-text",
+          "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium text-sidebar-text/60 transition-colors hover:bg-sidebar-hover hover:text-sidebar-text",
           collapsed && "justify-center",
         )}
         onClick={() => void onLogout()}
@@ -165,15 +152,11 @@ function SidebarUser({
         aria-label={t('action.logout')}
       >
         <LogOut className="h-3.5 w-3.5" />
-        {!collapsed && t('action.logout')}
+        {!collapsed && <span>{t('action.logout')}</span>}
       </button>
     </div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Convenience composition (used by both desktop sidebar and mobile sheet)    */
-/* -------------------------------------------------------------------------- */
 
 const NAV_LABEL_KEYS: Record<string, string> = {
   "/": "nav.dashboard",
@@ -205,10 +188,11 @@ export function SidebarContent({
   return (
     <>
       <SidebarHeader>
-        <img src={logoSidebar} alt="Vaultly" className="h-8 w-8" />
-        <span className="text-lg font-bold tracking-wide text-sidebar-text">
-          Vaultly
-        </span>
+        <img
+          src="/logo.png"
+          alt="Vaultly"
+          className="h-10 w-auto max-w-[40px] object-contain invert dark:invert-0 transition-[filter] duration-200"
+        />
       </SidebarHeader>
 
       <SidebarNav>
@@ -222,14 +206,10 @@ export function SidebarContent({
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Desktop sidebar wrapper                                                   */
-/* -------------------------------------------------------------------------- */
 
 interface SidebarProps {
   user: AuthUser | null;
   onLogout: () => Promise<void>;
-  /** Collapse mode. Defaults to `"none"` (always expanded with labels). */
   collapsible?: "icon" | "offcanvas" | "none";
 }
 
@@ -241,7 +221,7 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
     <aside
       className={cn(
         "fixed left-0 top-0 z-30 hidden h-screen flex-col bg-sidebar font-medium transition-[width] duration-200 ease-out md:flex",
-        isCollapsed ? "w-[56px]" : "w-[240px]",
+        isCollapsed ? "w-[56px]" : "w-[216px]",
       )}
     >
       <SidebarRoot collapsible={collapsible}>
@@ -251,8 +231,5 @@ export function Sidebar({ user, onLogout, collapsible = "none" }: SidebarProps) 
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*  Compound exports                                                          */
-/* -------------------------------------------------------------------------- */
 
 export { SidebarRoot, SidebarHeader, SidebarNav, SidebarItem, SidebarUser };

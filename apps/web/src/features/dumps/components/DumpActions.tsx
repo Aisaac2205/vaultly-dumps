@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Download } from "lucide-react";
 import { Button } from "@/shared/ui/button";
@@ -11,11 +12,12 @@ interface DumpActionsProps {
 }
 
 export function DumpActions({ job }: DumpActionsProps) {
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
   const [downloading, setDownloading] = useState(false);
 
   if (job.status !== "completed" || !job.fileKey) {
-    return <span className="text-muted-foreground font-mono text-xs">—</span>;
+    return <span className="text-muted-foreground text-xs">—</span>;
   }
 
   const handleRestore = () => {
@@ -32,9 +34,9 @@ export function DumpActions({ job }: DumpActionsProps) {
       a.href = url;
       a.download = job.fileKey!.split("/").pop() ?? "backup.dump";
       a.click();
-      toast.success("Descarga iniciada");
+      toast.success(t("toast.downloadStarted"));
     } catch {
-      toast.error("Error al generar el enlace de descarga");
+      toast.error(t("toast.downloadError"));
     } finally {
       setDownloading(false);
     }
@@ -47,18 +49,18 @@ export function DumpActions({ job }: DumpActionsProps) {
         size="sm"
         onClick={() => void handleDownload()}
         disabled={downloading}
-        aria-label="Descargar dump"
+        aria-label={t("aria.downloadDump")}
       >
         <Download className="h-3.5 w-3.5" />
-        {downloading ? "Descargando..." : null}
+        {downloading ? t("action.downloading") : null}
       </Button>
       <Button
         variant="outline"
         size="sm"
         onClick={handleRestore}
-        aria-label="Restaurar backup"
+        aria-label={t("aria.restoreBackup")}
       >
-        Restaurar
+        {t("action.restore")}
       </Button>
     </div>
   );

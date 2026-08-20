@@ -18,7 +18,7 @@ export function Topbar({ className }: TopbarProps) {
   return (
     <header
       className={cn(
-        "hidden md:flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-6",
+        "hidden md:flex h-16 shrink-0 items-center justify-between bg-sidebar text-sidebar-text px-4 md:px-6",
         className,
       )}
     >
@@ -27,7 +27,7 @@ export function Topbar({ className }: TopbarProps) {
           type="button"
           onClick={toggle}
           aria-label={sidebarExpanded ? t('sidebar.collapse') : t('sidebar.expand')}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-sidebar-text/70 transition-colors hover:bg-sidebar-hover hover:text-sidebar-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-indicator"
         >
           {sidebarExpanded ? (
             <PanelLeftClose className="h-4 w-4" />
@@ -35,7 +35,9 @@ export function Topbar({ className }: TopbarProps) {
             <PanelLeftOpen className="h-4 w-4" />
           )}
         </button>
-        <Breadcrumbs />
+        <div className="text-sidebar-text">
+          <Breadcrumbs />
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

@@ -1,26 +1,21 @@
-import { Skeleton } from "@/shared/ui/skeleton";
+import { motion } from "motion/react";
+import { TetrominoLoader } from "@/shared/ui/TetrominoLoader";
 import { useTranslation } from "react-i18next";
 
 export function RouteFallback() {
   const { t } = useTranslation("common");
   return (
-    <div
-      role="status"
-      aria-label={t("route.loading")}
-      aria-live="polite"
-      className="space-y-5 p-4 sm:p-6 lg:p-8"
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      className="flex min-h-[calc(100vh-9rem)] w-full flex-col items-center justify-center p-8"
     >
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-4 w-72" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Skeleton className="h-24 rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
-        <Skeleton className="h-24 rounded-2xl" />
-      </div>
-      <Skeleton className="h-64 rounded-2xl" />
-    </div>
+      <TetrominoLoader
+        size="md"
+        label={t("route.loading", { defaultValue: "Cargando..." })}
+      />
+    </motion.div>
   );
 }

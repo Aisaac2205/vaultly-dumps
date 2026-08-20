@@ -22,6 +22,18 @@ export function RestoreActions({
   const { t } = useTranslation("restore");
   return (
     <div className="space-y-3">
+      {!isDryRun && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-xs">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-destructive" />
+          <p className="leading-relaxed text-text-secondary">
+            <span className="font-semibold text-destructive">
+              {t("dryRun.warningPrefix", "Precaución:")}
+            </span>{" "}
+            {t("dryRun.warningText")}
+          </p>
+        </div>
+      )}
+
       <div className="flex gap-3">
         <Button
           onClick={onSimulate}

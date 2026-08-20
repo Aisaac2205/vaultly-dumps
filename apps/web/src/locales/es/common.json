@@ -50,5 +50,17 @@
   "connection.loading": "Cargando…",
   "connection.unavailable": "Conexión no disponible ({{id}})",
   "connection.deleted": "Conexión eliminada",
-  "empty.data": "Sin datos"
+  "empty.data": "Sin datos",
+  "action.filters": "Filtros",
+  "action.restore": "Restaurar",
+  "action.download": "Descargar",
+  "action.downloading": "Descargando...",
+  "action.apply": "Aplicar",
+  "action.search": "Buscar",
+  "action.select": "Seleccionar",
+  "action.removeFilter": "Eliminar filtro {{label}}",
+  "toast.downloadStarted": "Descarga iniciada",
+  "toast.downloadError": "Error al generar el enlace de descarga",
+  "aria.restoreBackup": "Restaurar backup",
+  "aria.downloadDump": "Descargar dump"
 }

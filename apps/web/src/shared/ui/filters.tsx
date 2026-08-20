@@ -1,14 +1,11 @@
-/* eslint-disable react-refresh/only-export-components -- compound-component pattern: sub-components are exported together as the `Filters` namespace object, not individually; splitting the design system only for Fast Refresh is out of scope here */
+/* eslint-disable react-refresh/only-export-components */
 import * as React from "react";
-import { X, Filter } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { X, SlidersHorizontal } from "lucide-react";
 import { Popover as PopoverPrimitive, Select as SelectPrimitive } from "radix-ui";
 import { cn } from "@/shared/lib/cn";
 import { Badge } from "@/shared/ui/badge";
 import { BadgeDot, type BadgeDotTone } from "@/shared/ui/badge";
-
-/* -------------------------------------------------------------------------- */
-/*  Types                                                                     */
-/* -------------------------------------------------------------------------- */
 
 export interface FilterOption {
   value: string;
@@ -44,10 +41,6 @@ function useFiltersContext() {
   }
   return ctx;
 }
-
-/* -------------------------------------------------------------------------- */
-/*  Filters.Root                                                              */
-/* -------------------------------------------------------------------------- */
 
 export interface FiltersRootProps {
   filters: Record<string, string>;
@@ -157,31 +150,29 @@ function FiltersRoot({ filters, onFiltersChange, children }: FiltersRootProps) {
 }
 FiltersRoot.displayName = "Filters.Root";
 
-/* -------------------------------------------------------------------------- */
-/*  Filters.Trigger                                                           */
-/* -------------------------------------------------------------------------- */
-
 export interface FiltersTriggerProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children?: React.ReactNode;
 }
 
 function FiltersTrigger({ className, children, ...props }: FiltersTriggerProps) {
+  const { t } = useTranslation("common");
   const { activeCount } = useFiltersContext();
 
   return (
     <PopoverPrimitive.Trigger asChild>
       <button
         className={cn(
-          "inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+          "inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 active:scale-[0.98] transition-all duration-150 outline-none select-none cursor-pointer",
+          activeCount > 0 && "text-foreground font-semibold bg-muted/40",
           className,
         )}
         {...props}
       >
         {children ?? (
           <>
-            <Filter className="h-4 w-4" />
-            Filtros
+            <SlidersHorizontal className="h-4 w-4" />
+            {t("action.filters")}
           </>
         )}
         {activeCount > 0 && (
@@ -194,10 +185,6 @@ function FiltersTrigger({ className, children, ...props }: FiltersTriggerProps) 
   );
 }
 FiltersTrigger.displayName = "Filters.Trigger";
-
-/* -------------------------------------------------------------------------- */
-/*  Filters.Popover                                                           */
-/* -------------------------------------------------------------------------- */
 
 export interface FiltersPopoverProps
   extends React.ComponentProps<typeof PopoverPrimitive.Content> {
@@ -223,17 +210,14 @@ function FiltersPopover({ className, children, ...props }: FiltersPopoverProps) 
 }
 FiltersPopover.displayName = "Filters.Popover";
 
-/* -------------------------------------------------------------------------- */
-/*  Filters.Search                                                            */
-/* -------------------------------------------------------------------------- */
-
 export interface FiltersSearchProps {
   filterKey: string;
   label?: string;
   placeholder?: string;
 }
 
-function FiltersSearch({ filterKey, label, placeholder = "Buscar..." }: FiltersSearchProps) {
+function FiltersSearch({ filterKey, label, placeholder }: FiltersSearchProps) {
+  const { t } = useTranslation("common");
   const { setFilter, getFilterValue, registerConfig } = useFiltersContext();
   const initialValue = getFilterValue(filterKey);
   const [localValue, setLocalValue] = React.useState(initialValue);
@@ -241,9 +225,7 @@ function FiltersSearch({ filterKey, label, placeholder = "Buscar..." }: FiltersS
 
   React.useEffect(() => {
     registerConfig({ key: filterKey, label: label ?? filterKey, type: "search" });
-    // Only run on mount / filterKey change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey, label]);
+  }, [filterKey, label, registerConfig]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -273,17 +255,13 @@ function FiltersSearch({ filterKey, label, placeholder = "Buscar..." }: FiltersS
         type="text"
         value={localValue}
         onChange={handleChange}
-        placeholder={placeholder}
+        placeholder={placeholder ?? `${t("action.search")}...`}
         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       />
     </div>
   );
 }
 FiltersSearch.displayName = "Filters.Search";
-
-/* -------------------------------------------------------------------------- */
-/*  Filters.Select                                                            */
-/* -------------------------------------------------------------------------- */
 
 export interface FiltersSelectProps {
   filterKey: string;
@@ -292,14 +270,13 @@ export interface FiltersSelectProps {
   placeholder?: string;
 }
 
-function FiltersSelect({ filterKey, label, options, placeholder = "Seleccionar..." }: FiltersSelectProps) {
+function FiltersSelect({ filterKey, label, options, placeholder }: FiltersSelectProps) {
+  const { t } = useTranslation("common");
   const { setFilter, getFilterValue, registerConfig } = useFiltersContext();
 
   React.useEffect(() => {
     registerConfig({ key: filterKey, label, type: "select", options });
-    // Only run on mount / filterKey change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey, label]);
+  }, [filterKey, label, options, registerConfig]);
 
   const currentValue = getFilterValue(filterKey);
 
@@ -318,7 +295,7 @@ function FiltersSelect({ filterKey, label, options, placeholder = "Seleccionar..
             !currentValue && "text-muted-foreground",
           )}
         >
-          <SelectPrimitive.Value placeholder={placeholder} />
+          <SelectPrimitive.Value placeholder={placeholder ?? `${t("action.select")}...`} />
           <SelectPrimitive.Icon className="ml-2">
             <svg
               width="12"
@@ -349,20 +326,20 @@ function FiltersSelect({ filterKey, label, options, placeholder = "Seleccionar..
                   <SelectPrimitive.Item
                     key={opt.value}
                     value={opt.value}
-                  className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                >
-                  <SelectPrimitive.ItemIndicator className="absolute left-2 inline-flex items-center">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path
-                        d="M2.5 6L5 8.5L9.5 3.5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </SelectPrimitive.ItemIndicator>
-                  <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
+                    className="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                  >
+                    <SelectPrimitive.ItemIndicator className="absolute left-2 inline-flex items-center">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path
+                          d="M2.5 6L5 8.5L9.5 3.5"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </SelectPrimitive.ItemIndicator>
+                    <SelectPrimitive.ItemText>{opt.label}</SelectPrimitive.ItemText>
                   </SelectPrimitive.Item>
                 ))}
             </SelectPrimitive.Viewport>
@@ -374,10 +351,6 @@ function FiltersSelect({ filterKey, label, options, placeholder = "Seleccionar..
 }
 FiltersSelect.displayName = "Filters.Select";
 
-/* -------------------------------------------------------------------------- */
-/*  Filters.DateRange                                                         */
-/* -------------------------------------------------------------------------- */
-
 export interface FiltersDateRangeProps {
   filterKey: string;
   label: string;
@@ -388,8 +361,7 @@ function FiltersDateRange({ filterKey, label }: FiltersDateRangeProps) {
 
   React.useEffect(() => {
     registerConfig({ key: filterKey, label, type: "dateRange" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterKey, label]);
+  }, [filterKey, label, registerConfig]);
 
   const currentValue = getFilterValue(filterKey);
 
@@ -411,16 +383,13 @@ function FiltersDateRange({ filterKey, label }: FiltersDateRangeProps) {
 }
 FiltersDateRange.displayName = "Filters.DateRange";
 
-/* -------------------------------------------------------------------------- */
-/*  Filters.ActiveChips                                                       */
-/* -------------------------------------------------------------------------- */
-
 export interface FiltersActiveChipsProps {
   className?: string;
   tone?: BadgeDotTone;
 }
 
 function FiltersActiveChips({ className, tone = "info" }: FiltersActiveChipsProps) {
+  const { t } = useTranslation("common");
   const { filters, removeFilter, configs } = useFiltersContext();
 
   const activeEntries = Object.entries(filters).filter(
@@ -449,7 +418,7 @@ function FiltersActiveChips({ className, tone = "info" }: FiltersActiveChipsProp
               type="button"
               onClick={() => removeFilter(key)}
               className="ml-0.5 rounded-full p-0.5 hover:bg-muted transition-colors"
-              aria-label={`Eliminar filtro ${displayLabel}`}
+              aria-label={t("action.removeFilter", { label: displayLabel })}
             >
               <X className="h-3 w-3" />
             </button>
@@ -461,16 +430,13 @@ function FiltersActiveChips({ className, tone = "info" }: FiltersActiveChipsProp
 }
 FiltersActiveChips.displayName = "Filters.ActiveChips";
 
-/* -------------------------------------------------------------------------- */
-/*  Filters.Apply                                                             */
-/* -------------------------------------------------------------------------- */
-
 export interface FiltersApplyProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children?: React.ReactNode;
 }
 
-function FiltersApply({ className, children = "Apply", ...props }: FiltersApplyProps) {
+function FiltersApply({ className, children, ...props }: FiltersApplyProps) {
+  const { t } = useTranslation("common");
   return (
     <button
       type="button"
@@ -480,15 +446,11 @@ function FiltersApply({ className, children = "Apply", ...props }: FiltersApplyP
       )}
       {...props}
     >
-      {children}
+      {children ?? t("action.apply")}
     </button>
   );
 }
 FiltersApply.displayName = "Filters.Apply";
-
-/* -------------------------------------------------------------------------- */
-/*  Exports                                                                   */
-/* -------------------------------------------------------------------------- */
 
 export const Filters = {
   Root: FiltersRoot,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { useDashboard, useConnectionStats, useStorageStats } from "./hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -10,9 +11,9 @@ import { BackupTimeline } from "./components/BackupTimeline";
 import { RestoreTimeline } from "./components/RestoreTimeline";
 import { BackupAreaChart } from "./components/BackupAreaChart";
 import { UpcomingCronjobsCard } from "./components/UpcomingCronjobsCard";
-import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
-import { FadeIn } from "@/shared/ui/motion/FadeIn";
+import { TetrominoLoader } from "@/shared/ui/TetrominoLoader";
+import { useSmoothLoading } from "@/shared/hooks/useSmoothLoading";
 
 export default function Dashboard() {
   const { t } = useTranslation('dashboard')
@@ -69,66 +70,72 @@ export default function Dashboard() {
     dailyCountsLen,
   ]);
 
-  const isLoading =
+  const rawLoading =
     dashboardLoading || connectionsLoading || storageLoading || cronjobsLoading || statsLoading || dailyCountsLoading;
-
-  if (isLoading) {
-    return (
-      <div
-        className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6"
-        role="status"
-        aria-busy="true"
-        aria-label={t('header.loading')}
-      >
-        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-        <TableSkeleton rows={5} />
-      </div>
-    );
-  }
-
-  if (dashboardErrors.length > 0) {
-    return (
-      <div className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
-        <Alert variant="destructive">
-          <AlertDescription>
-            {t('error.load', { message: dashboardErrors[0]?.message ?? t('error.generic', { ns: 'common' }) })}
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  const isLoading = useSmoothLoading(rawLoading);
 
   return (
-    <FadeIn className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6">
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
-      >
-        {t('header.liveUpdate', { cycle: refreshCycle })}
-      </div>
+    <AnimatePresence mode="wait">
+      {isLoading ? (
+        <motion.div
+          key="dashboard-loading"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex min-h-[calc(100vh-9rem)] w-full flex-col items-center justify-center p-8"
+        >
+          <TetrominoLoader size="md" label={t('header.loading')} />
+        </motion.div>
+      ) : dashboardErrors.length > 0 ? (
+        <motion.div
+          key="dashboard-error"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6"
+        >
+          <Alert variant="destructive">
+            <AlertDescription>
+              {t('error.load', { message: dashboardErrors[0]?.message ?? t('error.generic', { ns: 'common' }) })}
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+      ) : (
+        <motion.div
+          key="dashboard-content"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full space-y-5 sm:space-y-8 p-4 sm:p-6"
+        >
+          <div
+            aria-live="polite"
+            aria-atomic="true"
+            className="sr-only"
+          >
+            {t('header.liveUpdate', { cycle: refreshCycle })}
+          </div>
 
-      <DashboardHeader lastUpdated={new Date()} />
+          <DashboardHeader lastUpdated={new Date()} />
 
-      <KpiGrid stats={stats} connections={connections} dailyCounts={dailyCounts} />
+          <KpiGrid stats={stats} connections={connections} dailyCounts={dailyCounts} />
 
-      <BackupAreaChart data={dailyCounts} />
+          <BackupAreaChart data={dailyCounts} />
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-5 lg:items-start">
-        <div className="lg:col-span-3">
-          <BackupTimeline backups={recentBackups} />
-        </div>
-        <div className="flex flex-col gap-4 sm:gap-6 lg:col-span-2">
-          <RestoreTimeline restores={recentRestores} />
-          <SystemHealthCard dumps={dumps} />
-          <UpcomingCronjobsCard cronjobs={cronjobs} />
-        </div>
-      </div>
-    </FadeIn>
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-5 lg:items-start">
+            <div className="lg:col-span-3">
+              <BackupTimeline backups={recentBackups} />
+            </div>
+            <div className="flex flex-col gap-4 sm:gap-6 lg:col-span-2">
+              <RestoreTimeline restores={recentRestores} />
+              <SystemHealthCard dumps={dumps} />
+              <UpcomingCronjobsCard cronjobs={cronjobs} />
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

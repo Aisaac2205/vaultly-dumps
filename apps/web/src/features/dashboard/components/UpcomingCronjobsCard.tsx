@@ -63,7 +63,7 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
                     </p>
                     {hasSchedule ? (
                       <p
-                        className="font-mono text-xs text-muted-foreground tabular-nums"
+                        className="text-xs text-muted-foreground"
                         title={absoluteTitle}
                       >
                         {formatUpcomingTime(cj.nextRunAt as string)}

@@ -1,6 +1,5 @@
-import { Shield } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { LeverSwitch } from "@/shared/ui/lever-switch";
+import { Switch } from "@/shared/ui/switch";
 
 interface RestoreOptionsProps {
   isDryRun: boolean;
@@ -20,7 +19,7 @@ export function RestoreOptions({
         <div>
           <label
             htmlFor="dry-run"
-            className="cursor-pointer select-none text-sm font-medium"
+            className="cursor-pointer select-none text-sm font-medium text-text-primary"
           >
             Dry Run
           </label>
@@ -29,20 +28,13 @@ export function RestoreOptions({
           </p>
         </div>
 
-        <LeverSwitch
+        <Switch
           id="dry-run"
           checked={isDryRun}
-          onChange={onDryRunChange}
+          onCheckedChange={onDryRunChange}
           disabled={disabled}
         />
       </div>
-
-      {!isDryRun && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-3 text-sm text-red-600 dark:text-red-400">
-          <Shield className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>{t("dryRun.warningText")}</p>
-        </div>
-      )}
     </div>
   );
 }

@@ -107,20 +107,17 @@ export function SourceConnectionCombobox({
                   >
                     <Check
                       className={cn(
-                        "size-4 shrink-0",
+                        "size-4 shrink-0 text-text-primary",
                         isSelected ? "opacity-100" : "opacity-0",
                       )}
                     />
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <DbTypeLogo dbType={conn.dbType} />
-                      <span className="truncate font-medium">{conn.name}</span>
+                      <span className="truncate font-medium text-text-primary">{conn.name}</span>
                       <span className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                         {conn.environment}
                       </span>
                     </div>
-                    <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
-                      {conn.slug}
-                    </span>
                   </CommandItem>
                 );
               })}

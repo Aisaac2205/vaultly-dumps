@@ -1,6 +1,6 @@
-import { cn } from "@/shared/lib/cn";
+import { Switch } from "./switch";
 
-interface LeverSwitchProps {
+export interface LeverSwitchProps {
   id?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
@@ -16,22 +16,14 @@ export function LeverSwitch({
   className,
 }: LeverSwitchProps) {
   return (
-    <label className={cn("toggle-container", className)}>
-      <input
-        id={id}
-        type="checkbox"
-        className="toggle-input"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        disabled={disabled}
-      />
-      <div className="toggle-handle-wrapper">
-        <div className="toggle-shaft" />
-        <div className="toggle-handle" />
-      </div>
-      <div className="toggle-base">
-        <div className="toggle-base-inside" />
-      </div>
-    </label>
+    <Switch
+      id={id}
+      checked={checked}
+      onCheckedChange={onChange}
+      disabled={disabled}
+      className={className}
+    />
   );
 }
+
+export { Switch };

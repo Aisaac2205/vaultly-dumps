@@ -50,5 +50,17 @@
   "connection.loading": "Loading…",
   "connection.unavailable": "Connection unavailable ({{id}})",
   "connection.deleted": "Deleted connection",
-  "empty.data": "No data"
+  "empty.data": "No data",
+  "action.filters": "Filters",
+  "action.restore": "Restore",
+  "action.download": "Download",
+  "action.downloading": "Downloading...",
+  "action.apply": "Apply",
+  "action.search": "Search",
+  "action.select": "Select",
+  "action.removeFilter": "Remove filter {{label}}",
+  "toast.downloadStarted": "Download started",
+  "toast.downloadError": "Error generating download link",
+  "aria.restoreBackup": "Restore backup",
+  "aria.downloadDump": "Download dump"
 }

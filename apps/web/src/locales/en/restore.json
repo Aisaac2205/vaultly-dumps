@@ -49,7 +49,7 @@
   "dryRun.warningText": "This will run a REAL restore on the target database. Existing data will be modified.",
   "action.processing": "Processing...",
   "action.simulate": "Simulate Restore",
-  "action.restore": "Restore (live)",
+  "action.restore": "Restore",
   "action.recommendation": "A Dry Run is recommended before restoring.",
   "action.confirm": "Confirm restore",
   "action.execute": "Execute restore",

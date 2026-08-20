@@ -25,6 +25,12 @@
   "toast.created": "Backup creado correctamente",
   "toast.createError": "Error al crear el backup",
   "confirm.create": "¿Estás seguro de que querés crear un nuevo backup?",
+  "confirm.title": "Crear respaldo manual",
+  "confirm.description": "Se generará un nuevo dump de base de datos inmediatamente para la conexión \"{{name}}\".",
+  "confirm.cancel": "Cancelar",
+  "confirm.submit": "Crear respaldo",
+  "loading.title": "Generando respaldo de base de datos...",
+  "loading.subtitle": "Conectando a la base de datos y creando el dump. Por favor esperá.",
   "filter.connection": "Conexión",
   "filter.environment": "Ambiente",
   "filter.status": "Estado",
@@ -35,5 +41,9 @@
   "status.completed": "Completado",
   "status.running": "En progreso",
   "status.pending": "Pendiente",
-  "status.failed": "Fallido"
+  "status.failed": "Fallido",
+  "error.binaryNotFound": "Herramienta no disponible",
+  "error.authFailed": "Error de acceso",
+  "error.connectionRefused": "Conexión rechazada",
+  "error.genericFailure": "Error en el respaldo"
 }

@@ -1,12 +1,36 @@
 import { DataTable, type Column } from "@/shared/ui/data-table";
 import { StatusBadge } from "@/shared/ui/status-badge";
-import { Database } from "lucide-react";
+import { Database, AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { BackupJob } from "../types";
 import { DumpActions } from "./DumpActions";
 import { formatSize } from "@/shared/lib/format";
 import { formatDateTimeShort as formatDate } from "@/lib/format";
 import cloudflareSvg from "@/shared/assets/Cloudflare.svg";
+
+function formatHumanErrorMessage(
+  rawError: string,
+  t: (key: string, options?: { defaultValue?: string }) => string,
+): string {
+  if (/ENOENT|spawn (pg_dump|mysqldump|mariadb-dump)/i.test(rawError)) {
+    return t("error.binaryNotFound", {
+      defaultValue: "Herramienta no disponible",
+    });
+  }
+  if (/password authentication failed/i.test(rawError)) {
+    return t("error.authFailed", {
+      defaultValue: "Error de acceso",
+    });
+  }
+  if (/ECONNREFUSED|Connection refused/i.test(rawError)) {
+    return t("error.connectionRefused", {
+      defaultValue: "Conexión rechazada",
+    });
+  }
+  return t("error.genericFailure", {
+    defaultValue: "Error en el respaldo",
+  });
+}
 
 interface DumpsTableProps {
   dumps: BackupJob[];
@@ -52,7 +76,7 @@ export function DumpsTable({
     {
       header: t('column.date'),
       accessor: (job) => (
-        <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
           {formatDate(job.createdAt)}
         </span>
       ),
@@ -71,19 +95,26 @@ export function DumpsTable({
     },
     {
       header: t('column.status'),
-      accessor: (job) => (
-        <div className="flex flex-col items-center gap-1">
-          <StatusBadge status={job.status} />
-          {job.status === "failed" && job.errorMessage && (
-            <p
-              className="max-w-full truncate text-[10px] font-mono text-error"
-              title={job.errorMessage}
-            >
-              {job.errorMessage}
-            </p>
-          )}
-        </div>
-      ),
+      accessor: (job) => {
+        const errorText =
+          job.status === "failed" && job.errorMessage
+            ? formatHumanErrorMessage(job.errorMessage, t)
+            : undefined;
+        return (
+          <div className="flex flex-col items-center gap-1">
+            <StatusBadge status={job.status} />
+            {errorText && (
+              <div
+                className="flex items-center justify-center gap-1 max-w-[200px] text-[11px] text-error font-medium cursor-help"
+                title={job.errorMessage ?? undefined}
+              >
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span className="truncate">{errorText}</span>
+              </div>
+            )}
+          </div>
+        );
+      },
       className: "w-[20%]",
       headerClassName: "w-[20%]",
     },
@@ -104,7 +135,7 @@ export function DumpsTable({
     {
       header: t('column.size'),
       accessor: (job) => (
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {job.fileSizeMb != null
             ? formatSize(job.fileSizeMb * 1024 * 1024)
             : "—"}

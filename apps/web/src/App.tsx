@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { router } from "./router";
 import { lazyRoutes, type RouteKey } from "./shared/lib/lazy-routes";
+import { LoadingProvider } from "./shared/providers/LoadingProvider";
 
 const PRELOAD_KEYS: readonly RouteKey[] = [
   "dumps",
@@ -29,5 +30,9 @@ export function App() {
     return cancel;
   }, []);
 
-  return <RouterProvider router={router} />;
+  return (
+    <LoadingProvider>
+      <RouterProvider router={router} />
+    </LoadingProvider>
+  );
 }

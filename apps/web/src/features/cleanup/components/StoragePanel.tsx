@@ -2,6 +2,7 @@ import { HardDrive, Database, Radio, Clock } from "lucide-react";
 import { formatDateTimeShort as formatDate } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 import { StatCard } from "@/shared/ui/stat-card";
+import { Card, CardContent } from "@/shared/ui/card";
 import { Stagger, StaggerItem } from "@/shared/ui/motion/Stagger";
 import { useStorageOverview } from "../hooks/useMaintenance";
 
@@ -15,7 +16,7 @@ function countOldDumps(connections: { oldest: string | null }[]): number {
 }
 
 export function StoragePanel() {
-  const { t } = useTranslation('cleanup')
+  const { t } = useTranslation('cleanup');
   const { data, isLoading, isError, error } = useStorageOverview();
 
   if (!data && !isLoading) {
@@ -73,7 +74,7 @@ export function StoragePanel() {
             />
           </StaggerItem>
         </Stagger>
-        <p className="text-sm text-muted-foreground text-center py-4">
+        <p className="py-4 text-center text-sm text-muted-foreground">
           {t('empty.noDumps')}
         </p>
       </div>
@@ -128,58 +129,65 @@ export function StoragePanel() {
       </Stagger>
 
       {data != null && data.byConnection.length > 0 && (
-        <details className="group rounded-lg border border-border">
-          <summary className="flex cursor-pointer items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-muted-foreground marker:content-none">
-            <span className="select-none group-open:rotate-90 transition-transform text-[10px]">
-              ▶
-            </span>
-            {t('detail.title')}
-          </summary>
-          <div className="overflow-x-auto border-t border-border px-2 pb-2">
-            <table className="w-full text-sm">
-              <caption className="sr-only">
-                {t('table.caption')}
-              </caption>
-              <thead>
-                <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                  <th className="py-1.5 pr-3 font-medium" scope="col">
-                    {t('table.connection')}
-                  </th>
-                  <th className="py-1.5 pr-3 text-right font-medium" scope="col">
-                    {t('table.dumps')}
-                  </th>
-                  <th className="py-1.5 pr-3 text-right font-medium" scope="col">
-                    {t('table.size')}
-                  </th>
-                  <th className="py-1.5 font-medium" scope="col">
-                    {t('table.oldest')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.byConnection.map((c) => (
-                  <tr
-                    key={c.connectionSlug}
-                    className="border-b border-border/50"
-                  >
-                    <td className="max-w-[12rem] truncate py-1.5 pr-3">
-                      {c.connectionName}
-                    </td>
-                    <td className="py-1.5 pr-3 text-right tabular-nums">
-                      {c.count}
-                    </td>
-                    <td className="py-1.5 pr-3 text-right tabular-nums">
-                      {c.sizeMb} MB
-                    </td>
-                    <td className="py-1.5 text-muted-foreground">
-                      {c.oldest ? formatDate(c.oldest) : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="space-y-3 pt-2">
+          <div>
+            <h3 className="text-sm font-semibold text-text-primary">
+              {t('detail.title')}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {t('table.caption')}
+            </p>
           </div>
-        </details>
+
+          <Card variant="outlined" className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <caption className="sr-only">
+                    {t('table.caption')}
+                  </caption>
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30 text-left text-xs font-medium text-muted-foreground">
+                      <th className="px-5 py-3" scope="col">
+                        {t('table.connection')}
+                      </th>
+                      <th className="px-5 py-3 text-right" scope="col">
+                        {t('table.dumps')}
+                      </th>
+                      <th className="px-5 py-3 text-right" scope="col">
+                        {t('table.size')}
+                      </th>
+                      <th className="px-5 py-3 text-right" scope="col">
+                        {t('table.oldest')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {data.byConnection.map((c) => (
+                      <tr
+                        key={c.connectionSlug}
+                        className="transition-colors hover:bg-muted/20"
+                      >
+                        <td className="max-w-[14rem] truncate px-5 py-3 font-medium text-text-primary">
+                          {c.connectionName}
+                        </td>
+                        <td className="px-5 py-3 text-right text-xs text-text-secondary">
+                          {c.count}
+                        </td>
+                        <td className="px-5 py-3 text-right text-xs text-text-secondary">
+                          {c.sizeMb} MB
+                        </td>
+                        <td className="px-5 py-3 text-right text-xs text-muted-foreground">
+                          {c.oldest ? formatDate(c.oldest) : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

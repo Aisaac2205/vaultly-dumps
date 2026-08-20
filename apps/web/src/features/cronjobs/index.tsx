@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
@@ -20,8 +21,8 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { EmptyState } from "@/shared/ui/empty-state";
-import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
-import { FadeIn } from "@/shared/ui/motion/FadeIn";
+import { TetrominoLoader } from "@/shared/ui/TetrominoLoader";
+import { useSmoothLoading } from "@/shared/hooks/useSmoothLoading";
 import { Clock, Plus } from "lucide-react";
 import type { Cronjob, CreateCronjobDto, UpdateCronjobDto } from "./types";
 
@@ -29,81 +30,78 @@ export default function Cronjobs() {
   const { t } = useTranslation('cronjobs')
   const {
     data: cronjobs = [],
-    isLoading: isQueryLoading,
+    isLoading: rawQueryLoading,
     error: queryError,
   } = useCronjobs();
+
+  const isQueryLoading = useSmoothLoading(rawQueryLoading);
 
   const {
     data: connections = [],
     isLoading: connectionsLoading,
   } = useCronjobConnections();
 
+  const [editingCronjob, setEditingCronjob] = useState<Cronjob | undefined>(undefined);
+  const [showForm, setShowForm] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState<Record<string, boolean>>({});
+
+  const { filters, setFilters, filtered } = useCronjobFilters(cronjobs);
+
   const createMutation = useCreateCronjob();
   const updateMutation = useUpdateCronjob();
   const toggleMutation = useToggleCronjob();
   const deleteMutation = useDeleteCronjob();
 
-  const [showForm, setShowForm] = useState(false);
-  const [editingCronjob, setEditingCronjob] = useState<Cronjob | undefined>(
-    undefined,
-  );
-  const [formLoading, setFormLoading] = useState(false);
-  const [toggleLoading, setToggleLoading] = useState<
-    Record<string, boolean>
-  >({});
+  const formLoading = createMutation.isPending || updateMutation.isPending;
 
-  const { filters, setFilters, filtered } = useCronjobFilters(cronjobs);
-
-  const handleNewClick = () => {
+  const handleNewClick = useCallback(() => {
     setEditingCronjob(undefined);
     setShowForm(true);
-  };
-
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingCronjob(undefined);
-  };
-
-  const handleSubmit = useCallback(
-    async (dto: CreateCronjobDto | UpdateCronjobDto) => {
-      setFormLoading(true);
-      try {
-        if (editingCronjob) {
-          await updateMutation.mutateAsync({
-            id: editingCronjob.id,
-            dto: dto as UpdateCronjobDto,
-          });
-          toast.success(t('toast.updated'));
-        } else {
-          await createMutation.mutateAsync(dto as CreateCronjobDto);
-          toast.success(t('toast.created'));
-        }
-        setShowForm(false);
-        setEditingCronjob(undefined);
-      } catch {
-        // Error surfaced via mutation state
-      } finally {
-        setFormLoading(false);
-      }
-    },
-    [editingCronjob, createMutation, updateMutation, t],
-  );
+  }, []);
 
   const handleEdit = useCallback((cronjob: Cronjob) => {
     setEditingCronjob(cronjob);
     setShowForm(true);
   }, []);
 
+  const handleCancel = useCallback(() => {
+    setEditingCronjob(undefined);
+    setShowForm(false);
+  }, []);
+
+  const handleSubmit = useCallback(
+    async (data: CreateCronjobDto | UpdateCronjobDto) => {
+      try {
+        if (editingCronjob) {
+          await updateMutation.mutateAsync({
+            id: editingCronjob.id,
+            dto: data as UpdateCronjobDto,
+          });
+          toast.success(t('toast.updated'));
+        } else {
+          await createMutation.mutateAsync(data as CreateCronjobDto);
+          toast.success(t('toast.created'));
+        }
+        setShowForm(false);
+        setEditingCronjob(undefined);
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : t('toast.error');
+        toast.error(message);
+      }
+    },
+    [editingCronjob, createMutation, updateMutation, t],
+  );
+
   const handleDelete = useCallback(
     async (id: string) => {
-      const confirmed = window.confirm(t('confirm.delete'));
-      if (!confirmed) return;
-
       try {
         await deleteMutation.mutateAsync(id);
         toast.success(t('toast.deleted'));
-      } catch {
-        // Error surfaced via mutation state
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : t('toast.deleteError');
+        toast.error(message);
       }
     },
     [deleteMutation, t],
@@ -112,74 +110,26 @@ export default function Cronjobs() {
   const handleToggle = useCallback(
     async (id: string) => {
       const cronjob = cronjobs.find((c) => c.id === id);
+      if (!cronjob) return;
+
+      const newActive = !cronjob.isActive;
       setToggleLoading((prev) => ({ ...prev, [id]: true }));
+
       try {
         await toggleMutation.mutateAsync(id);
         toast.success(
-          cronjob?.isActive ? t('toast.paused') : t('toast.activated'),
+          newActive ? t('toast.activated') : t('toast.paused'),
         );
-      } catch {
-        // Error surfaced via mutation state
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : t('toast.statusError');
+        toast.error(message);
       } finally {
         setToggleLoading((prev) => ({ ...prev, [id]: false }));
       }
     },
     [toggleMutation, cronjobs, t],
   );
-
-  // ─── Loading state ──────────────────────────────────────
-
-  if (isQueryLoading) {
-    return (
-      <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <div className="h-8 w-24 animate-pulse rounded bg-muted" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-        <TableSkeleton rows={5} columns={7} />
-      </FadeIn>
-    );
-  }
-
-  // ─── Error state ────────────────────────────────────────
-
-  if (queryError) {
-    return (
-      <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <PageHeader title="Cronjobs" />
-        <Alert variant="destructive">
-          <AlertDescription>
-            {t('error.load', { message: queryError instanceof Error ? queryError.message : t('error.generic', { ns: 'common' }) })}
-          </AlertDescription>
-        </Alert>
-      </FadeIn>
-    );
-  }
-
-  // ─── Empty state ────────────────────────────────────────
-
-  if (cronjobs.length === 0 && !showForm) {
-    return (
-      <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <PageHeader title="Cronjobs" />
-        <EmptyState
-          icon={<Clock className="h-12 w-12" />}
-          title={t('empty.title')}
-          description={t('empty.description')}
-          action={
-            <Button onClick={handleNewClick}>
-              <Plus className="h-4 w-4" />
-              {t('action.new')}
-            </Button>
-          }
-        />
-      </FadeIn>
-    );
-  }
-
-  // ─── Normal state ───────────────────────────────────────
 
   const mutationError =
     createMutation.error ??
@@ -188,57 +138,116 @@ export default function Cronjobs() {
     toggleMutation.error;
 
   return (
-    <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
-      <PageHeader
-        title="Cronjobs"
-        actions={
-          !showForm ? (
-            <Button onClick={handleNewClick}>
-              <Plus className="h-4 w-4" />
-              {t('action.new')}
-            </Button>
-          ) : undefined
-        }
-      />
+    <AnimatePresence mode="wait">
+      {isQueryLoading ? (
+        <motion.div
+          key="cronjobs-loading"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex min-h-[calc(100vh-9rem)] w-full flex-col items-center justify-center p-8"
+        >
+          <TetrominoLoader size="md" />
+        </motion.div>
+      ) : queryError ? (
+        <motion.div
+          key="cronjobs-error"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="space-y-8 p-4 sm:p-6 lg:p-8"
+        >
+          <PageHeader title="Cronjobs" />
+          <Alert variant="destructive">
+            <AlertDescription>
+              {t('error.load', { message: queryError instanceof Error ? queryError.message : t('error.generic', { ns: 'common' }) })}
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+      ) : cronjobs.length === 0 && !showForm ? (
+        <motion.div
+          key="cronjobs-empty"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-8 p-4 sm:p-6 lg:p-8"
+        >
+          <PageHeader title="Cronjobs" />
+          <EmptyState
+            icon={<Clock className="h-12 w-12" />}
+            title={t('empty.title')}
+            description={t('empty.description')}
+            action={
+              <Button onClick={handleNewClick}>
+                <Plus className="h-4 w-4" />
+                {t('action.new')}
+              </Button>
+            }
+          />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="cronjobs-content"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-8 p-4 sm:p-6 lg:p-8"
+        >
+          <PageHeader
+            title="Cronjobs"
+            actions={
+              !showForm ? (
+                <Button onClick={handleNewClick}>
+                  <Plus className="h-4 w-4" />
+                  {t('action.new')}
+                </Button>
+              ) : undefined
+            }
+          />
 
-      {mutationError && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {mutationError instanceof Error
-              ? mutationError.message
-              : t('error.unexpected', { ns: 'common' })}
-          </AlertDescription>
-        </Alert>
+          {mutationError && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {mutationError instanceof Error
+                  ? mutationError.message
+                  : t('error.unexpected', { ns: 'common' })}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <CronjobsStats
+            cronjobs={cronjobs}
+            loading={isQueryLoading}
+          />
+
+          {showForm && (
+            <CronjobForm
+              cronjob={editingCronjob}
+              connections={connections}
+              connectionsLoading={connectionsLoading}
+              onSubmit={handleSubmit}
+              onCancel={handleCancel}
+              isLoading={formLoading}
+            />
+          )}
+
+          {cronjobs.length > 0 && (
+            <CronjobFilters filters={filters} onChange={setFilters} />
+          )}
+
+          <CronjobsTable
+            cronjobs={filtered}
+            isLoading={false}
+            onEdit={handleEdit}
+            onDelete={(id) => void handleDelete(id)}
+            onToggle={(id) => void handleToggle(id)}
+            toggleLoading={toggleLoading}
+          />
+        </motion.div>
       )}
-
-      <CronjobsStats
-        cronjobs={cronjobs}
-        loading={isQueryLoading}
-      />
-
-      {showForm && (
-        <CronjobForm
-          cronjob={editingCronjob}
-          connections={connections}
-          connectionsLoading={connectionsLoading}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isLoading={formLoading}
-        />
-      )}
-
-      {cronjobs.length > 0 && (
-        <CronjobFilters filters={filters} onChange={setFilters} />
-      )}
-
-      <CronjobsTable
-        cronjobs={filtered}
-        isLoading={false}
-        onEdit={handleEdit}
-        onDelete={(id) => void handleDelete(id)}
-        onToggle={(id) => void handleToggle(id)}
-        toggleLoading={toggleLoading}
-      />
-    </FadeIn>
+    </AnimatePresence>
   );
 }
