@@ -6,7 +6,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/cn";
@@ -32,7 +31,6 @@ interface DataTableProps<T> {
 export function DataTable<T>({
   columns,
   data,
-  loading,
   emptyMessage,
   className,
   compact = false,
@@ -44,49 +42,6 @@ export function DataTable<T>({
   const cellPadding = compact ? "px-3 py-2" : "px-6 py-5";
   const wrapperClass = className ?? "rounded-xl bg-card shadow-sm overflow-hidden";
   const minWidth = compact ? "" : "min-w-[360px]";
-
-  if (loading) {
-    return (
-      <div className={wrapperClass}>
-        <div className="overflow-x-auto">
-          <Table className={minWidth}>
-            <TableHeader>
-              <TableRow>
-                {columns.map((col, i) => (
-                  <TableHead
-                    key={i}
-                    className={cn(headPadding, "text-sm font-medium truncate", col.headerClassName)}
-                  >
-                    {col.header}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, rowIdx) => (
-                <TableRow key={rowIdx}>
-                  {columns.map((col, colIdx) => (
-                    <TableCell
-                      key={colIdx}
-                      className={cn(cellPadding, col.className)}
-                    >
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-        {pagination && (
-          <div className="flex items-center justify-end border-t px-4 py-3">
-            {pagination}
-          </div>
-        )}
-      </div>
-    );
-  }
 
   if (data.length === 0) {
     return (
