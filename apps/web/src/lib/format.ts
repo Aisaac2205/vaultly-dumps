@@ -94,3 +94,28 @@ export function nextRunParts(isoDate: string | null | undefined): { value: strin
   const d = Math.round(h / 24)
   return { value: String(d), unit: 'd' }
 }
+
+export function formatEnvironment(env: string | null | undefined): string {
+  if (!env) return '—'
+  const normalized = env.toLowerCase().trim()
+  if (normalized === 'prod' || normalized === 'production') {
+    return i18n.t('env.prod', { ns: 'common', defaultValue: 'Producción' })
+  }
+  if (normalized === 'dev' || normalized === 'development') {
+    return i18n.t('env.dev', { ns: 'common', defaultValue: 'Desarrollo' })
+  }
+  if (normalized === 'qa') {
+    return i18n.t('env.qa', { ns: 'common', defaultValue: 'QA' })
+  }
+  if (normalized === 'staging') {
+    return i18n.t('env.staging', { ns: 'common', defaultValue: 'Staging' })
+  }
+  if (normalized === 'test' || normalized === 'testing') {
+    return i18n.t('env.test', { ns: 'common', defaultValue: 'Test' })
+  }
+  const key = `env.${normalized}`
+  return i18n.exists(key, { ns: 'common' })
+    ? i18n.t(key, { ns: 'common' })
+    : env.charAt(0).toUpperCase() + env.slice(1).toLowerCase()
+}
+

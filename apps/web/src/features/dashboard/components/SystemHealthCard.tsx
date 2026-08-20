@@ -1,18 +1,26 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { DataTable, type Column } from "@/shared/ui/data-table";
 import type { R2Object } from "../types";
 import { useTranslation } from "react-i18next";
 import { formatRelativeTime } from "@/lib/format";
 import { formatSize } from "@/shared/lib/format";
 import cloudflareSvg from "@/shared/assets/Cloudflare.svg";
-import { Activity, HardDrive } from "lucide-react";
+import { Activity } from "lucide-react";
 
 interface SystemHealthCardProps {
   dumps: R2Object[];
 }
 
+interface StorageMetricItem {
+  id: string;
+  name: string;
+  subtext: string;
+  value: string;
+}
+
 export function SystemHealthCard({ dumps }: SystemHealthCardProps) {
-  const { t } = useTranslation('dashboard')
+  const { t } = useTranslation('dashboard');
   const totalSize = dumps.reduce((acc, d) => acc + d.size, 0);
   const lastDump =
     dumps.length > 0
@@ -25,11 +33,11 @@ export function SystemHealthCard({ dumps }: SystemHealthCardProps) {
 
   if (!hasStorage) {
     return (
-      <Card>
+      <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle className="text-base">{t('health.title')}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex items-center justify-center">
           <EmptyState
             icon={<Activity className="h-8 w-8" />}
             title={t('health.empty.title')}
@@ -40,41 +48,61 @@ export function SystemHealthCard({ dumps }: SystemHealthCardProps) {
     );
   }
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Activity className="h-4 w-4" />
-          {t('health.title')}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Storage Section */}
-        <div>
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
-            <HardDrive className="h-3.5 w-3.5" />
-            {t('health.storage')}
-            <img src={cloudflareSvg} alt="Cloudflare R2" className="h-3.5 w-3.5" />
-          </h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('health.dumpsStored')}</span>
-              <span className="font-mono font-semibold">{dumps.length}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('health.spaceUsed')}</span>
-              <span className="font-mono font-semibold">
-                {totalSize > 0 ? formatSize(totalSize) : "0 MB"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">{t('health.lastDump')}</span>
-              <span className="font-mono text-xs">
-                {lastDump ? formatRelativeTime(lastDump.lastModified) : "N/A"}
-              </span>
-            </div>
-          </div>
+  const metricsData: StorageMetricItem[] = [
+    {
+      id: "dumps",
+      name: t('health.dumpsStored', { defaultValue: 'Dumps almacenados' }),
+      subtext: "Cloudflare R2",
+      value: `${dumps.length}`,
+    },
+    {
+      id: "space",
+      name: t('health.spaceUsed', { defaultValue: 'Espacio ocupado' }),
+      subtext: t('health.totalStorage', { defaultValue: 'Volumen total' }),
+      value: totalSize > 0 ? formatSize(totalSize) : "0 MB",
+    },
+    {
+      id: "sync",
+      name: t('health.lastDump', { defaultValue: 'Último dump' }),
+      subtext: t('health.latestActivity', { defaultValue: 'Actividad reciente' }),
+      value: lastDump ? formatRelativeTime(lastDump.lastModified) : "N/A",
+    },
+  ];
+
+  const columns: Column<StorageMetricItem>[] = [
+    {
+      header: (
+        <span className="inline-flex items-center gap-1.5">
+          {t('health.storage')}
+          <img src={cloudflareSvg} alt="Cloudflare" className="h-3.5 w-3.5" />
+        </span>
+      ),
+      accessor: (m) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-medium text-text-primary">{m.name}</span>
+          <span className="font-mono text-[10px] text-muted-foreground/70">{m.subtext}</span>
         </div>
+      ),
+    },
+    {
+      header: t('column.status', { defaultValue: 'Estado / Valor' }),
+      accessor: (m) => (
+        <span className="font-mono text-xs font-semibold text-text-primary">
+          {m.value}
+        </span>
+      ),
+      className: "text-right w-32",
+      headerClassName: "text-right",
+    },
+  ];
+
+  return (
+    <Card className="h-full flex flex-col">
+      <CardHeader>
+        <CardTitle className="text-base">{t('health.title')}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 flex flex-col justify-between">
+        <DataTable columns={columns} data={metricsData} compact />
       </CardContent>
     </Card>
   );

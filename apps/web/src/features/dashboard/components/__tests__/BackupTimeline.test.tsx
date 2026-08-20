@@ -60,19 +60,18 @@ describe("BackupTimeline", () => {
     expect(screen.getByText("Entorno")).toBeInTheDocument();
   });
 
-  it("renders environment as plain text (lowercase with CSS uppercase)", () => {
+  it("renders environment as clean formatted text", () => {
     renderTimeline();
 
-    expect(screen.getByText("prod")).toBeInTheDocument();
-    expect(screen.getByText("dev")).toBeInTheDocument();
+    expect(screen.getByText("Producción")).toBeInTheDocument();
+    expect(screen.getByText("Desarrollo")).toBeInTheDocument();
   });
 
-  it("uses muted-foreground and font-mono styling for environment", () => {
+  it("uses muted-foreground styling for environment", () => {
     renderTimeline();
 
-    const prodElement = screen.getByText("prod");
+    const prodElement = screen.getByText("Producción");
     expect(prodElement.classList.contains("text-muted-foreground")).toBe(true);
-    expect(prodElement.classList.contains("font-mono")).toBe(true);
   });
 
   it("renders connection names without environment badge", () => {

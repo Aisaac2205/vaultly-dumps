@@ -1,12 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
-import {
-  Clock,
-  Calendar,
-  AlertCircle,
-  PauseCircle,
-} from "lucide-react";
+import { EmptyState } from "@/shared/ui/empty-state";
+import { DataTable, type Column } from "@/shared/ui/data-table";
+import { Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatUpcomingTime, formatDateTime } from "@/lib/format";
+import { formatUpcomingTime } from "@/lib/format";
 import type { CronjobEntity } from "../types";
 
 interface UpcomingCronjobsCardProps {
@@ -14,7 +11,7 @@ interface UpcomingCronjobsCardProps {
 }
 
 export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
-  const { t } = useTranslation('dashboard')
+  const { t } = useTranslation('dashboard');
   const active = cronjobs.filter((c) => c.isActive);
   const paused = cronjobs.filter((c) => !c.isActive);
 
@@ -25,74 +22,63 @@ export function UpcomingCronjobsCard({ cronjobs }: UpcomingCronjobsCardProps) {
     return new Date(a.nextRunAt).getTime() - new Date(b.nextRunAt).getTime();
   });
 
-  const upcoming = sortedActive.slice(0, 3);
-  const remaining = sortedActive.length - upcoming.length;
+  const visible = sortedActive.slice(0, 3);
+  const remaining = sortedActive.length - visible.length;
+
+  const columns: Column<CronjobEntity>[] = [
+    {
+      header: t('column.cronjob', { defaultValue: 'Cronjob' }),
+      accessor: (cj) => (
+        <div className="flex flex-col gap-0.5">
+          <span className="truncate font-medium text-xs text-text-primary" title={cj.name}>
+            {cj.name}
+          </span>
+          <span className="font-mono text-[10px] text-muted-foreground/70 truncate">
+            {cj.connectionName ?? cj.cronExpression}
+          </span>
+        </div>
+      ),
+    },
+    {
+      header: t('column.nextRun', { defaultValue: 'Próxima ejecución' }),
+      accessor: (cj) => (
+        <span className="text-xs whitespace-nowrap text-muted-foreground font-mono">
+          {cj.nextRunAt ? formatUpcomingTime(cj.nextRunAt) : t('upcoming.noNext')}
+        </span>
+      ),
+      className: "w-28 text-right",
+      headerClassName: "text-right",
+    },
+  ];
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Calendar className="h-4 w-4" aria-hidden="true" />
-          {t('upcoming.title')}
-        </CardTitle>
+        <CardTitle className="text-base">{t('upcoming.title')}</CardTitle>
       </CardHeader>
-      <CardContent>
-        {upcoming.length === 0 ? (
-          <div
-            role="status"
-            className="flex flex-col items-center gap-2 py-4 text-center text-sm text-muted-foreground"
-          >
-            <Clock className="h-8 w-8" aria-hidden="true" />
-            <p>{t('upcoming.empty')}</p>
-          </div>
+      <CardContent className="flex-1 flex flex-col justify-between">
+        {visible.length === 0 ? (
+          <EmptyState
+            icon={<Clock className="h-8 w-8" />}
+            title={t('upcoming.empty')}
+            description={t('upcoming.empty')}
+          />
         ) : (
-          <ul className="space-y-2">
-            {upcoming.map((cj) => {
-              const hasSchedule = cj.nextRunAt !== null;
-              const absoluteTitle = hasSchedule
-                ? formatDateTime(cj.nextRunAt as string)
-                : undefined;
-              return (
-                <li
-                  key={cj.id}
-                  className="flex items-center justify-between gap-2 rounded-md bg-muted/40 px-3 py-2 text-sm"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium" title={cj.name}>
-                      {cj.name}
-                    </p>
-                    {hasSchedule ? (
-                      <p
-                        className="text-xs text-muted-foreground"
-                        title={absoluteTitle}
-                      >
-                        {formatUpcomingTime(cj.nextRunAt as string)}
-                      </p>
-                    ) : (
-                      <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <AlertCircle
-                          className="h-3 w-3 shrink-0"
-                          aria-hidden="true"
-                        />
-                        {t('upcoming.noNext')}
-                      </p>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-        {remaining > 0 && (
-          <p className="mt-2 text-center text-xs text-muted-foreground">
-            {t("upcoming.more", { count: remaining })}
-          </p>
-        )}
-        {paused.length > 0 && (
-          <p className="mt-1 flex items-center justify-center gap-1 text-center text-xs text-muted-foreground">
-            <PauseCircle className="h-3 w-3" aria-hidden="true" />
-            {t(paused.length === 1 ? 'upcoming.paused_one' : 'upcoming.paused_other', { count: paused.length })}
-          </p>
+          <>
+            <DataTable columns={columns} data={visible} compact />
+            {(remaining > 0 || paused.length > 0) && (
+              <div className="py-2.5 text-center text-xs text-muted-foreground space-y-0.5">
+                {remaining > 0 && (
+                  <p>{t("upcoming.more", { count: remaining })}</p>
+                )}
+                {paused.length > 0 && (
+                  <p className="text-muted-foreground/70">
+                    {t(paused.length === 1 ? 'upcoming.paused_one' : 'upcoming.paused_other', { count: paused.length })}
+                  </p>
+                )}
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>

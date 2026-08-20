@@ -1,5 +1,5 @@
 import type { Cronjob } from "../types";
-import { formatDateTimeShort as formatDate } from "@/lib/format";
+import { formatDateTimeShort as formatDate, formatEnvironment } from "@/lib/format";
 import { useTranslation } from "react-i18next";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Button } from "@/shared/ui/button";
@@ -53,8 +53,8 @@ export default function CronjobsTable({
       accessor: (cronjob) => {
         const env = resolveEnv(cronjob.connectionId);
         return env ? (
-          <span className="text-muted-foreground font-mono text-xs uppercase">
-            {env}
+          <span className="text-muted-foreground text-xs">
+            {formatEnvironment(env)}
           </span>
         ) : (
           <span className="text-muted-foreground">—</span>

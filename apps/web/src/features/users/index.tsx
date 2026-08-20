@@ -4,7 +4,8 @@ import { UsersFilters, useUserFilters } from "./components/UsersFilters";
 import { UsersTable } from "./components/UsersTable";
 import { CreateUserDialog } from "./components/CreateUserDialog";
 import { PageHeader } from "@/shared/ui/page-header";
-import { FadeIn } from "@/shared/ui/motion/FadeIn";
+
+import { GlobalLoadingOverlay } from "@/shared/ui/TetrominoLoader";
 import { useTranslation } from "react-i18next";
 
 function toQueryFilters(filters: { search: string; role: "" | "admin" | "user" }): UseUsersFilters {
@@ -23,7 +24,8 @@ export default function UsersPage() {
   const hasActiveFilters = filters.search !== "" || filters.role !== "";
 
   return (
-    <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
+    <>
+    <div className="space-y-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
         title={t('page.title')}
         subtitle={t('page.subtitle')}
@@ -36,6 +38,9 @@ export default function UsersPage() {
         loading={isLoading}
         filtered={hasActiveFilters}
       />
-    </FadeIn>
+    </div>
+
+    <GlobalLoadingOverlay open={isLoading} label={t('loading', { defaultValue: 'Cargando usuarios...' })} />
+  </>
   );
 }

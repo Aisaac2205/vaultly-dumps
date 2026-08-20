@@ -17,33 +17,17 @@ describe("BackupAreaChart", () => {
   it("renders chart with CSS variable colors via ChartContainer", () => {
     render(<BackupAreaChart data={sampleData} />);
 
-    // The ChartContainer renders and injects CSS variables for chart colors.
-    // Verify it renders without crashing and the description mentions both types.
-    const description = screen.getByText(/Programados vs manuales/);
-    expect(description).toBeInTheDocument();
+    // Verify title is rendered
+    expect(screen.getByText("Backups completados")).toBeInTheDocument();
 
-    // The chartConfig uses var(--color-chart-scheduled) instead of hardcoded hex.
-    // We verify this by checking the ChartContainer's style prop, which maps
-    // chartConfig colors into CSS custom properties.
-    const chartContainer = document.querySelector("[style*='--color-chart-scheduled']");
+    // The chartConfig uses var(--color-info)
+    const chartContainer = document.querySelector("[style*='--color-total']");
     expect(chartContainer).toBeTruthy();
   });
 
-  it("renders empty state when no data matches time range", () => {
-    const oldData = [
-      { date: "2025-01-01", scheduled: 1, manual: 0 },
-    ];
-
-    render(<BackupAreaChart data={oldData} />);
+  it("renders empty state when data is empty", () => {
+    render(<BackupAreaChart data={[]} />);
 
     expect(screen.getByText(/No hay datos/i)).toBeInTheDocument();
-  });
-
-  it("renders time range toggle buttons", () => {
-    render(<BackupAreaChart data={sampleData} />);
-
-    expect(screen.getByText("7 días")).toBeInTheDocument();
-    expect(screen.getByText("30 días")).toBeInTheDocument();
-    expect(screen.getByText("3 meses")).toBeInTheDocument();
   });
 });

@@ -5,7 +5,7 @@ import { ConnectionLabel } from "@/shared/components/ConnectionLabel";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { shortId, formatDateTimeShort as formatDate } from "@/lib/format";
+import { shortId, formatDateTimeShort as formatDate, formatEnvironment } from "@/lib/format";
 import type { BackupJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
 
@@ -14,7 +14,7 @@ interface BackupTimelineProps {
   maxItems?: number;
 }
 
-export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) {
+export function BackupTimeline({ backups, maxItems = 8 }: BackupTimelineProps) {
   const { t } = useTranslation('dashboard')
   const visible = maxItems > 0 ? backups.slice(0, maxItems) : backups;
   const remaining = maxItems > 0 ? Math.max(0, backups.length - maxItems) : 0;
@@ -24,9 +24,9 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
     {
       header: t('column.connection'),
       accessor: (job) => (
-        <div className="flex flex-col gap-0.5">
-          <ConnectionLabel id={job.connectionId} name={job.connectionName} />
-          <span className="font-mono text-[10px] text-muted-foreground/70">
+        <div className="flex flex-col gap-1 py-0.5">
+          <ConnectionLabel id={job.connectionId} name={job.connectionName} className="font-medium text-xs text-text-primary leading-tight" />
+          <span className="font-mono text-[10px] text-muted-foreground/70 leading-tight">
             {shortId(job.id)}
           </span>
         </div>
@@ -35,8 +35,8 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
     {
       header: t('column.environment'),
       accessor: (job) => (
-        <span className="font-mono text-xs uppercase text-muted-foreground">
-          {job.environment}
+        <span className="text-xs text-muted-foreground">
+          {formatEnvironment(job.environment)}
         </span>
       ),
       className: "hidden md:table-cell",
@@ -58,11 +58,11 @@ export function BackupTimeline({ backups, maxItems = 15 }: BackupTimelineProps) 
   ];
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-base">{t('timeline.backups.title')}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-between">
         {hasBackups ? (
           <>
             <DataTable columns={columns} data={visible} compact />

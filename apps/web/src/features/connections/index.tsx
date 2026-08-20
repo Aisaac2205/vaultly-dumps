@@ -16,12 +16,12 @@ import {
   ConnectionFilters,
   useConnectionFilters,
 } from "./components/ConnectionFilters";
-import { FadeIn } from "@/shared/ui/motion/FadeIn";
+
 import { PageHeader } from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { EmptyState } from "@/shared/ui/empty-state";
-import { CardSkeleton, TableSkeleton } from "@/shared/ui/loading-skeleton";
+import { GlobalLoadingOverlay } from "@/shared/ui/TetrominoLoader";
 import { Database } from "lucide-react";
 import type {
   Connection,
@@ -163,22 +163,6 @@ export default function Connections() {
     [testRawMutation],
   );
 
-  // ─── Loading state ──────────────────────────────────────
-
-  if (isQueryLoading) {
-    return (
-      <div className="space-y-8 p-4 sm:p-6 lg:p-8">
-        <div className="h-8 w-36 animate-pulse rounded bg-muted" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-        <TableSkeleton rows={5} columns={8} />
-      </div>
-    );
-  }
-
   // ─── Error state ────────────────────────────────────────
 
   if (queryError) {
@@ -196,7 +180,7 @@ export default function Connections() {
 
   // ─── Empty state ────────────────────────────────────────
 
-  if (connections.length === 0 && !showForm) {
+  if (!isQueryLoading && connections.length === 0 && !showForm) {
     return (
       <div className="space-y-8 p-4 sm:p-6 lg:p-8">
         <PageHeader title={t('page.title')} />
@@ -218,54 +202,58 @@ export default function Connections() {
     createMutation.error ?? updateMutation.error ?? deleteMutation.error;
 
   return (
-    <FadeIn className="space-y-8 p-4 sm:p-6 lg:p-8">
-      <PageHeader
-        title={t('page.title')}
-        actions={
-          !showForm ? (
-            <Button onClick={handleNewClick}>{t('action.new')}</Button>
-          ) : undefined
-        }
-      />
-
-      {mutationError && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {mutationError instanceof Error
-              ? mutationError.message
-              : t('error.unexpected', { ns: 'common' })}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <ConnectionsStats
-        connections={connections}
-        loading={isQueryLoading}
-      />
-
-      {showForm && (
-        <ConnectionForm
-          connection={editingConnection}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          isLoading={formLoading}
-          testRaw={testRaw}
+    <>
+    <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+        <PageHeader
+          title={t('page.title')}
+          actions={
+            !showForm ? (
+              <Button onClick={handleNewClick}>{t('action.new')}</Button>
+            ) : undefined
+          }
         />
-      )}
 
-      {connections.length > 0 && (
-        <ConnectionFilters filters={filters} onChange={setFilters} />
-      )}
+        {mutationError && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {mutationError instanceof Error
+                ? mutationError.message
+                : t('error.unexpected', { ns: 'common' })}
+            </AlertDescription>
+          </Alert>
+        )}
 
-      <ConnectionsTable
-        connections={filtered}
-        isLoading={false}
-        onEdit={handleEdit}
-        onDelete={(id) => void handleDelete(id)}
-        onTest={(id) => void handleTest(id)}
-        testResults={testResults}
-        testLoading={testLoading}
-      />
-    </FadeIn>
+        <ConnectionsStats
+          connections={connections}
+          loading={isQueryLoading}
+        />
+
+        {showForm && (
+          <ConnectionForm
+            connection={editingConnection}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isLoading={formLoading}
+            testRaw={testRaw}
+          />
+        )}
+
+        {connections.length > 0 && (
+          <ConnectionFilters filters={filters} onChange={setFilters} />
+        )}
+
+        <ConnectionsTable
+          connections={filtered}
+          isLoading={isQueryLoading}
+          onEdit={handleEdit}
+          onDelete={(id) => void handleDelete(id)}
+          onTest={(id) => void handleTest(id)}
+          testResults={testResults}
+          testLoading={testLoading}
+        />
+      </div>
+
+      <GlobalLoadingOverlay open={isQueryLoading} label={t('loading', { defaultValue: 'Cargando conexiones...' })} />
+    </>
   );
 }

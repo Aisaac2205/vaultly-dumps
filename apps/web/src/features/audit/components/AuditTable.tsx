@@ -10,7 +10,7 @@ import {
   PaginationEllipsis,
 } from "@/shared/ui/pagination";
 import { useTranslation } from "react-i18next";
-import { formatDateTimeShort } from "@/lib/format";
+import { formatDateTimeShort, formatEnvironment } from "@/lib/format";
 import {
   Database,
   Trash2,
@@ -58,66 +58,70 @@ function ActionCell({ action }: { action: string }) {
   const Icon = ACTION_ICONS[action] ?? FileText;
   return (
     <div className="flex items-center gap-2">
-      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-      <code className="text-xs font-mono">{action}</code>
+      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <code className="text-xs font-mono text-text-primary">{action}</code>
     </div>
   );
 }
 
-function ResourceCell({ log, resourceLabel }: { log: AuditLog; resourceLabel: string }) {
+function formatResourceType(type: string): string {
+  if (!type) return "";
+  return type.replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
+function MetadataCell({
+  log,
+  viewLabel,
+}: {
+  log: AuditLog;
+  viewLabel: string;
+}) {
   const meta = log.metadata ?? {};
   const metaName =
     (typeof meta.name === "string" && meta.name) ||
     (typeof meta.connectionName === "string" && meta.connectionName) ||
     undefined;
 
-  if (log.resourceType === "connection") {
-    return (
-      <div className="flex items-center gap-1.5">
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-          {resourceLabel}
-        </span>
-        <ConnectionLabel id={log.resourceId} name={metaName} className="text-sm" />
-      </div>
-    );
-  }
+  const hasMeta = Object.keys(meta).length > 0;
+  const showId = log.resourceId && log.resourceId !== "unknown";
+  const formattedType = formatResourceType(log.resourceType);
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-        {log.resourceType}
-      </span>
-      {metaName ? (
-        <span className="text-sm truncate" title={`${metaName} (${log.resourceId})`}>
-          {metaName}
-        </span>
-      ) : (
-        <span
-          className="font-mono text-xs text-muted-foreground"
-          title={log.resourceId}
-        >
-          #{shortenId(log.resourceId)}
-        </span>
+    <div className="flex flex-col items-center gap-1.5 py-0.5 w-full min-w-0">
+      <div className="flex items-center justify-center gap-2 min-w-0">
+        {log.resourceType === "connection" ? (
+          <ConnectionLabel id={log.resourceId} name={metaName} className="text-xs truncate font-medium" />
+        ) : metaName ? (
+          <span className="text-xs font-medium text-text-primary truncate" title={`${metaName} (${log.resourceId})`}>
+            {metaName}
+          </span>
+        ) : showId ? (
+          <span
+            className="font-mono text-xs text-muted-foreground truncate"
+            title={log.resourceId}
+          >
+            #{shortenId(log.resourceId)}
+          </span>
+        ) : null}
+        {formattedType && (
+          <span className="text-[11px] text-muted-foreground/70 shrink-0 font-medium">
+            {formattedType}
+          </span>
+        )}
+      </div>
+
+      {hasMeta && (
+        <details className="group w-full block text-center">
+          <summary className="cursor-pointer text-xs font-mono text-muted-foreground hover:text-foreground list-none inline-flex items-center justify-center gap-1 transition-colors">
+            <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90 text-muted-foreground/70 shrink-0" />
+            <span>{viewLabel}</span>
+          </summary>
+          <pre className="mt-2 w-full rounded-lg border border-border/50 bg-muted/40 p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-60 overflow-y-auto text-muted-foreground text-left leading-relaxed">
+            {JSON.stringify(meta, null, 2)}
+          </pre>
+        </details>
       )}
     </div>
-  );
-}
-
-function MetadataCell({ metadata, viewLabel }: { metadata?: Record<string, unknown>; viewLabel: string }) {
-  if (!metadata || Object.keys(metadata).length === 0) {
-    return <span className="text-muted-foreground">—</span>;
-  }
-
-  return (
-    <details className="group">
-      <summary className="cursor-pointer text-xs font-mono text-muted-foreground hover:text-foreground list-none flex items-center gap-1">
-        <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90" />
-        {viewLabel}
-      </summary>
-      <pre className="mt-2 rounded-md bg-muted p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-48 overflow-y-auto">
-        {JSON.stringify(metadata, null, 2)}
-      </pre>
-    </details>
   );
 }
 
@@ -166,11 +170,11 @@ function AuditPagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3">
-      <p className="text-sm text-muted-foreground">
+    <div className="flex w-full items-center justify-between gap-4">
+      <p className="text-xs text-muted-foreground whitespace-nowrap">
         {t('showing', { start: startItem, end: endItem, total })}
       </p>
-      <Pagination>
+      <Pagination className="mx-0 w-auto">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
@@ -214,51 +218,55 @@ export default function AuditTable({
   pageSize,
   onPageChange,
 }: AuditTableProps) {
-  const { t } = useTranslation('audit')
+  const { t } = useTranslation('audit');
 
   const columns: Column<AuditLog>[] = [
     {
       header: t('column.date'),
       accessor: (log) => (
-        <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTimeShort(log.createdAt)}</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap font-mono">
+          {formatDateTimeShort(log.createdAt)}
+        </span>
       ),
-      className: "hidden sm:table-cell",
-      headerClassName: "hidden sm:table-cell",
+      className: "w-36 hidden sm:table-cell",
+      headerClassName: "w-36 hidden sm:table-cell",
     },
     {
       header: t('column.user'),
       accessor: (log) => (
-        <span className="text-sm">{log.username}</span>
+        <span className="text-sm font-medium text-text-primary truncate">{log.username}</span>
       ),
+      className: "w-32 text-left",
+      headerClassName: "w-32 text-left",
     },
     {
       header: t('column.action'),
       accessor: (log) => <ActionCell action={log.action} />,
-    },
-    {
-      header: t('column.resource'),
-      accessor: (log) => <ResourceCell log={log} resourceLabel={t('resource.connection')} />,
+      className: "w-44 text-left",
+      headerClassName: "w-44 text-left",
     },
     {
       header: t('column.environment'),
       accessor: (log) => (
-        <span className="font-mono text-xs text-muted-foreground uppercase">{log.environment}</span>
+        <span className="text-xs text-muted-foreground">
+          {formatEnvironment(log.environment)}
+        </span>
       ),
-      className: "hidden sm:table-cell",
-      headerClassName: "hidden sm:table-cell",
+      className: "w-28 text-center hidden sm:table-cell",
+      headerClassName: "w-28 text-center hidden sm:table-cell",
     },
     {
       header: t('column.metadata'),
-      accessor: (log) => <MetadataCell metadata={log.metadata} viewLabel={t('metadata.view')} />,
-      className: "hidden sm:table-cell",
-      headerClassName: "hidden sm:table-cell",
+      accessor: (log) => <MetadataCell log={log} viewLabel={t('metadata.view')} />,
+      className: "text-center",
+      headerClassName: "text-center",
     },
   ];
 
   return (
     <div className="space-y-2">
       {logs.length === 0 && !isLoading ? (
-        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground rounded-xl bg-card border border-border/60">
           <ClipboardList className="h-8 w-8 mb-3 text-muted-foreground/50" />
           <p className="text-sm font-medium text-foreground">
             {t('empty.title')}

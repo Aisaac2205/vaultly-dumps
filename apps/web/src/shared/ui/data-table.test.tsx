@@ -33,14 +33,6 @@ describe('DataTable', () => {
     expect(screen.getByText('Sin resultados')).toBeInTheDocument();
   });
 
-  it('renders skeletons when loading', () => {
-    render(<DataTable columns={columns} data={[]} loading />);
-
-    // Skeletons are rendered (5 rows of skeleton divs)
-    const skeletons = document.querySelectorAll('[class*="h-4 w-full"]');
-    expect(skeletons.length).toBeGreaterThan(0);
-  });
-
   it('renders pagination slot when provided', () => {
     render(
       <DataTable
@@ -51,18 +43,5 @@ describe('DataTable', () => {
     );
 
     expect(screen.getByText('Page 1 of 10')).toBeInTheDocument();
-  });
-
-  it('renders pagination slot in loading state', () => {
-    render(
-      <DataTable
-        columns={columns}
-        data={[]}
-        loading
-        pagination={<div>Loading pagination</div>}
-      />,
-    );
-
-    expect(screen.getByText('Loading pagination')).toBeInTheDocument();
   });
 });

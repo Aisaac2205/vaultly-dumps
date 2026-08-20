@@ -62,5 +62,12 @@
   "toast.downloadStarted": "Download started",
   "toast.downloadError": "Error generating download link",
   "aria.restoreBackup": "Restore backup",
-  "aria.downloadDump": "Download dump"
+  "aria.downloadDump": "Download dump",
+  "role.admin": "Administrator",
+  "role.user": "User",
+  "env.prod": "Production",
+  "env.dev": "Development",
+  "env.qa": "QA",
+  "env.staging": "Staging",
+  "env.test": "Test"
 }

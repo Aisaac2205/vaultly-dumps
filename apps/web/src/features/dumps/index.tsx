@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { useDumps, useProdConnections } from "./hooks";
@@ -33,7 +32,7 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/shared/ui/pagination";
-import { TetrominoLoader, GlobalLoadingOverlay } from "@/shared/ui/TetrominoLoader";
+import { GlobalLoadingOverlay } from "@/shared/ui/TetrominoLoader";
 import { useSmoothLoading } from "@/shared/hooks/useSmoothLoading";
 import { DumpsStats } from "./components/DumpsStats";
 import { DumpsTable } from "./components/DumpsTable";
@@ -56,12 +55,14 @@ export default function Dumps() {
     refetch,
   } = useDumps({ page, pageSize, filters });
 
-  const { data: connections = [], isLoading: connectionsLoading } =
-    useProdConnections();
+  const { data: connections = [], isLoading: connectionsLoading } = useProdConnections();
   const [selectedConnectionId, setSelectedConnectionId] = useState("");
   const [backupError, setBackupError] = useState<string | null>(null);
   const [isCreatingBackup, setIsCreatingBackup] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  const rawLoading = dumpsLoading || connectionsLoading;
+  const isQueryLoading = useSmoothLoading(rawLoading);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -111,153 +112,128 @@ export default function Dumps() {
     setPage(newPage);
   }, []);
 
-  const rawLoading = dumpsLoading || connectionsLoading;
-  const isLoading = useSmoothLoading(rawLoading);
-
   return (
     <>
-      <AnimatePresence mode="wait">
-        {isLoading ? (
-          <motion.div
-            key="dumps-loading"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex min-h-[calc(100vh-9rem)] w-full flex-col items-center justify-center p-8"
-          >
-            <TetrominoLoader size="md" label={t('loading.title')} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="dumps-content"
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="space-y-6 p-4 sm:p-6 lg:p-8"
-          >
-            <PageHeader
-              title="Dumps"
-              actions={
-                <div className="flex items-center gap-3">
-                  <Select
-                    value={selectedConnectionId}
-                    onValueChange={setSelectedConnectionId}
-                    disabled={isCreatingBackup || connections.length === 0}
-                  >
-                    <SelectTrigger className="w-[240px] sm:w-[280px]">
-                      <SelectValue
-                        placeholder={
-                          connections.length === 0
-                            ? t('select.noConnections')
-                            : t('select.placeholder')
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {connections.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          <div className="flex items-center gap-2 min-w-0">
-                            <img
-                              src={c.dbType?.toLowerCase().includes("mysql") ? mysqlIcon : postgresIcon}
-                              alt={c.dbType}
-                              className="h-4 w-4 shrink-0 object-contain"
-                            />
-                            <span className="truncate">{c.name}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    onClick={handleOpenConfirm}
-                    disabled={isCreatingBackup || !selectedConnectionId}
-                  >
-                    {isCreatingBackup ? t('action.creating') : t('action.newBackup')}
-                  </Button>
-                </div>
-              }
-            />
-
-            {(dumpsError || backupError) && (
-              <Alert variant="destructive">
-                <AlertDescription>
-                  {backupError ?? dumpsError?.message ?? "Error desconocido"}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <DumpsFilters
-              filters={filters}
-              connections={connections}
-              onApply={handleApplyFilters}
-              onReset={handleResetFilters}
-            />
-
-            <DumpsStats dumps={dumps} />
-            <DumpsTable
-              dumps={dumps}
-              isLoading={dumpsLoading}
-              total={total}
-              page={page}
-              pageSize={pageSize}
-              pagination={
-                totalPages > 1 ? (
-                  <Pagination>
-                    <PaginationContent>
-                      <PaginationItem>
-                        <PaginationPrevious
-                          onClick={() => handlePageChange(Math.max(1, page - 1))}
-                          disabled={page <= 1}
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <PageHeader
+          title="Dumps"
+          actions={
+            <div className="flex items-center gap-3">
+              <Select
+                value={selectedConnectionId}
+                onValueChange={setSelectedConnectionId}
+                disabled={isCreatingBackup || connections.length === 0}
+              >
+                <SelectTrigger className="w-[240px] sm:w-[280px]">
+                  <SelectValue
+                    placeholder={
+                      connections.length === 0
+                        ? t('select.noConnections')
+                        : t('select.placeholder')
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {connections.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img
+                          src={c.dbType?.toLowerCase().includes("mysql") ? mysqlIcon : postgresIcon}
+                          alt={c.dbType}
+                          className="h-4 w-4 shrink-0 object-contain"
                         />
-                      </PaginationItem>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1)
-                        .filter(
-                          (p) =>
-                            p === 1 ||
-                            p === totalPages ||
-                            Math.abs(p - page) <= 1,
-                        )
-                        .map((p, idx, arr) => {
-                          const items: React.ReactNode[] = [];
-                          if (idx > 0 && p - arr[idx - 1] > 1) {
-                            items.push(
-                              <PaginationItem key={`ellipsis-${p}`}>
-                                <span className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground">
-                                  ...
-                                </span>
-                              </PaginationItem>,
-                            );
-                          }
-                          items.push(
-                            <PaginationItem key={p}>
-                              <PaginationLink
-                                isActive={p === page}
-                                onClick={() => handlePageChange(p)}
-                              >
-                                {p}
-                              </PaginationLink>
-                            </PaginationItem>,
-                          );
-                          return items;
-                        })}
-                      <PaginationItem>
-                        <PaginationNext
-                          onClick={() =>
-                            handlePageChange(Math.min(totalPages, page + 1))
-                          }
-                          disabled={page >= totalPages}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
-                ) : undefined
-              }
-            />
-          </motion.div>
+                        <span className="truncate">{c.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={handleOpenConfirm}
+                disabled={isCreatingBackup || !selectedConnectionId}
+              >
+                {isCreatingBackup ? t('action.creating') : t('action.newBackup')}
+              </Button>
+            </div>
+          }
+        />
+
+        {(dumpsError || backupError) && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {backupError ?? dumpsError?.message ?? "Error desconocido"}
+            </AlertDescription>
+          </Alert>
         )}
-      </AnimatePresence>
+
+        <DumpsFilters
+          filters={filters}
+          connections={connections}
+          onApply={handleApplyFilters}
+          onReset={handleResetFilters}
+        />
+
+        <DumpsStats dumps={dumps} />
+        <DumpsTable
+          dumps={dumps}
+          isLoading={isQueryLoading}
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          pagination={
+            totalPages > 1 ? (
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => handlePageChange(Math.max(1, page - 1))}
+                      disabled={page <= 1}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(
+                      (p) =>
+                        p === 1 ||
+                        p === totalPages ||
+                        Math.abs(p - page) <= 1,
+                    )
+                    .map((p, idx, arr) => {
+                      const items: React.ReactNode[] = [];
+                      if (idx > 0 && p - arr[idx - 1] > 1) {
+                        items.push(
+                          <PaginationItem key={`ellipsis-${p}`}>
+                            <span className="flex h-9 w-9 items-center justify-center text-sm text-muted-foreground">
+                              ...
+                            </span>
+                          </PaginationItem>,
+                        );
+                      }
+                      items.push(
+                        <PaginationItem key={p}>
+                          <PaginationLink
+                            isActive={p === page}
+                            onClick={() => handlePageChange(p)}
+                          >
+                            {p}
+                          </PaginationLink>
+                        </PaginationItem>,
+                      );
+                      return items;
+                    })}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() =>
+                        handlePageChange(Math.min(totalPages, page + 1))
+                      }
+                      disabled={page >= totalPages}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            ) : undefined
+          }
+        />
+      </div>
 
       {/* Confirmation Dialog */}
       <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
@@ -300,11 +276,11 @@ export default function Dumps() {
         </DialogContent>
       </Dialog>
 
-      {/* Global Loading Overlay with Tetromino animation */}
+      {/* Global Loading Overlay with Tetromino animation and smooth blur */}
       <GlobalLoadingOverlay
-        open={isCreatingBackup}
-        label={t('loading.title')}
-        sublabel={t('loading.subtitle')}
+        open={isQueryLoading || isCreatingBackup}
+        label={isCreatingBackup ? t('loading.title') : t('loading.fetching', { defaultValue: 'Cargando respaldos...' })}
+        sublabel={isCreatingBackup ? t('loading.subtitle') : undefined}
       />
     </>
   );

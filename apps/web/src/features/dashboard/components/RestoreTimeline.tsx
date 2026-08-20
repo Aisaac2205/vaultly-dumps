@@ -4,40 +4,43 @@ import { DataTable } from "@/shared/ui/data-table";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { shortId, formatDateTimeShort as formatDate } from "@/lib/format";
+import { shortId, formatDateTimeShort as formatDate, formatEnvironment } from "@/lib/format";
 import type { RestoreJob } from "../types";
 import type { Column } from "@/shared/ui/data-table";
 
-const MAX_ITEMS = 7;
-
 interface RestoreTimelineProps {
   restores: RestoreJob[];
+  maxItems?: number;
 }
 
-export function RestoreTimeline({ restores }: RestoreTimelineProps) {
+export function RestoreTimeline({ restores, maxItems = 8 }: RestoreTimelineProps) {
   const { t } = useTranslation('dashboard')
-  const visible = restores.slice(0, MAX_ITEMS);
-  const remaining = Math.max(0, restores.length - MAX_ITEMS);
+  const visible = maxItems > 0 ? restores.slice(0, maxItems) : restores;
+  const remaining = maxItems > 0 ? Math.max(0, restores.length - maxItems) : 0;
   const hasRestores = restores.length > 0;
 
   const columns: Column<RestoreJob>[] = [
     {
       header: t('column.id'),
       accessor: (job) => (
-        <span className="font-mono text-xs">{shortId(job.id)}</span>
+        <div className="flex flex-col gap-1 py-0.5">
+          <span className="truncate font-mono text-xs font-medium text-text-primary leading-tight">{shortId(job.id)}</span>
+          <span className="font-mono text-[10px] text-muted-foreground/70 leading-tight">
+            {job.isDryRun ? "dry-run" : "restore"}
+          </span>
+        </div>
       ),
-      className: "w-20",
+      className: "w-24",
     },
     {
       header: t('column.environment'),
-      accessor: (job) => job.targetEnvironment,
-      className: "w-20",
-    },
-    {
-      header: t('column.dryRun'),
-      accessor: (job) => (job.isDryRun ? t('value.yes') : t('value.no')),
-      className: "w-16 text-center",
-      headerClassName: "text-center",
+      accessor: (job) => (
+        <span className="text-xs text-muted-foreground">
+          {formatEnvironment(job.targetEnvironment)}
+        </span>
+      ),
+      className: "hidden md:table-cell",
+      headerClassName: "hidden md:table-cell",
     },
     {
       header: t('column.status'),
@@ -48,22 +51,22 @@ export function RestoreTimeline({ restores }: RestoreTimelineProps) {
       accessor: (job) => (
         <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDate(job.createdAt)}</span>
       ),
-      className: "w-28",
+      className: "w-24",
     },
   ];
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-base">{t('timeline.restores.title')}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-between">
         {hasRestores ? (
           <>
             <DataTable columns={columns} data={visible} compact />
             {remaining > 0 && (
-              <p className="mt-2 text-center text-xs text-muted-foreground">
-                +{remaining}
+              <p className="py-2.5 text-center text-xs text-muted-foreground">
+                {t('label.more', { count: remaining, ns: 'common' })}
               </p>
             )}
           </>

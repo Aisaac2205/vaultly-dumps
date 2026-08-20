@@ -1,4 +1,6 @@
 {
+  "page.title": "Conexiones",
+  "page.subtitle": "Gestión y monitoreo de conexiones a bases de datos",
   "column.name": "Nombre",
   "column.environment": "Ambiente",
   "column.type": "Tipo",

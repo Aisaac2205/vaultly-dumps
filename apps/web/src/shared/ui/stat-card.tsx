@@ -1,6 +1,5 @@
 import { Card, CardContent, type CardProps } from "@/shared/ui/card";
 import { Badge, BadgeDot } from "@/shared/ui/badge";
-import { Skeleton } from "@/shared/ui/skeleton";
 import { type ReactNode } from "react";
 
 interface StatCardProps {
@@ -27,21 +26,9 @@ export function StatCard({
   trend,
   aside,
   statusColor,
-  loading,
   compact = false,
   variant,
 }: StatCardProps) {
-  if (loading) {
-    return (
-      <Card variant={variant}>
-        <CardContent className="p-6">
-          <Skeleton className="mb-3.5 h-3.5 w-24" />
-          <Skeleton className={compact ? "h-7 w-16" : "h-9 w-24"} />
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card variant={variant}>
       <CardContent className="p-6">

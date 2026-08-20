@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "motion/react";
+
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,7 +21,7 @@ import { PageHeader } from "@/shared/ui/page-header";
 import { Button } from "@/shared/ui/button";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { EmptyState } from "@/shared/ui/empty-state";
-import { TetrominoLoader } from "@/shared/ui/TetrominoLoader";
+import { GlobalLoadingOverlay } from "@/shared/ui/TetrominoLoader";
 import { useSmoothLoading } from "@/shared/hooks/useSmoothLoading";
 import { Clock, Plus } from "lucide-react";
 import type { Cronjob, CreateCronjobDto, UpdateCronjobDto } from "./types";
@@ -138,24 +138,9 @@ export default function Cronjobs() {
     toggleMutation.error;
 
   return (
-    <AnimatePresence mode="wait">
-      {isQueryLoading ? (
-        <motion.div
-          key="cronjobs-loading"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="flex min-h-[calc(100vh-9rem)] w-full flex-col items-center justify-center p-8"
-        >
-          <TetrominoLoader size="md" />
-        </motion.div>
-      ) : queryError ? (
-        <motion.div
-          key="cronjobs-error"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+    <>
+      {queryError ? (
+        <div
           className="space-y-8 p-4 sm:p-6 lg:p-8"
         >
           <PageHeader title="Cronjobs" />
@@ -164,14 +149,9 @@ export default function Cronjobs() {
               {t('error.load', { message: queryError instanceof Error ? queryError.message : t('error.generic', { ns: 'common' }) })}
             </AlertDescription>
           </Alert>
-        </motion.div>
-      ) : cronjobs.length === 0 && !showForm ? (
-        <motion.div
-          key="cronjobs-empty"
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        </div>
+      ) : !isQueryLoading && cronjobs.length === 0 && !showForm ? (
+        <div
           className="space-y-8 p-4 sm:p-6 lg:p-8"
         >
           <PageHeader title="Cronjobs" />
@@ -186,14 +166,9 @@ export default function Cronjobs() {
               </Button>
             }
           />
-        </motion.div>
+        </div>
       ) : (
-        <motion.div
-          key="cronjobs-content"
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        <div
           className="space-y-8 p-4 sm:p-6 lg:p-8"
         >
           <PageHeader
@@ -240,14 +215,16 @@ export default function Cronjobs() {
 
           <CronjobsTable
             cronjobs={filtered}
-            isLoading={false}
+            isLoading={isQueryLoading}
             onEdit={handleEdit}
             onDelete={(id) => void handleDelete(id)}
             onToggle={(id) => void handleToggle(id)}
             toggleLoading={toggleLoading}
           />
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+
+    <GlobalLoadingOverlay open={isQueryLoading} label={t('loading', { defaultValue: 'Cargando cronjobs...' })} />
+  </>
   );
 }
