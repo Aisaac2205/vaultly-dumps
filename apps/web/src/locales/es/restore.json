@@ -49,7 +49,7 @@
   "dryRun.warningText": "Esto ejecutará un restore REAL sobre la base de datos destino. Los datos existentes serán modificados.",
   "action.processing": "Procesando...",
   "action.simulate": "Simular Restauración",
-  "action.restore": "Restaurar (real)",
+  "action.restore": "Restaurar",
   "action.recommendation": "Se recomienda un Dry Run antes de restaurar.",
   "action.confirm": "Confirmar restore",
   "action.execute": "Ejecutar restore",

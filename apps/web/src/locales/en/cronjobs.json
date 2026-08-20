@@ -10,6 +10,7 @@
   "stats.total": "Total cronjobs",
   "stats.active": "Active",
   "stats.topStatus": "Top status",
+  "stats.mainStatus": "Top status",
   "stats.nextRun": "Next run",
   "status.pending": "Pending",
   "status.running": "Running",

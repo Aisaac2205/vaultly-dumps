@@ -25,6 +25,12 @@
   "toast.created": "Backup created successfully",
   "toast.createError": "Error creating backup",
   "confirm.create": "Are you sure you want to create a new backup?",
+  "confirm.title": "Create manual backup",
+  "confirm.description": "A new database dump will be generated immediately for connection \"{{name}}\".",
+  "confirm.cancel": "Cancel",
+  "confirm.submit": "Create backup",
+  "loading.title": "Generating database backup...",
+  "loading.subtitle": "Connecting to database and creating dump. Please wait.",
   "filter.connection": "Connection",
   "filter.environment": "Environment",
   "filter.status": "Status",
@@ -35,5 +41,9 @@
   "status.completed": "Completed",
   "status.running": "In progress",
   "status.pending": "Pending",
-  "status.failed": "Failed"
+  "status.failed": "Failed",
+  "error.binaryNotFound": "Tool unavailable",
+  "error.authFailed": "Access error",
+  "error.connectionRefused": "Connection rejected",
+  "error.genericFailure": "Backup failed"
 }
