@@ -81,29 +81,40 @@ function SidebarRoot({ children, onNavigate, collapsible = "none" }: SidebarRoot
   );
 }
 
-/** Logo / branding section. In collapsed mode only the first child (logo) is rendered. */
+/** Logo / branding section with macOS traffic light chrome. */
 function SidebarHeader({ children }: { children: ReactNode }) {
   const { collapsed } = useSidebarNavContext();
   const childArray = Children.toArray(children);
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 transition-all duration-200",
-        collapsed ? "justify-center px-2 py-5" : "px-4 py-5",
-      )}
-    >
-      {collapsed ? childArray.slice(0, 1) : children}
+    <div className="flex flex-col gap-2 pt-3 pb-2 transition-all duration-200">
+      {/* macOS Window Controls (Traffic Lights) */}
+      <div className={cn("flex items-center px-4", collapsed ? "justify-center" : "justify-between")}>
+        <div className="flex items-center gap-1.5" aria-hidden="true">
+          <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 transition-transform hover:scale-110" />
+          <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 transition-transform hover:scale-110" />
+          <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 transition-transform hover:scale-110" />
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "flex items-center gap-3 transition-all duration-200",
+          collapsed ? "justify-center px-2 py-2" : "px-4 py-2",
+        )}
+      >
+        {collapsed ? childArray.slice(0, 1) : children}
+      </div>
     </div>
   );
 }
 
 /** Scrollable navigation wrapper. */
 function SidebarNav({ children }: { children: ReactNode }) {
-  return <nav className="flex-1 overflow-y-auto py-3">{children}</nav>;
+  return <nav className="flex-1 overflow-y-auto px-1 py-2 space-y-0.5">{children}</nav>;
 }
 
-/** Single navigation link with token-based active state. Collapse-aware. */
+/** Single navigation link with token-based active state. Collapse-aware macOS pill styling. */
 function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) {
   const { onNavigate, collapsed } = useSidebarNavContext();
 
@@ -122,22 +133,22 @@ function SidebarItem({ path, label, icon: Icon, routeKey, end }: NavItemConfig) 
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors",
+          "flex items-center gap-3 mx-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-all",
           "focus-visible:ring-2 focus-visible:ring-sidebar-indicator focus-visible:ring-inset focus-visible:outline-none",
           isActive
-            ? "border-l-2 border-sidebar-indicator bg-sidebar-active text-sidebar-text"
+            ? "border-sidebar-indicator bg-sidebar-active text-sidebar-text shadow-xs font-semibold"
             : "text-sidebar-text/70 hover:bg-sidebar-hover hover:text-sidebar-text",
-          collapsed && "justify-center px-2",
+          collapsed && "justify-center mx-1 px-2",
         )
       }
     >
       <Icon className="h-4 w-4 shrink-0" aria-hidden={collapsed ? true : undefined} />
-      {!collapsed && <span>{label}</span>}
+      {!collapsed && <span className="truncate">{label}</span>}
     </NavLink>
   );
 }
 
-/** User info + logout in the sidebar footer. Collapse-aware. */
+/** User info + logout in the sidebar footer. Collapse-aware macOS card style. */
 function SidebarUser({
   user,
   onLogout,
@@ -146,18 +157,24 @@ function SidebarUser({
   onLogout: () => Promise<void>;
 }) {
   const { collapsed } = useSidebarNavContext();
-  const { t } = useTranslation('common')
+  const { t } = useTranslation('common');
 
   return (
-    <div className="flex flex-col gap-2 border-t border-sidebar-border p-4">
+    <div className="flex flex-col gap-2 border-t border-sidebar-border/70 p-3">
       {!collapsed && user && (
-        <span className="truncate text-xs text-sidebar-text/60">
-          {user.email}
-        </span>
+        <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-xs text-sidebar-text/80">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground shadow-xs">
+            {user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-semibold text-sidebar-text text-xs">{user.name ?? user.email}</div>
+            <div className="truncate text-[10px] text-sidebar-text/60">{user.email}</div>
+          </div>
+        </div>
       )}
       <button
         className={cn(
-          "flex items-center gap-2 text-left text-xs text-sidebar-text/50 transition-colors hover:text-sidebar-text",
+          "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium text-sidebar-text/60 transition-colors hover:bg-sidebar-hover hover:text-sidebar-text",
           collapsed && "justify-center",
         )}
         onClick={() => void onLogout()}
@@ -165,7 +182,7 @@ function SidebarUser({
         aria-label={t('action.logout')}
       >
         <LogOut className="h-3.5 w-3.5" />
-        {!collapsed && t('action.logout')}
+        {!collapsed && <span>{t('action.logout')}</span>}
       </button>
     </div>
   );

@@ -41,7 +41,7 @@ function LayoutInner({ children, user, onLogout }: LayoutProps) {
   const sidebarCollapsed = state === "collapsed";
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen w-full overflow-x-hidden bg-sidebar">
       {/* Desktop sidebar — icon-rail collapsible */}
       <Sidebar user={user} onLogout={onLogout} collapsible="icon" />
 
@@ -74,25 +74,27 @@ function LayoutInner({ children, user, onLogout }: LayoutProps) {
         </span>
       </header>
 
-      {/* Main content area — margin adapts to sidebar width, content fills available space */}
+      {/* Main content area — margin adapts to sidebar width, canvas floats as macOS window */}
       <div
         className={cn(
-          "flex min-h-screen flex-1 flex-col pt-14 md:pt-0 transition-[margin] duration-200 ease-out",
+          "flex min-h-screen flex-1 flex-col pt-14 md:pt-0 overflow-hidden bg-sidebar transition-[margin] duration-200 ease-out",
           sidebarCollapsed ? "md:ml-[56px]" : "md:ml-[240px]",
         )}
       >
-        {/* Desktop topbar */}
+        {/* Desktop topbar — seamlessly integrated with bg-sidebar frame */}
         <Topbar />
 
-        {/* Page content with transition slot */}
+        {/* Page content with macOS floating canvas slot */}
         <AnimatePresence mode="wait">
           <motion.main
             key={pathname}
-            className="min-h-0 flex-1 bg-bg"
-            initial={reducedMotion ? {} : { opacity: 0, y: 8 }}
+            id="main-content"
+            tabIndex={-1}
+            className="min-h-0 flex-1 overflow-auto bg-bg md:m-3 md:mt-0 md:rounded-2xl md:ring-1 md:ring-border/80 md:shadow-pop flex flex-col transition-all duration-200"
+            initial={reducedMotion ? {} : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reducedMotion ? {} : { opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
           >
             {children}
           </motion.main>

@@ -21,11 +21,11 @@ export function Breadcrumbs({ className }: BreadcrumbsProps) {
   const isRoot = segments.length === 0;
 
   return (
-    <nav aria-label="Breadcrumbs" className={cn("flex items-center gap-1 text-sm", className)}>
+    <nav aria-label="Breadcrumbs" className={cn("flex items-center gap-1.5 text-sm", className)}>
       {isRoot ? (
-        <span className="font-medium text-foreground">{t("nav.dashboard")}</span>
+        <span className="font-medium text-sidebar-text">{t("nav.dashboard")}</span>
       ) : (
-        <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+        <Link to="/" className="text-sidebar-text/60 hover:text-sidebar-text transition-colors">
           {t("nav.dashboard")}
         </Link>
       )}
@@ -35,14 +35,14 @@ export function Breadcrumbs({ className }: BreadcrumbsProps) {
         const isLast = i === segments.length - 1;
 
         return (
-          <span key={path} className="flex items-center gap-1">
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <span key={path} className="flex items-center gap-1.5">
+            <ChevronRight className="h-3.5 w-3.5 text-sidebar-text/40" aria-hidden="true" />
             {isLast ? (
-              <span className="font-medium text-foreground">{segmentLabel(segment)}</span>
+              <span className="font-medium text-sidebar-text">{segmentLabel(segment)}</span>
             ) : (
               <Link
                 to={path}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sidebar-text/60 hover:text-sidebar-text transition-colors"
               >
                 {segmentLabel(segment)}
               </Link>
