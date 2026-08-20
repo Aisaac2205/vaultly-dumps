@@ -2,7 +2,8 @@ import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/shared/ui/page-header";
 import { Alert, AlertDescription } from "@/shared/ui/alert";
-import { FadeIn } from "@/shared/ui/motion/FadeIn";
+
+import { GlobalLoadingOverlay } from "@/shared/ui/TetrominoLoader";
 import { useAudit } from "./hooks/useAudit";
 import type { AuditFilters as AuditFiltersType } from "./types";
 import AuditFilters from "./components/AuditFilters";
@@ -35,7 +36,8 @@ export default function Audit() {
   }, [resetFilters]);
 
   return (
-    <FadeIn className="space-y-6 p-4 sm:p-6 lg:p-8">
+    <>
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
         title={t('page.title')}
         subtitle={t('page.subtitle')}
@@ -55,7 +57,7 @@ export default function Audit() {
         onReset={handleReset}
       />
 
-      <FadeIn delay={0.1}>
+      <div>
         <AuditTable
           logs={logs}
           isLoading={isLoading}
@@ -64,7 +66,10 @@ export default function Audit() {
           pageSize={pageSize}
           onPageChange={setPage}
         />
-      </FadeIn>
-    </FadeIn>
+      </div>
+    </div>
+
+    <GlobalLoadingOverlay open={isLoading} label={t('loading', { defaultValue: 'Cargando auditoría...' })} />
+  </>
   );
 }

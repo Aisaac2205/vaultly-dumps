@@ -19,5 +19,17 @@
   "filter.resource": "Recurso",
   "filter.all": "Todos",
   "filter.from": "Desde",
-  "filter.to": "Hasta"
+  "filter.to": "Hasta",
+  "action.backup.created": "Backup creado",
+  "action.backup.deleted": "Backup eliminado",
+  "action.restore.started": "Restore iniciado",
+  "action.restore.completed": "Restore completado",
+  "action.restore.failed": "Restore fallido",
+  "action.connection.created": "Conexión creada",
+  "action.connection.updated": "Conexión actualizada",
+  "action.connection.deleted": "Conexión eliminada",
+  "action.cronjob.created": "Cronjob creado",
+  "action.cronjob.updated": "Cronjob actualizado",
+  "action.cronjob.deleted": "Cronjob eliminado",
+  "action.cronjob.toggled": "Cronjob cambiado"
 }

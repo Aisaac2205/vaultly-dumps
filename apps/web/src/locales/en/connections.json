@@ -1,4 +1,6 @@
 {
+  "page.title": "Connections",
+  "page.subtitle": "Manage and monitor database connections",
   "column.name": "Name",
   "column.environment": "Environment",
   "column.type": "Type",

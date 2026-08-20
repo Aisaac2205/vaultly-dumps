@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { BackupJob } from "../types";
 import { DumpActions } from "./DumpActions";
 import { formatSize } from "@/shared/lib/format";
-import { formatDateTimeShort as formatDate } from "@/lib/format";
+import { formatDateTimeShort as formatDate, formatEnvironment } from "@/lib/format";
 import cloudflareSvg from "@/shared/assets/Cloudflare.svg";
 
 function formatHumanErrorMessage(
@@ -68,10 +68,10 @@ export function DumpsTable({
     {
       header: t('column.environment'),
       accessor: (job) => (
-        <span className="text-xs text-muted-foreground">{job.environment}</span>
+        <span className="text-xs text-muted-foreground">{formatEnvironment(job.environment)}</span>
       ),
-      className: "w-[8%]",
-      headerClassName: "w-[8%]",
+      className: "w-[10%]",
+      headerClassName: "w-[10%]",
     },
     {
       header: t('column.date'),

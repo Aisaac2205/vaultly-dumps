@@ -71,25 +71,23 @@ describe("AuditTable", () => {
     expect(screen.getByText("Entorno")).toBeInTheDocument();
   });
 
-  it("renders environment as plain text (lowercase, CSS uppercase)", () => {
+  it("renders environment as clean formatted text", () => {
     renderTable();
 
-    // The environment text is stored lowercase, displayed uppercase via CSS
-    expect(screen.getByText("prod")).toBeInTheDocument();
-    expect(screen.getByText("dev")).toBeInTheDocument();
-    expect(screen.getByText("qa")).toBeInTheDocument();
+    expect(screen.getByText("Producción")).toBeInTheDocument();
+    expect(screen.getByText("Desarrollo")).toBeInTheDocument();
+    expect(screen.getByText("QA")).toBeInTheDocument();
 
     // EnvironmentBadge was previously used — verify no badge-specific classes
     const badges = document.querySelectorAll(".border-destructive\\/40");
     expect(badges.length).toBe(0);
   });
 
-  it("uses muted-foreground and font-mono styling for environment text", () => {
+  it("uses muted-foreground styling for environment text", () => {
     renderTable();
 
-    const prodElement = screen.getByText("prod");
+    const prodElement = screen.getByText("Producción");
     expect(prodElement.classList.contains("text-muted-foreground")).toBe(true);
-    expect(prodElement.classList.contains("font-mono")).toBe(true);
   });
 
   it("shows connection resources with ConnectionLabel", () => {

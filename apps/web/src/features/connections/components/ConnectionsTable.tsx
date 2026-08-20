@@ -6,6 +6,7 @@ import TestConnectionBadge from "./TestConnectionBadge";
 import PostgresSQL from "@/shared/assets/PostgresSQL.svg";
 import MySQL from "@/shared/assets/MySQL.svg";
 import { useTranslation } from "react-i18next";
+import { formatEnvironment } from "@/lib/format";
 import { DropdownMenu as DropdownMenuPrimitive } from "radix-ui";
 import { Ellipsis, ClipboardList } from "lucide-react";
 
@@ -43,8 +44,8 @@ export default function ConnectionsTable({
     {
       header: t('column.environment'),
       accessor: (c) => (
-        <span className="text-muted-foreground font-mono text-xs uppercase">
-          {c.environment}
+        <span className="text-xs text-muted-foreground">
+          {formatEnvironment(c.environment)}
         </span>
       ),
     },

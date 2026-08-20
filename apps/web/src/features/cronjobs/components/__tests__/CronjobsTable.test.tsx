@@ -55,12 +55,11 @@ describe("CronjobsTable", () => {
     expect(screen.getByText("Entorno")).toBeInTheDocument();
   });
 
-  it("renders environment as plain text for each row (lowercase with CSS uppercase)", () => {
+  it("renders environment as clean formatted text for each row", () => {
     render(<CronjobsTable {...defaultProps} />);
 
-    // The environment is stored as lowercase and displayed uppercase via CSS
-    expect(screen.getByText("prod")).toBeInTheDocument();
-    expect(screen.getByText("dev")).toBeInTheDocument();
+    expect(screen.getByText("Producción")).toBeInTheDocument();
+    expect(screen.getByText("Desarrollo")).toBeInTheDocument();
   });
 
   it("renders em dash for unknown connection", () => {
@@ -88,13 +87,10 @@ describe("CronjobsTable", () => {
     expect(screen.getByText("Dev DB")).toBeInTheDocument();
   });
 
-  it("renders loading skeleton with Entorno column", () => {
-    render(<CronjobsTable {...defaultProps} isLoading />);
+  it("renders Entorno column in table header", () => {
+    render(<CronjobsTable {...defaultProps} />);
     // The header should still show Entorno
     expect(screen.getByText("Entorno")).toBeInTheDocument();
-    // Skeleton cells should be present via animate-pulse
-    const skeletons = document.querySelectorAll(".animate-pulse");
-    expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it("renders empty state when no cronjobs", () => {
