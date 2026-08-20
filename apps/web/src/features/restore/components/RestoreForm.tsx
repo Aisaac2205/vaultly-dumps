@@ -244,7 +244,7 @@ export function RestoreForm({
       </div>
 
       {/* Sticky actions at bottom */}
-      <div className="sticky bottom-0 -mx-6 mt-4 border-t border-border bg-background px-6 pt-4">
+      <div className="sticky bottom-0 -mx-6 mt-4 border-t border-border bg-card px-6 pt-4">
         <RestoreActions
           canSimulate={canSimulate}
           canExecute={!!targetConnectionId && hasSource}

@@ -1,6 +1,7 @@
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { StatusBadge } from "@/shared/ui/status-badge";
+import { TetrominoLoader } from "@/shared/ui/TetrominoLoader";
 
 type RestoreProgressStatus = "running" | "completed" | "failed";
 
@@ -17,27 +18,25 @@ export function RestoreProgress({ jobId, status, progress = 0 }: RestoreProgress
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <StatusBadge status={status} />
-          <span className="font-mono text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             Job: {jobId.slice(0, 8)}...
           </span>
         </div>
         {status === "running" && (
-          <span className="font-mono text-sm font-medium text-foreground">
+          <span className="text-sm font-medium text-foreground">
             {progress}%
           </span>
         )}
       </div>
 
       {status === "running" && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 rounded-lg bg-muted/30 p-4">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium">{t("progress.restoring")}</p>
-              <p className="text-xs text-muted-foreground">
-                {t("progress.wait")}
-              </p>
-            </div>
+        <div className="space-y-4">
+          <div className="flex flex-col items-center justify-center rounded-xl bg-muted/20 border border-border/50 p-4">
+            <TetrominoLoader
+              size="sm"
+              label={t("progress.restoring")}
+              sublabel={t("progress.wait")}
+            />
           </div>
           
           {/* Progress bar */}

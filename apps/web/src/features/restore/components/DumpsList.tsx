@@ -99,7 +99,7 @@ export function DumpsList({
                 />
               )}
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate font-mono text-xs">
+                <span className="truncate text-xs font-medium">
                   {dump.timestamp}
                 </span>
                 <span
@@ -115,7 +115,7 @@ export function DumpsList({
               </div>
               <span
                 className={cn(
-                  "ml-auto w-20 shrink-0 text-right font-mono text-xs",
+                  "ml-auto w-20 shrink-0 text-right text-xs",
                   isSelected
                     ? "text-accent-foreground/75"
                     : "text-foreground/55",

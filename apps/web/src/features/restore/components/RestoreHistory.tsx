@@ -85,13 +85,22 @@ export function RestoreHistory({
 
   const tableRef = useRef<HTMLDivElement>(null);
 
-  const filteredJobs = jobs.filter((job) => {
-    const envMatch =
-      envFilter === "all" || job.targetEnvironment === envFilter;
-    const statusMatch =
-      statusFilter === "all" || job.status === statusFilter;
-    return envMatch && statusMatch;
-  });
+  const MAX_HISTORY_ITEMS = 18;
+
+  const filteredJobs = useMemo(() => {
+    return jobs.filter((job) => {
+      const envMatch =
+        envFilter === "all" || job.targetEnvironment === envFilter;
+      const statusMatch =
+        statusFilter === "all" || job.status === statusFilter;
+      return envMatch && statusMatch;
+    });
+  }, [jobs, envFilter, statusFilter]);
+
+  const displayedJobs = useMemo(
+    () => filteredJobs.slice(0, MAX_HISTORY_ITEMS),
+    [filteredJobs],
+  );
 
   // Reset scroll position when filters change
   useEffect(() => {
@@ -117,7 +126,11 @@ export function RestoreHistory({
           <h3 className="text-sm font-semibold">{t('history.title')}</h3>
           {filteredJobs.length > 0 && (
             <span className="text-xs text-muted-foreground">
-              ({filteredJobs.length})
+              ({displayedJobs.length}
+              {filteredJobs.length > MAX_HISTORY_ITEMS
+                ? `/${filteredJobs.length}`
+                : ""}
+              )
             </span>
           )}
         </div>
@@ -207,7 +220,7 @@ export function RestoreHistory({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredJobs.map((job) => {
+              {displayedJobs.map((job) => {
                 const info = job.targetConnectionId ? connectionMap.get(job.targetConnectionId) : undefined;
                 return (
                   <TableRow key={job.id} className="hover:bg-muted/40">
@@ -219,14 +232,14 @@ export function RestoreHistory({
                           )}
                           <div className="min-w-0">
                             <p className="truncate text-sm font-medium" title={info.name}>{info.name}</p>
-                            <p className="truncate font-mono text-[11px] text-muted-foreground" title={info.database}>{info.database}</p>
+                            <p className="truncate text-[11px] text-muted-foreground" title={info.database}>{info.database}</p>
                           </div>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="whitespace-nowrap py-3 font-mono text-xs text-muted-foreground">
+                    <TableCell className="whitespace-nowrap py-3 text-xs text-muted-foreground">
                       {job.startedAt ? formatDateTimeShort(job.startedAt) : "—"}
                     </TableCell>
                     <TableCell className="py-3">
@@ -237,7 +250,7 @@ export function RestoreHistory({
                     <TableCell className="py-3">
                       <StatusBadge status={job.status} />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap py-3 text-right font-mono text-xs text-muted-foreground">
+                    <TableCell className="whitespace-nowrap py-3 text-right text-xs text-muted-foreground">
                       {job.startedAt
                         ? formatDuration(
                             job.startedAt,

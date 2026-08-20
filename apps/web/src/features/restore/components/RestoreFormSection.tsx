@@ -20,26 +20,26 @@ export function RestoreFormSection({
   isLast = false,
 }: RestoreFormSectionProps) {
   return (
-    <div className={cn("relative pl-7", className)}>
+    <div className={cn("relative pl-8", className)}>
       {/* Connector line */}
       {!isLast && (
-        <div className="absolute left-[11px] top-8 bottom-0 w-px bg-border" />
+        <div className="absolute left-3 top-8 bottom-0 w-px bg-border/60" />
       )}
       
       {/* Number badge */}
-      <div className="absolute left-0 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground ring-4 ring-background">
+      <div className="absolute left-0 top-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-[11px] font-semibold text-text-primary shadow-xs ring-2 ring-background transition-colors">
         {number}
       </div>
 
-      <div className="space-y-2 pb-4">
+      <div className="space-y-2 pb-5">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold">{title}</h3>
-          {icon && <span className="flex items-center">{icon}</span>}
+          <h3 className="text-sm font-semibold tracking-tight text-text-primary">{title}</h3>
+          {icon && <span className="flex items-center text-muted-foreground">{icon}</span>}
         </div>
         {description && (
-          <p className="text-xs text-muted-foreground">{description}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
         )}
-        <div>{children}</div>
+        <div className="pt-1">{children}</div>
       </div>
     </div>
   );
