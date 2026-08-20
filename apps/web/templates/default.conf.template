@@ -1,6 +1,6 @@
-# ${NGINX_LOCAL_RESOLVERS} and ${API_UPSTREAM} are substituted at container
+# Resolver, upstream, CSP header name, and client-IP source are substituted at container
 # start by the official nginx entrypoint (20-envsubst-on-templates.sh),
-# scoped to just these two names by NGINX_ENVSUBST_FILTER (see Dockerfile)
+# scoped to an explicit allowlist by NGINX_ENVSUBST_FILTER (see Dockerfile)
 # so nginx's own request-time $variables below are left untouched.
 # NGINX_LOCAL_RESOLVERS itself comes from another built-in entrypoint
 # script, 15-local-resolvers.envsh, gated behind NGINX_ENTRYPOINT_LOCAL_RESOLVERS.
@@ -12,6 +12,11 @@ server {
 
     root /usr/share/nginx/html;
     index index.html;
+
+    # Security headers for SPA, proxied API responses, and SSE. Locations
+    # declaring cache headers include this snippet again because nginx's
+    # add_header inheritance stops at the first child add_header directive.
+    include /etc/nginx/conf.d/security-headers.inc;
 
     # Gzip compression (text/html is gzipped by default in nginx core).
     gzip on;
@@ -30,8 +35,11 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Connection "";
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Railway mode trusts the edge-overwritten X-Real-IP; direct mode
+        # ignores forwarding headers and uses nginx's TCP peer. The entrypoint
+        # selects and validates CLIENT_IP_SOURCE before envsubst runs.
+        proxy_set_header X-Real-IP ${CLIENT_IP_SOURCE};
+        proxy_set_header X-Forwarded-For ${CLIENT_IP_SOURCE};
         proxy_set_header X-Forwarded-Proto $scheme;
 
         proxy_buffering off;
@@ -49,8 +57,8 @@ server {
 
         proxy_http_version 1.1;
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP ${CLIENT_IP_SOURCE};
+        proxy_set_header X-Forwarded-For ${CLIENT_IP_SOURCE};
         proxy_set_header X-Forwarded-Proto $scheme;
 
         client_max_body_size 20m;
@@ -64,6 +72,7 @@ server {
 
     # Do not cache index.html — always fetch latest
     location = /index.html {
+        include /etc/nginx/conf.d/security-headers.inc;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
         add_header Pragma "no-cache";
         add_header Expires "0";
@@ -71,12 +80,14 @@ server {
 
     # Cache hashed assets aggressively (js, css with content hash in filename)
     location ~* \.(js|css)$ {
+        include /etc/nginx/conf.d/security-headers.inc;
         expires 1y;
         add_header Cache-Control "public, immutable";
     }
 
     # Cache other static assets
     location ~* \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        include /etc/nginx/conf.d/security-headers.inc;
         expires 1y;
         add_header Cache-Control "public, immutable";
     }

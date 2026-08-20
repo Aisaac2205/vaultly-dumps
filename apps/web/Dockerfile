@@ -39,12 +39,19 @@ FROM nginx:alpine AS production
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 
 COPY apps/web/templates/default.conf.template /etc/nginx/templates/default.conf.template
+COPY apps/web/nginx/security-headers.conf /etc/nginx/templates/security-headers.inc.template
+COPY apps/web/docker-entrypoint.d/10-security-config.sh /docker-entrypoint.d/10-security-config.sh
+RUN chmod +x /docker-entrypoint.d/10-security-config.sh
 
 # Activates the official image's own /docker-entrypoint.d/15-local-resolvers.envsh,
 # which exports NGINX_LOCAL_RESOLVERS from /etc/resolv.conf (off by default).
 ENV NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1
-ENV NGINX_ENVSUBST_FILTER=^(NGINX_LOCAL_RESOLVERS|API_UPSTREAM)$
+ENV NGINX_ENVSUBST_FILTER=^(NGINX_LOCAL_RESOLVERS|API_UPSTREAM|CSP_HEADER_NAME|CLIENT_IP_SOURCE)$
 ENV API_UPSTREAM=api:3000
+# Start in report-only mode. Set this to Content-Security-Policy after checking
+# the browser console for violations in the deployed SPA.
+ENV CSP_HEADER_NAME=Content-Security-Policy-Report-Only
+ENV CLIENT_IP_MODE=auto
 
 EXPOSE 80
 

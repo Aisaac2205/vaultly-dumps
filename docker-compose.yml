@@ -10,8 +10,6 @@ services:
         # Debe ser >= al server PostgreSQL más nuevo que vayas a dumpear.
         POSTGRES_CLIENT_VERSION: "18"
     env_file: .env
-    ports:
-      - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
@@ -34,11 +32,11 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       target: production
-    env_file: .env
     environment:
       # Sigue el PORT real de la API en vez de asumir 3000 si alguien
       # lo cambia en .env — ver Dockerfile ENV API_UPSTREAM default.
       API_UPSTREAM: api:${PORT:-3000}
+      CSP_HEADER_NAME: ${CSP_HEADER_NAME:-Content-Security-Policy-Report-Only}
     ports:
       - "5173:80"
     depends_on:
