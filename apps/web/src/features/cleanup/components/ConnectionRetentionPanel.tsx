@@ -49,18 +49,21 @@ export function ConnectionRetentionPanel() {
     isRunning,
   } = useConnectionRetentionPanel();
 
+  const prodConnections = connections.filter((c) => c.environment === "prod");
+
   return (
-    <div className="space-y-4">
-      {/* Connection selector */}
-      <Card>
-        <CardContent className="space-y-5 p-5 sm:p-6">
-          <div className="space-y-1.5">
-            <label
-              htmlFor="retention-connection"
-              className="block text-xs font-medium text-muted-foreground"
-            >
-              {t("retention.database")}
-            </label>
+    <Card variant="outlined" className="overflow-hidden">
+      <CardHeader className="border-b border-border bg-card px-5 py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <CardTitle className="text-sm font-semibold text-text-primary">
+              {t("retention.title")}
+            </CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              {t("retention.description")}
+            </CardDescription>
+          </div>
+          <div className="w-full sm:w-64">
             <select
               id="retention-connection"
               value={connectionSlug}
@@ -69,132 +72,181 @@ export function ConnectionRetentionPanel() {
               className={inputClass}
             >
               <option value="">{t("retention.selectConnection")}</option>
-              {connections
-                .filter((c) => c.environment === "prod")
-                .map((connection) => (
-                  <option key={connection.id} value={connection.slug}>
-                     {connection.name}
-                  </option>
-                ))}
+              {prodConnections.map((connection) => (
+                <option key={connection.id} value={connection.slug}>
+                  {connection.name}
+                </option>
+              ))}
             </select>
-            {!isLoading &&
-              connections.filter((c) => c.environment === "prod").length ===
-                0 && (
-                <p className="text-xs text-muted-foreground">
-                  {t("retention.noProdConnections")}
-                </p>
-              )}
           </div>
+        </div>
+
+        {!isLoading && !isDirty && hasSavedPolicy && connectionSelected && (
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600">
+            <CheckCircle2 className="size-3.5" aria-hidden="true" />
+            {t("retention.policyApplied")}
+          </div>
+        )}
+      </CardHeader>
+
+      {!connectionSelected ? (
+        <CardContent className="p-8 text-center text-xs text-muted-foreground">
+          {prodConnections.length === 0
+            ? t("retention.noProdConnections")
+            : t("form.hint.noConnection")}
         </CardContent>
-      </Card>
-
-      {/* Policy form */}
-      {connectionSelected && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("retention.title")}</CardTitle>
-            <CardDescription>
-              {t("retention.description")}
-            </CardDescription>
-            {!isLoading && !isDirty && hasSavedPolicy && (
-              <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600">
-                <CheckCircle2 className="size-3.5" aria-hidden="true" />
-                {t("retention.policyApplied")}
-              </div>
-            )}
-          </CardHeader>
-
+      ) : (
+        <>
           {policiesError && (
-            <CardContent>
+            <div className="p-5 pb-0">
               <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {policiesErrorObj instanceof Error
                   ? policiesErrorObj.message
                   : t("retention.errorLoad")}
               </div>
-            </CardContent>
+            </div>
           )}
 
-          <CardContent className="flex flex-col gap-4">
-            {isLoading ? (
-              <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-12 animate-pulse rounded-md bg-muted"
-                  />
-                ))}
-              </div>
-            ) : (
-              rows.map((row) => {
-                const valueId = `retention-days-${row.category}`;
-                const keepId = `retention-keep-${row.category}`;
-                return (
-                  <fieldset
-                    key={row.category}
-                    className="flex flex-wrap items-center gap-3 rounded-md border border-border px-4 py-3"
-                  >
-                    <legend className="sr-only">
-                      {t(`category.${row.category}`)}
-                    </legend>
-                    <span className="w-32 text-sm font-medium">
-                      {t(`category.${row.category}`)}
-                    </span>
-
-                    <label
-                      htmlFor={keepId}
-                      className="flex items-center gap-2 text-xs text-muted-foreground"
+          <CardContent className="space-y-5 p-5">
+            <div className="grid gap-3">
+              {isLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-12 animate-pulse rounded-md bg-muted"
+                    />
+                  ))}
+                </div>
+              ) : (
+                rows.map((row) => {
+                  const valueId = `retention-days-${row.category}`;
+                  const keepId = `retention-keep-${row.category}`;
+                  return (
+                    <fieldset
+                      key={row.category}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3"
                     >
-                      <input
-                        id={keepId}
-                        type="checkbox"
-                        checked={row.keepForever}
-                        onChange={(e) =>
-                          updateRow(row.category, {
-                            keepForever: e.target.checked,
-                          })
-                        }
-                        disabled={isSaving}
-                      />
-                      {t("retention.keepForever")}
-                    </label>
+                      <legend className="sr-only">
+                        {t(`category.${row.category}`)}
+                      </legend>
+                      <span className="w-32 text-xs font-semibold text-text-primary">
+                        {t(`category.${row.category}`)}
+                      </span>
 
-                    {!row.keepForever && (
-                      <div className="flex items-center gap-2">
-                        <label htmlFor={valueId} className="sr-only">
-                          {t("retention.daysLabel", { category: t(`category.${row.category}`) })}
+                      <div className="flex items-center gap-4">
+                        <label
+                          htmlFor={keepId}
+                          className="flex items-center gap-2 text-xs text-muted-foreground"
+                        >
+                          <input
+                            id={keepId}
+                            type="checkbox"
+                            checked={row.keepForever}
+                            onChange={(e) =>
+                              updateRow(row.category, {
+                                keepForever: e.target.checked,
+                              })
+                            }
+                            disabled={isSaving}
+                            className="rounded border-input text-primary focus:ring-1 focus:ring-ring"
+                          />
+                          {t("retention.keepForever")}
                         </label>
-                        <input
-                          id={valueId}
-                          className={`${inputClass} w-20`}
-                          type="number"
-                          min={1}
-                          step={1}
-                          value={row.days}
-                          onChange={(e) =>
-                            updateRow(row.category, {
-                              days: e.target.value,
-                            })
-                          }
-                          disabled={isSaving}
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          {t("retention.days")}
-                        </span>
+
+                        {!row.keepForever && (
+                          <div className="flex items-center gap-2">
+                            <label htmlFor={valueId} className="sr-only">
+                              {t("retention.daysLabel", {
+                                category: t(`category.${row.category}`),
+                              })}
+                            </label>
+                            <input
+                              id={valueId}
+                              className={`${inputClass} w-20 text-center text-xs`}
+                              type="number"
+                              min={1}
+                              step={1}
+                              value={row.days}
+                              onChange={(e) =>
+                                updateRow(row.category, {
+                                  days: e.target.value,
+                                })
+                              }
+                              disabled={isSaving}
+                            />
+                            <span className="text-xs text-muted-foreground">
+                              {t("retention.days")}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </fieldset>
-                );
-              })
-            )}
+                    </fieldset>
+                  );
+                })
+              )}
+            </div>
 
             {validationError && (
-              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                 {validationError}
               </div>
             )}
+
+            {/* Impact preview */}
+            <div className="rounded-lg border border-border bg-card p-4">
+              <h4 className="text-xs font-semibold text-text-primary">
+                {t("retention.impact.title")}
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                {t("retention.impact.description")}
+              </p>
+
+              <div className="mt-3">
+                {previewLoading ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t("retention.impact.calculating")}
+                  </p>
+                ) : prunable.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t("retention.impact.empty")}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {prunable.map((item) => (
+                        <div
+                          key={item.category}
+                          className="rounded-md border border-border/80 bg-muted/30 p-2.5"
+                        >
+                          <p className="text-[11px] font-medium text-muted-foreground">
+                            {t(`category.${item.category}`)}
+                          </p>
+                          <p className="text-sm font-semibold text-text-primary">
+                            {item.count}{" "}
+                            <span className="text-xs font-normal text-muted-foreground">
+                              {item.count === 1 ? "respaldo" : "respaldos"}
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {item.totalSizeMb.toFixed(2)} MB
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="pt-1 text-xs font-medium text-text-primary">
+                      {t("retention.impact.total", {
+                        count: totalCount,
+                        mb: totalMb.toFixed(2),
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end gap-3">
+          <CardFooter className="flex justify-end gap-3 border-t border-border bg-muted/20 px-5 py-3.5">
             <Button
               type="button"
               variant="destructive"
@@ -214,57 +266,7 @@ export function ConnectionRetentionPanel() {
               {isSaving ? t("retention.saving") : t("retention.savePolicy")}
             </Button>
           </CardFooter>
-        </Card>
-      )}
-
-      {/* Impact preview */}
-      {connectionSelected && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("retention.impact.title")}</CardTitle>
-            <CardDescription>
-              {t("retention.impact.description")}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {previewLoading ? (
-              <p className="text-sm text-muted-foreground">
-                {t("retention.impact.calculating")}
-              </p>
-            ) : prunable.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t("retention.impact.empty")}
-              </p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {prunable.map((item) => (
-                    <div
-                      key={item.category}
-                      className="rounded-md border border-border px-4 py-3"
-                    >
-                      <p className="text-xs font-medium text-muted-foreground">
-                        {t(`category.${item.category}`)}
-                      </p>
-                      <p className="text-lg font-semibold">
-                        {item.count}{" "}
-                        <span className="text-sm font-normal text-muted-foreground">
-                          {item.count === 1 ? "dump" : "dumps"}
-                        </span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.totalSizeMb.toFixed(2)} MB
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {t("retention.impact.total", { count: totalCount, mb: totalMb.toFixed(2) })}
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        </>
       )}
 
       {/* Confirm dialog */}
@@ -305,6 +307,6 @@ export function ConnectionRetentionPanel() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </Card>
   );
 }
