@@ -27,4 +27,13 @@ export const envValidationSchema = Joi.object({
   // Rate limiting (requests per minute, per IP). Health endpoint is excluded.
   THROTTLE_TTL_MS: Joi.number().integer().min(1000).default(60_000),
   THROTTLE_LIMIT: Joi.number().integer().min(1).default(100),
+  // Better Auth bypasses Nest guards, so its middleware has a dedicated,
+  // bounded single-replica limiter.
+  AUTH_RATE_WINDOW_MS: Joi.number().integer().min(1_000).default(60_000),
+  AUTH_RATE_MAX: Joi.number().integer().min(1).default(10),
+  AUTH_RATE_MAX_KEYS: Joi.number().integer().min(100).default(10_000),
+  AUTH_RATE_SWEEP_INTERVAL_MS: Joi.number()
+    .integer()
+    .min(1_000)
+    .default(60_000),
 });

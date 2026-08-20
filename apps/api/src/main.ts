@@ -9,6 +9,8 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import express from 'express';
 import { AppModule } from './app.module';
+import { createAuthRateLimitMiddleware } from './common/middleware/auth-rate-limit.middleware';
+import { createApiSecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 
 // Safety net global: cualquier promise no atrapada (cronjobs, R2, pg_dump,
 // etc.) se loguea pero NO mata el proceso. Sin esto, Node 22 trata
@@ -30,35 +32,33 @@ async function bootstrap(): Promise<void> {
     bodyParser: false,
   });
 
-  // The API always sits behind the web service's nginx (see
-  // apps/web/templates/default.conf.template) and never gets a public
-  // domain of its own — exactly one hop. Without this, req.ip resolves to
-  // nginx's own address for every request, so the per-IP rate limiter
-  // right below would bucket all traffic under one key and any attacker
-  // could lock out every user with a single burst.
+  // The private API always sits exactly one hop behind the web nginx. Its
+  // entrypoint chooses the client identity safely: Railway's edge-overwritten
+  // X-Real-IP on Railway, or nginx's TCP peer outside Railway. Trusting one hop
+  // here makes req.ip consume only that normalized X-Forwarded-For value.
   app.set('trust proxy', 1);
+
+  const config = app.get(ConfigService);
+
+  // Helmet protects API responses independently from nginx. CSP is owned by
+  // nginx because it serves the executable SPA document; API routes return
+  // only JSON or SSE.
+  app.use(createApiSecurityHeadersMiddleware());
 
   // Rate-limit auth endpoints (login, sign-up, password reset).
   // The NestJS ThrottlerGuard doesn't apply here because the catch-all
   // auth controller bypasses the NestJS pipeline with @Res().
-  const authRateMap = new Map<string, { count: number; resetAt: number }>();
-  const AUTH_RATE_WINDOW_MS = 60_000;
-  const AUTH_RATE_MAX = 10;
-  app.use('/api/auth', (req: express.Request, res: express.Response, next: express.NextFunction) => {
-    if (req.method !== 'POST') return next();
-    const ip = req.ip ?? req.socket.remoteAddress ?? 'unknown';
-    const now = Date.now();
-    const entry = authRateMap.get(ip);
-    if (!entry || now > entry.resetAt) {
-      authRateMap.set(ip, { count: 1, resetAt: now + AUTH_RATE_WINDOW_MS });
-      return next();
-    }
-    if (entry.count >= AUTH_RATE_MAX) {
-      return res.status(429).json({ message: 'Too many requests' });
-    }
-    entry.count++;
-    return next();
-  });
+  app.use(
+    '/api/auth',
+    createAuthRateLimitMiddleware({
+      windowMs: config.getOrThrow<number>('AUTH_RATE_WINDOW_MS'),
+      maxRequests: config.getOrThrow<number>('AUTH_RATE_MAX'),
+      maxKeys: config.getOrThrow<number>('AUTH_RATE_MAX_KEYS'),
+      sweepIntervalMs: config.getOrThrow<number>(
+        'AUTH_RATE_SWEEP_INTERVAL_MS',
+      ),
+    }),
+  );
 
   // Block public self-registration. User creation is only allowed through:
   // - Admin seed (server-side auth.api.signUpEmail — bypasses Express)
@@ -90,8 +90,6 @@ async function bootstrap(): Promise<void> {
       { path: 'health', method: RequestMethod.GET },
     ],
   });
-
-  const config = app.get(ConfigService);
 
   const port = config.get<number>('PORT', 3000);
 
