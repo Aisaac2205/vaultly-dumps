@@ -14,7 +14,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/shared/ui/table";
-import { Skeleton } from "@/shared/ui/skeleton";
 import {
   Popover,
   PopoverContent,
@@ -32,7 +31,6 @@ import { Button } from "@/shared/ui/button";
 interface RestoreHistoryProps {
   jobs: RestoreJob[];
   connections: Connection[];
-  isLoading: boolean;
 }
 
 const STATUS_CONFIG_KEYS: Record<RestoreJob["status"], string> = {
@@ -65,7 +63,6 @@ function formatDuration(
 export function RestoreHistory({
   jobs,
   connections,
-  isLoading,
 }: RestoreHistoryProps) {
   const { t } = useTranslation('restore')
   const connectionMap = useMemo(() => {
@@ -106,16 +103,6 @@ export function RestoreHistory({
   useEffect(() => {
     if (tableRef.current) tableRef.current.scrollTop = 0;
   }, [envFilter, statusFilter]);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-2">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-10 w-full" />
-        ))}
-      </div>
-    );
-  }
 
   return (
     <div className="flex min-h-0 h-full flex-col">

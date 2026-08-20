@@ -14,12 +14,12 @@ import { Alert, AlertDescription } from "@/shared/ui/alert";
 import { Card, CardContent } from "@/shared/ui/card";
 import { RestoreForm } from "./components/RestoreForm";
 import { DryRunResult } from "./components/DryRunResult";
-import { RestoreProgress } from "./components/RestoreProgress";
 import { RestoreHistory } from "./components/RestoreHistory";
 import { ConfirmRestoreDialog } from "./components/ConfirmRestoreDialog";
 import { formatDateTimeShort as formatDate } from "@/lib/format";
 import { PageHeader } from "@/shared/ui/page-header";
-import { FadeIn } from "@/shared/ui/motion/FadeIn";
+
+import { GlobalLoadingOverlay } from "@/shared/ui/TetrominoLoader";
 import type { RestoreDto } from "./types";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 
@@ -34,7 +34,7 @@ interface NavState {
 }
 
 export default function Restore() {
-  const { t } = useTranslation('restore')
+  const { t } = useTranslation('restore');
   const location = useLocation();
   const navState = (location.state as NavState | null) ?? {};
   const sourceBackupIdFromNav = navState.sourceBackupId;
@@ -43,7 +43,6 @@ export default function Restore() {
   const {
     state,
     dryRunResult,
-    restoreJob,
     finalStatus,
     isLoading: restoreLoading,
     error: restoreError,
@@ -65,7 +64,6 @@ export default function Restore() {
 
   const {
     data: restoreHistory = [],
-    isLoading: historyLoading,
   } = useRestoreHistory();
 
   const [currentDto, setCurrentDto] = useState<RestoreDto | null>(null);
@@ -145,13 +143,6 @@ export default function Restore() {
 
   const displayError = restoreError ?? (connectionsError?.message ?? null);
 
-  function progressStatus(): "running" | "completed" | "failed" {
-    if (state === "done") {
-      return finalStatus === "completed" ? "completed" : "failed";
-    }
-    return "running";
-  }
-
   const subtitle =
     state === "idle"
       ? t('subtitle.idle')
@@ -164,7 +155,7 @@ export default function Restore() {
       : t('subtitle.failed');
 
   return (
-    <FadeIn className="space-y-6 p-4 sm:p-6 lg:p-8">
+    <div className="space-y-6 p-4 sm:p-6 lg:p-8">
       <PageHeader title={t('page.title')} subtitle={subtitle} />
 
       {displayError && (
@@ -173,7 +164,7 @@ export default function Restore() {
         </Alert>
       )}
 
-      {state === "idle" && (
+      {(state === "idle" || (state === "running" && !dryRunResult)) && (
         <div className="grid gap-6 lg:grid-cols-5 lg:items-stretch">
           <div className="lg:col-span-2">
             <Card className="h-full rounded-xl shadow-sm">
@@ -186,7 +177,7 @@ export default function Restore() {
                   onR2DumpChange={setSelectedR2Dump}
                   onDryRun={handleDryRun}
                   onRestore={handleDirectRestore}
-                  isLoading={restoreLoading}
+                  isLoading={restoreLoading || state === "running"}
                   connections={connections}
                   connectionsLoading={connectionsLoading}
                   sourceConnections={sourceConnections}
@@ -202,7 +193,6 @@ export default function Restore() {
                 <RestoreHistory
                   jobs={restoreHistory}
                   connections={connections}
-                  isLoading={historyLoading}
                 />
               </CardContent>
             </Card>
@@ -210,7 +200,7 @@ export default function Restore() {
         </div>
       )}
 
-      {state === "dry-run" && dryRunResult && (
+      {(state === "dry-run" || (state === "running" && !!dryRunResult)) && dryRunResult && (
         <div ref={dryRunResultRef} className="flex min-h-[calc(100vh-12rem)] flex-col items-center justify-center scroll-mt-6">
           <div className="w-full max-w-6xl">
             <Card className="rounded-xl shadow-sm animate-in fade-in-0 slide-in-from-top-2 duration-300">
@@ -219,25 +209,11 @@ export default function Restore() {
                   result={dryRunResult}
                   onConfirm={handleConfirm}
                   onCancel={handleCancel}
-                  isLoading={restoreLoading}
+                  isLoading={restoreLoading || state === "running"}
                 />
               </CardContent>
             </Card>
           </div>
-        </div>
-      )}
-
-      {state === "running" && restoreJob && (
-        <div className="mx-auto max-w-2xl">
-          <Card className="rounded-xl shadow-sm">
-            <CardContent className="p-6">
-              <RestoreProgress
-                jobId={restoreJob.id}
-                status={progressStatus()}
-                progress={state === "running" ? 45 : 100}
-              />
-            </CardContent>
-          </Card>
         </div>
       )}
 
@@ -251,7 +227,7 @@ export default function Restore() {
             ? (DB_LABELS[pendingTarget.dbType] ?? pendingTarget.dbType)
             : undefined
         }
-        isLoading={restoreLoading}
+        isLoading={restoreLoading || state === "running"}
         onConfirm={() => handleConfirmedRestore()}
       />
 
@@ -286,6 +262,13 @@ export default function Restore() {
           </Card>
         </div>
       )}
-    </FadeIn>
+
+      {/* Global Loading Overlay with Tetromino animation */}
+      <GlobalLoadingOverlay
+        open={connectionsLoading || sourceConnectionsLoading || state === "running" || restoreLoading}
+        label={state === "running" || restoreLoading ? t('progress.restoring') : t('progress.loading', { defaultValue: 'Cargando...' })}
+        sublabel={state === "running" || restoreLoading ? t('progress.wait') : undefined}
+      />
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Check, Loader2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { EnrichedR2Object } from "@/features/dumps/types";
 import { cn } from "@/shared/lib/cn";
@@ -30,21 +30,11 @@ export function DumpsList({
   dumps,
   value,
   onChange,
-  loading = false,
   disabled = false,
   label,
 }: DumpsListProps) {
   const { t } = useTranslation("restore");
   const resolvedLabel = label ?? t("dumps.available");
-
-  if (loading) {
-    return (
-      <div className="flex items-center gap-2 rounded-xl bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" />
-        {t("dumps.loading")}
-      </div>
-    );
-  }
 
   if (dumps.length === 0) {
     return (

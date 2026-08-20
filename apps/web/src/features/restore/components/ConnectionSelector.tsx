@@ -85,20 +85,11 @@ export function ConnectionSelector({
   value,
   onChange,
   disabled = false,
-  loading = false,
 }: ConnectionSelectorProps) {
   const { t } = useTranslation("restore");
   const [open, setOpen] = useState(false);
 
   const selected = connections.find((c) => c.id === value);
-
-  if (loading) {
-    return (
-      <div className="flex h-10 items-center rounded-xl bg-muted/40 px-3 text-sm text-muted-foreground">
-        {t("target.loading")}
-      </div>
-    );
-  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
