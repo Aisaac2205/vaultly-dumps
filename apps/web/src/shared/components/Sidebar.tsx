@@ -81,30 +81,19 @@ function SidebarRoot({ children, onNavigate, collapsible = "none" }: SidebarRoot
   );
 }
 
-/** Logo / branding section with macOS traffic light chrome. */
+/** Logo / branding section. In collapsed mode only the first child (logo) is rendered. */
 function SidebarHeader({ children }: { children: ReactNode }) {
   const { collapsed } = useSidebarNavContext();
   const childArray = Children.toArray(children);
 
   return (
-    <div className="flex flex-col gap-2 pt-3 pb-2 transition-all duration-200">
-      {/* macOS Window Controls (Traffic Lights) */}
-      <div className={cn("flex items-center px-4", collapsed ? "justify-center" : "justify-between")}>
-        <div className="flex items-center gap-1.5" aria-hidden="true">
-          <span className="h-3 w-3 rounded-full bg-[#FF5F56] border border-[#E0443E]/40 transition-transform hover:scale-110" />
-          <span className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-[#DEA123]/40 transition-transform hover:scale-110" />
-          <span className="h-3 w-3 rounded-full bg-[#27C93F] border border-[#1AAB29]/40 transition-transform hover:scale-110" />
-        </div>
-      </div>
-
-      <div
-        className={cn(
-          "flex items-center gap-3 transition-all duration-200",
-          collapsed ? "justify-center px-2 py-2" : "px-4 py-2",
-        )}
-      >
-        {collapsed ? childArray.slice(0, 1) : children}
-      </div>
+    <div
+      className={cn(
+        "flex items-center gap-3 transition-all duration-200",
+        collapsed ? "justify-center px-2 py-5" : "px-4 py-5",
+      )}
+    >
+      {collapsed ? childArray.slice(0, 1) : children}
     </div>
   );
 }
