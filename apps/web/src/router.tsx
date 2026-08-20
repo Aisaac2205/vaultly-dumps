@@ -2,7 +2,7 @@ import { Suspense, lazy, type ReactNode } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
 import { Layout } from "./shared/components/Layout";
-import { RouteFallback } from "./shared/components/RouteFallback";
+import { GlobalLoadingOverlay } from "./shared/ui/TetrominoLoader";
 import { useAuth } from "./shared/hooks/useAuth";
 import {
   LazyDashboard,
@@ -24,7 +24,7 @@ function AuthenticatedLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   return (
     <Layout user={user} onLogout={logout}>
-      <Suspense fallback={<RouteFallback />}>{children}</Suspense>
+      <Suspense fallback={<GlobalLoadingOverlay open={true} />}>{children}</Suspense>
     </Layout>
   );
 }

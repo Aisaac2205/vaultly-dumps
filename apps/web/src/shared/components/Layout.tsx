@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from "react";
-import { useLocation } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarRoot } from "./Sidebar";
 import { SidebarProvider, useSidebar } from "./SidebarProvider";
 import { Topbar } from "./Topbar";
@@ -7,7 +6,6 @@ import type { AuthUser } from "../hooks/useAuth";
 import { Sheet, SheetContent } from "../ui/sheet";
 import { Menu } from "lucide-react";
 import { Toaster } from "sonner";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { cn } from "@/shared/lib/cn";
 
 interface LayoutProps {
@@ -34,8 +32,6 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
 function LayoutInner({ children, user, onLogout }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const closeMobileSidebar = () => setSidebarOpen(false);
-  const { pathname } = useLocation();
-  const reducedMotion = useReducedMotion();
   const { state } = useSidebar();
   const sidebarCollapsed = state === "collapsed";
 
@@ -88,20 +84,13 @@ function LayoutInner({ children, user, onLogout }: LayoutProps) {
         <Topbar />
 
         {/* Page content */}
-        <AnimatePresence mode="wait">
-          <motion.main
-            key={pathname}
-            id="main-content"
-            tabIndex={-1}
-            className="min-h-0 flex-1 overflow-auto bg-bg md:m-3 md:mt-0 md:rounded-2xl md:ring-1 md:ring-border/80 md:shadow-pop flex flex-col transition-all duration-200"
-            initial={reducedMotion ? {} : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reducedMotion ? {} : { opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.23, 1, 0.32, 1] }}
-          >
-            {children}
-          </motion.main>
-        </AnimatePresence>
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="min-h-0 flex-1 overflow-auto bg-bg md:m-3 md:mt-0 md:rounded-2xl md:ring-1 md:ring-border/80 md:shadow-pop flex flex-col transition-all duration-200"
+        >
+          {children}
+        </main>
       </div>
 
       <Toaster position="bottom-right" richColors closeButton />

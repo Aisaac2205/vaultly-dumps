@@ -12,9 +12,11 @@ import {
   FileText,
   Users,
   LogOut,
+  ChevronsUpDown,
 } from "lucide-react";
 import { lazyRoutes, type RouteKey } from "@/shared/lib/lazy-routes";
 import { cn } from "@/shared/lib/cn";
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover";
 import { useSidebar } from "./SidebarProvider";
 
 
@@ -129,31 +131,65 @@ function SidebarUser({
   const { collapsed } = useSidebarNavContext();
   const { t } = useTranslation('common');
 
+  if (!user) return null;
+
+  const roleLabel =
+    user.role === "admin"
+      ? t('role.admin', { defaultValue: 'Administrador' })
+      : t('role.user', { defaultValue: 'Usuario' });
+
   return (
-    <div className="flex flex-col gap-2 border-t border-sidebar-border/70 p-3">
-      {!collapsed && user && (
-        <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-xs text-sidebar-text/80">
-          <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-[11px] font-bold text-accent-foreground shadow-xs">
-            {user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase()}
+    <div className="border-t border-sidebar-border/70 p-2">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "flex w-full items-center rounded-lg text-xs text-sidebar-text/80 transition-colors hover:bg-sidebar-hover hover:text-sidebar-text focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-sidebar-indicator cursor-pointer",
+              collapsed ? "justify-center p-2" : "gap-2.5 px-2.5 py-2",
+            )}
+            title={collapsed ? `${user.name ?? user.email} (${roleLabel})` : undefined}
+            aria-label={user.name ?? user.email}
+          >
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#bfe70a] text-[11px] font-bold text-black shadow-xs ring-1 ring-black/10 dark:ring-[#bfe70a]/30 select-none">
+              {user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase()}
+            </div>
+            {!collapsed && (
+              <>
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="truncate font-semibold text-sidebar-text text-xs">{user.name ?? user.email}</div>
+                  <div className="truncate text-[10px] text-sidebar-text/60 font-medium">{roleLabel}</div>
+                </div>
+                <ChevronsUpDown className="size-3.5 shrink-0 text-sidebar-text/50" aria-hidden="true" />
+              </>
+            )}
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          side={collapsed ? "right" : "top"}
+          align={collapsed ? "end" : "center"}
+          sideOffset={8}
+          className="w-56 p-1.5 shadow-pop border-border/80 bg-popover"
+        >
+          <div className="flex items-center gap-2.5 px-2.5 py-2 border-b border-border/50 mb-1">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-[#bfe70a] text-[11px] font-bold text-black shadow-xs ring-1 ring-black/10 dark:ring-[#bfe70a]/30 select-none">
+              {user.name ? user.name.slice(0, 2).toUpperCase() : user.email.slice(0, 2).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-semibold text-popover-foreground text-xs">{user.name ?? user.email}</div>
+              <div className="truncate text-[10px] text-muted-foreground font-medium">{user.email}</div>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-semibold text-sidebar-text text-xs">{user.name ?? user.email}</div>
-            <div className="truncate text-[10px] text-sidebar-text/60">{user.email}</div>
-          </div>
-        </div>
-      )}
-      <button
-        className={cn(
-          "flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs font-medium text-sidebar-text/60 transition-colors hover:bg-sidebar-hover hover:text-sidebar-text",
-          collapsed && "justify-center",
-        )}
-        onClick={() => void onLogout()}
-        type="button"
-        aria-label={t('action.logout')}
-      >
-        <LogOut className="h-3.5 w-3.5" />
-        {!collapsed && <span>{t('action.logout')}</span>}
-      </button>
+          <button
+            type="button"
+            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 cursor-pointer"
+            onClick={() => void onLogout()}
+          >
+            <LogOut className="size-3.5 shrink-0" aria-hidden="true" />
+            <span>{t('action.logout')}</span>
+          </button>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

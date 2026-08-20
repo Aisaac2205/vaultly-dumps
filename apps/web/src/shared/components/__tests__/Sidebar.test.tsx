@@ -62,13 +62,15 @@ describe("Sidebar", () => {
     expect(screen.getByText("Auditoría")).toBeInTheDocument();
   });
 
-  it("shows user email in footer", () => {
+  it("shows user role in footer", () => {
     renderWithRouter(<Sidebar user={mockUser} onLogout={mockLogout} />);
-    expect(screen.getByText("admin@vaultly.local")).toBeInTheDocument();
+    expect(screen.getByText("Administrador")).toBeInTheDocument();
   });
 
-  it("renders logout button", () => {
+  it("renders logout option when user trigger is clicked", () => {
     renderWithRouter(<Sidebar user={mockUser} onLogout={mockLogout} />);
+    const userButton = screen.getByRole("button", { name: /Admin/i });
+    fireEvent.click(userButton);
     expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
   });
 
@@ -156,16 +158,26 @@ describe("SidebarContent", () => {
     );
     expect(screen.getByAltText("Vaultly")).toBeInTheDocument();
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
+    expect(screen.getByText("Administrador")).toBeInTheDocument();
   });
 });
 
 describe("SidebarUser", () => {
-  it("renders null user without email", () => {
-    renderWithRouter(
+  it("renders null when user is null", () => {
+    const { container } = renderWithRouter(
       <SidebarUser user={null} onLogout={mockLogout} />,
     );
-    expect(screen.queryByText(/@/)).not.toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("renders user card and opens popover on click", () => {
+    renderWithRouter(
+      <SidebarUser user={mockUser} onLogout={mockLogout} />,
+    );
+    expect(screen.getByText("Admin")).toBeInTheDocument();
+    expect(screen.getByText("Administrador")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Admin/i }));
     expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
   });
 });
@@ -287,7 +299,7 @@ describe("Sidebar — collapsible icon mode", () => {
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Dumps")).toBeInTheDocument();
     expect(screen.getByAltText("Vaultly")).toBeInTheDocument();
-    expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
+    expect(screen.getByText("Administrador")).toBeInTheDocument();
   });
 
   it("hides labels and shows only icons when collapsed", () => {
@@ -340,6 +352,17 @@ describe("Sidebar — collapsible icon mode", () => {
     const dashboardLink = screen.getByLabelText("Dashboard");
     expect(dashboardLink).toHaveAttribute("title", "Dashboard");
   });
+
+  it("shows user avatar centered when collapsed with tooltip title", () => {
+    renderWithProvider(<Sidebar user={mockUser} onLogout={mockLogout} collapsible="icon" />, {
+      storedState: "collapsed",
+    });
+
+    // Avatar initials remain visible
+    expect(screen.getByText("AD")).toBeInTheDocument();
+    // User role label text is hidden
+    expect(screen.queryByText("Administrador")).not.toBeInTheDocument();
+  });
 });
 
 describe("Sidebar — collapsible offcanvas (mobile sheet)", () => {
@@ -360,6 +383,6 @@ describe("Sidebar — collapsible offcanvas (mobile sheet)", () => {
     // Labels are always visible in offcanvas mode (collapsed computation is false)
     expect(screen.getByText("Dashboard")).toBeInTheDocument();
     expect(screen.getByAltText("Vaultly")).toBeInTheDocument();
-    expect(screen.getByText("Cerrar Sesión")).toBeInTheDocument();
+    expect(screen.getByText("Administrador")).toBeInTheDocument();
   });
 });

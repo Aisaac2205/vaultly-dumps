@@ -19,7 +19,7 @@ function LoginBrandPanel() {
         intensity={0.5}
         noise={0.25}
         shape="corners"
-        colors={["#ffffffff", "#b4b4b4ff", "#d2ff08bd", "#ffffff"]}
+        colors={["#ffffffff", "#b4b4b4ff", "#bfe70ac4", "#ffffff"]}
         colorBack="#00000000"
         className="absolute inset-0"
       />
@@ -68,7 +68,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 antialiased selection:bg-black selection:text-white">
+    <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2 antialiased selection:bg-black/15 selection:text-black">
       <div className="flex min-h-screen flex-col justify-between bg-white px-8 py-10 sm:px-14 md:px-18 lg:px-16 xl:px-24">
         <div className="flex items-center self-start">
           <img src="/logo.png" alt="Vaultly" className="h-14 w-auto self-start sm:h-16 invert" />
@@ -113,7 +113,7 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   aria-invalid={!!error}
                   aria-describedby={error ? "login-error" : undefined}
-                  className="h-12 w-full rounded-[10px] border border-[#e5e5e5] bg-white px-4 text-base text-black outline-none transition-all placeholder:text-[#999] focus:border-black focus:ring-1 focus:ring-black"
+                  className="h-12 w-full rounded-[10px] border border-[#e5e5e5] bg-white px-4 text-base text-black outline-none transition-all placeholder:text-[#999] focus:border-black/60 focus:ring-2 focus:ring-black/10"
                   autoComplete="email"
                   autoFocus
                 />
@@ -136,7 +136,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     aria-invalid={!!error}
                     aria-describedby={error ? "login-error" : undefined}
-                    className="h-12 w-full rounded-[10px] border border-[#e5e5e5] bg-white px-4 pr-12 text-base text-black outline-none transition-all placeholder:text-[#999] focus:border-black focus:ring-1 focus:ring-black"
+                    className="h-12 w-full rounded-[10px] border border-[#e5e5e5] bg-white px-4 pr-12 text-base text-black outline-none transition-all placeholder:text-[#999] focus:border-black/60 focus:ring-2 focus:ring-black/10"
                     autoComplete="current-password"
                   />
                   <button
