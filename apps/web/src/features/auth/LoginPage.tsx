@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { GrainGradient } from "@paper-design/shaders-react";
 import { authClient } from "@/shared/lib/auth-client";
 import logoSidebar from "@/shared/assets/logo_sidebar.png";
 import { Button } from "@/shared/ui/button";
@@ -9,38 +10,25 @@ import { FadeIn } from "@/shared/ui/motion/FadeIn";
 
 function LoginBrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden rounded-xl border border-white/10 bg-black lg:flex flex-col justify-between p-8 lg:p-12 xl:p-14">
-      {/* Subtle monochrome ambient light and dot matrix texture */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, #ffffff 1px, transparent 0)`,
-          backgroundSize: "32px 32px",
-        }}
+    <div className="relative hidden overflow-hidden rounded-xl bg-black lg:flex items-end p-8 lg:p-12 xl:p-14">
+      {/* Paper Design Grain Shader in monochrome white */}
+      <GrainGradient
+        speed={1}
+        scale={1}
+        softness={0.5}
+        intensity={0.5}
+        noise={0.25}
+        shape="corners"
+        colors={["#ffffff", "#a3a3a3", "#a3a3a3", "#ffffff"]}
+        colorBack="#00000000"
+        className="absolute inset-0"
       />
-      <div
-        className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-white/[0.03] blur-3xl pointer-events-none"
-      />
-      <div
-        className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-white/[0.04] blur-3xl pointer-events-none"
-      />
-
-      {/* Top Tagline Pill */}
-      <div className="relative z-10">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-3.5 py-1 text-xs font-mono font-medium text-white/70 backdrop-blur-md">
-          <span className="h-1.5 w-1.5 rounded-full bg-white/80 animate-pulse" />
-          <span>Database Backups & Cloud Storage</span>
-        </div>
-      </div>
 
       {/* Bottom Editorial Statement */}
       <div className="relative z-10 flex flex-col gap-4">
-        <h2 className="max-w-[500px] text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl leading-[1.12]">
+        <h2 className="max-w-[480px] text-3xl font-medium tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl leading-[1.12]">
           Control y resguardo inteligente para tus bases de datos
         </h2>
-        <p className="max-w-[420px] text-sm sm:text-base text-white/50 leading-relaxed font-normal">
-          Automatización de dumps, restauración point-in-time y auditoría centralizada con la máxima seguridad.
-        </p>
       </div>
     </div>
   );
@@ -81,14 +69,14 @@ export default function LoginPage() {
   }
 
   return (
-    <section className="min-h-svh bg-background p-3 sm:p-4 text-foreground antialiased selection:bg-foreground selection:text-background">
+    <section className="min-h-svh bg-background p-3 sm:p-4 antialiased selection:bg-black selection:text-white">
       <div className="grid min-h-[calc(100svh-1.5rem)] gap-4 sm:gap-6 lg:grid-cols-[0.94fr_1.06fr]">
-        {/* Left column — Form Card */}
-        <div className="flex flex-col justify-between rounded-xl border border-border bg-card px-6 py-8 sm:px-10 sm:py-10 lg:min-h-[560px] lg:px-14 xl:px-20 shadow-xs">
+        {/* Left column — Pure White Form Card */}
+        <div className="flex flex-col justify-between rounded-xl border border-border bg-white px-6 py-8 sm:px-10 sm:py-10 lg:min-h-[560px] lg:px-14 xl:px-20 shadow-xs">
           {/* Logo / Brand Header */}
           <div className="flex items-center gap-2.5 self-start">
             <img src={logoSidebar} alt="Vaultly" className="h-8 w-8" />
-            <span className="text-xl font-bold tracking-tight text-foreground">
+            <span className="text-xl font-bold tracking-tight text-black">
               Vaultly
             </span>
           </div>
@@ -96,10 +84,10 @@ export default function LoginPage() {
           {/* Form Content */}
           <FadeIn className="my-auto py-8">
             <div className="mx-auto w-full max-w-[420px]">
-              <h1 className="text-2xl font-medium tracking-[-0.03em] text-foreground sm:text-3xl lg:text-4xl">
+              <h1 className="text-2xl font-medium tracking-[-0.03em] text-black sm:text-3xl lg:text-4xl">
                 {t("page.title")}
               </h1>
-              <p className="mt-2.5 text-sm sm:text-base text-muted-foreground">
+              <p className="mt-2.5 text-sm sm:text-base text-[#666]">
                 {t("page.subtitle")}
               </p>
 
@@ -121,7 +109,7 @@ export default function LoginPage() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="email"
-                    className="text-sm font-medium text-foreground"
+                    className="text-sm font-medium text-black"
                   >
                     {t("label.email")}
                   </label>
@@ -134,7 +122,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     aria-invalid={!!error}
                     aria-describedby={error ? "login-error" : undefined}
-                    className="h-12 w-full rounded-[10px] border border-border bg-background px-4 text-base text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-foreground focus:ring-1 focus:ring-foreground"
+                    className="h-12 w-full rounded-[10px] border border-[#e5e5e5] bg-white px-4 text-base text-black outline-none transition-all placeholder:text-[#999] focus:border-black focus:ring-1 focus:ring-black"
                     autoComplete="email"
                     autoFocus
                   />
@@ -143,7 +131,7 @@ export default function LoginPage() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="password"
-                    className="text-sm font-medium text-foreground"
+                    className="text-sm font-medium text-black"
                   >
                     {t("label.password")}
                   </label>
@@ -157,13 +145,13 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       aria-invalid={!!error}
                       aria-describedby={error ? "login-error" : undefined}
-                      className="h-12 w-full rounded-[10px] border border-border bg-background px-4 pr-12 text-base text-foreground outline-none transition-all placeholder:text-muted-foreground focus:border-foreground focus:ring-1 focus:ring-foreground"
+                      className="h-12 w-full rounded-[10px] border border-[#e5e5e5] bg-white px-4 pr-12 text-base text-black outline-none transition-all placeholder:text-[#999] focus:border-black focus:ring-1 focus:ring-black"
                       autoComplete="current-password"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword((v) => !v)}
-                      className="absolute inset-y-0 right-3.5 flex items-center text-muted-foreground transition-colors hover:text-foreground"
+                      className="absolute inset-y-0 right-3.5 flex items-center text-[#999] transition-colors hover:text-black"
                       tabIndex={-1}
                       aria-label={showPassword ? "Hide password" : "Show password"}
                     >
@@ -179,7 +167,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-12 w-full rounded-[10px] bg-foreground text-background text-base font-medium transition-all hover:bg-foreground/90 disabled:opacity-50 mt-2"
+                  className="h-12 w-full rounded-[10px] bg-black text-white text-base font-medium transition-all hover:bg-black/90 disabled:opacity-50 mt-2 cursor-pointer"
                 >
                   {loading ? t("action.submitting") : t("action.submit")}
                 </Button>
@@ -188,12 +176,12 @@ export default function LoginPage() {
           </FadeIn>
 
           {/* Footer */}
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-[#999]">
             &copy; {new Date().getFullYear()} Vaultly. {t("footer")}
           </p>
         </div>
 
-        {/* Right column — Minimalist Black & White Brand Panel */}
+        {/* Right column — GrainGradient Monochrome Brand Panel */}
         <LoginBrandPanel />
       </div>
     </section>
