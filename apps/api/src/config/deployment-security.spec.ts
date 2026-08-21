@@ -39,6 +39,22 @@ describe('production deployment security contract', () => {
     );
   });
 
+  it('sources the client IP selector before nginx expands its templates', () => {
+    const dockerfile = readRepositoryFile('apps/web/Dockerfile');
+    const entrypoint = readRepositoryFile(
+      'apps/web/docker-entrypoint.d/10-security-config.envsh',
+    );
+
+    expect(dockerfile).toContain(
+      'COPY apps/web/docker-entrypoint.d/10-security-config.envsh /docker-entrypoint.d/10-security-config.envsh',
+    );
+    expect(dockerfile).toContain(
+      'RUN chmod +x /docker-entrypoint.d/10-security-config.envsh',
+    );
+    expect(dockerfile).not.toContain('10-security-config.sh');
+    expect(entrypoint).toContain('export CLIENT_IP_SOURCE');
+  });
+
   it('applies inherited security headers to static, API, and SSE responses', () => {
     const nginx = readRepositoryFile(
       'apps/web/templates/default.conf.template',
@@ -46,7 +62,7 @@ describe('production deployment security contract', () => {
     const headers = readRepositoryFile('apps/web/nginx/security-headers.conf');
     const dockerfile = readRepositoryFile('apps/web/Dockerfile');
     const entrypoint = readRepositoryFile(
-      'apps/web/docker-entrypoint.d/10-security-config.sh',
+      'apps/web/docker-entrypoint.d/10-security-config.envsh',
     );
 
     expect(headers).toContain('X-Content-Type-Options "nosniff" always');
@@ -63,8 +79,8 @@ describe('production deployment security contract', () => {
     expect(nginx).toContain('proxy_read_timeout 3600s;');
     expect(nginx).toContain('proxy_set_header X-Forwarded-For ${CLIENT_IP_SOURCE};');
     expect(entrypoint).toContain('RAILWAY_ENVIRONMENT_ID');
-    expect(entrypoint).toContain("CLIENT_IP_SOURCE='$http_x_real_ip'");
-    expect(entrypoint).toContain("CLIENT_IP_SOURCE='$remote_addr'");
+    expect(entrypoint).toContain('CLIENT_IP_SOURCE="\\$http_x_real_ip"');
+    expect(entrypoint).toContain('CLIENT_IP_SOURCE="\\$remote_addr"');
     expect(entrypoint).toContain('Content-Security-Policy-Report-Only');
     expect(entrypoint).toContain(
       'Content-Security-Policy|Content-Security-Policy-Report-Only)',
