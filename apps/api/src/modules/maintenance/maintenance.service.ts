@@ -133,63 +133,80 @@ export class MaintenanceService {
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
   async sweepManualRetention(): Promise<void> {
     try {
-      const lock = await this.dataSource.query<Array<{ acquired: boolean }>>(
-        'SELECT pg_try_advisory_lock($1) AS acquired',
-        [MANUAL_SWEEP_LOCK_ID],
-      );
-      if (!lock[0]?.acquired) return;
-
+      const queryRunner = this.dataSource.createQueryRunner();
       try {
-        const connections = await this.connectionsService.findAll(Environment.PROD);
-        const connectionIds = connections.map((c) => c.id);
-
-        const policies = await this.retentionPolicyRepo.find({
-          where: { category: BackupCategory.MANUAL },
-        });
-        const policyByConnectionId = new Map(
-          policies
-            .filter((p) => p.retentionDays != null && connectionIds.includes(p.connectionId))
-            .map((p) => [p.connectionId, p.retentionDays]),
+        await queryRunner.connect();
+        const lock = await this.dataSource.query<Array<{ acquired: boolean }>>(
+          'SELECT pg_try_advisory_lock($1) AS acquired',
+          [MANUAL_SWEEP_LOCK_ID],
+          queryRunner,
         );
+        if (!lock[0]?.acquired) return;
 
-        if (policyByConnectionId.size === 0) return;
+        try {
+          const connections = await this.connectionsService.findAll(Environment.PROD);
+          const connectionIds = connections.map((c) => c.id);
 
-        let processedCount = 0;
-        for (const connection of connections) {
-          const days = policyByConnectionId.get(connection.id);
-          if (days == null) continue;
+          const policies = await this.retentionPolicyRepo.find({
+            where: { category: BackupCategory.MANUAL },
+          });
+          const policyByConnectionId = new Map(
+            policies
+              .filter((p) => p.retentionDays != null && connectionIds.includes(p.connectionId))
+              .map((p) => [p.connectionId, p.retentionDays]),
+          );
 
-          const policy: RetentionPolicy = { maxAgeDays: days };
-          try {
-            const result = await this.applyRetention(
-              connection.slug,
-              BackupCategory.MANUAL,
-              policy,
-            );
-            processedCount++;
-            if (result.deleted > 0) {
-              this.logger.log(
-                `Manual sweep "${connection.slug}": pruned ${result.deleted} (${result.freedMb} MB)`,
+          if (policyByConnectionId.size === 0) return;
+
+          let processedCount = 0;
+          for (const connection of connections) {
+            const days = policyByConnectionId.get(connection.id);
+            if (days == null) continue;
+
+            const policy: RetentionPolicy = { maxAgeDays: days };
+            try {
+              const result = await this.applyRetention(
+                connection.slug,
+                BackupCategory.MANUAL,
+                policy,
               );
+              processedCount++;
+              if (result.deleted > 0) {
+                this.logger.log(
+                  `Manual sweep "${connection.slug}": pruned ${result.deleted} (${result.freedMb} MB)`,
+                );
+              }
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
+              this.logger.warn(
+                `Manual sweep failed for "${connection.slug}": ${message}`,
+              );
+            }
+          }
+
+          if (processedCount > 0) {
+            await this.dataSource.query(
+              `UPDATE connection_retention_policies SET "updatedAt" = NOW() WHERE category = $1`,
+              [BackupCategory.MANUAL],
+            );
+          }
+        } finally {
+          try {
+            const unlockResult = await this.dataSource.query<Array<{ released: boolean }>>(
+              'SELECT pg_advisory_unlock($1) AS released',
+              [MANUAL_SWEEP_LOCK_ID],
+              queryRunner,
+            );
+            if (!unlockResult[0]?.released) {
+              this.logger.error('Manual retention advisory lock release failed');
             }
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
-            this.logger.warn(
-              `Manual sweep failed for "${connection.slug}": ${message}`,
-            );
+            this.logger.error(`Manual retention advisory lock release failed: ${message}`);
           }
         }
-
-        if (processedCount > 0) {
-          await this.dataSource.query(
-            `UPDATE connection_retention_policies SET "updatedAt" = NOW() WHERE category = $1`,
-            [BackupCategory.MANUAL],
-          );
-        }
       } finally {
-        await this.dataSource.query('SELECT pg_advisory_unlock($1)', [
-          MANUAL_SWEEP_LOCK_ID,
-        ]);
+        await queryRunner.release();
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
