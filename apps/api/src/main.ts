@@ -11,6 +11,7 @@ import express from 'express';
 import { AppModule } from './app.module';
 import { createAuthRateLimitMiddleware } from './common/middleware/auth-rate-limit.middleware';
 import { createApiSecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
+import { registerFatalRuntimePolicy } from './common/runtime/fatal-runtime-policy';
 
 // Safety net global: cualquier promise no atrapada (cronjobs, R2, pg_dump,
 // etc.) se loguea pero NO mata el proceso. Sin esto, Node 22 trata
@@ -21,9 +22,6 @@ process.on('unhandledRejection', (reason) => {
   const message = reason instanceof Error ? `${reason.message}\n${reason.stack}` : String(reason);
   processLogger.error(`Unhandled Rejection: ${message}`);
 });
-process.on('uncaughtException', (err) => {
-  processLogger.error(`Uncaught Exception: ${err.message}\n${err.stack}`);
-});
 
 async function bootstrap(): Promise<void> {
   // bodyParser: false → Better Auth catch-all needs the raw body stream.
@@ -31,6 +29,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
+  registerFatalRuntimePolicy(app, process, processLogger);
 
   // The private API always sits exactly one hop behind the web nginx. Its
   // entrypoint chooses the client identity safely: Railway's edge-overwritten
