@@ -40,8 +40,8 @@ COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 
 COPY apps/web/templates/default.conf.template /etc/nginx/templates/default.conf.template
 COPY apps/web/nginx/security-headers.conf /etc/nginx/templates/security-headers.inc.template
-COPY apps/web/docker-entrypoint.d/10-security-config.sh /docker-entrypoint.d/10-security-config.sh
-RUN chmod +x /docker-entrypoint.d/10-security-config.sh
+COPY apps/web/docker-entrypoint.d/10-security-config.envsh /docker-entrypoint.d/10-security-config.envsh
+RUN chmod +x /docker-entrypoint.d/10-security-config.envsh
 
 # Activates the official image's own /docker-entrypoint.d/15-local-resolvers.envsh,
 # which exports NGINX_LOCAL_RESOLVERS from /etc/resolv.conf (off by default).
