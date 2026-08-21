@@ -14,6 +14,7 @@
     "lint": "pnpm --parallel -r run lint",
     "test": "pnpm --parallel -r run test",
     "typecheck": "pnpm --parallel -r run typecheck",
+    "audit:production": "pnpm audit --prod --audit-level high",
     "docker:dev": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up",
     "docker:dev:test": "docker compose -f docker-compose.yml -f docker-compose.dev.yml --profile test up",
     "docker:db": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up db",
@@ -26,13 +27,5 @@
     "@semantic-release/release-notes-generator": "^14.1.1",
     "semantic-release": "^25.0.3",
     "typescript": "^5.8.3"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@nestjs/core"
-    ],
-    "ignoredBuiltDependencies": [
-      "@scarf/scarf"
-    ]
   }
 }
