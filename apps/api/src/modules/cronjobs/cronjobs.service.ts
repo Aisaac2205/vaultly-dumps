@@ -279,74 +279,91 @@ export class CronjobsService implements OnApplicationBootstrap {
     let cronjobName = cronjobId;
 
     try {
-      // CJ-1: Acquire advisory lock to prevent duplicate execution across replicas.
-      // pg_try_advisory_lock returns immediately (false if another replica holds it).
       const lockId = this.stableHash(cronjobId);
-      const lockResult = await this.dataSource.query(
-        'SELECT pg_try_advisory_lock($1) AS acquired',
-        [lockId],
-      );
-      if (!lockResult[0]?.acquired) {
-        this.logger.debug(`Cronjob "${cronjobId}" skipped — lock held by another replica`);
-        return;
-      }
-
+      const queryRunner = this.dataSource.createQueryRunner();
       try {
-        const cronjob = await this.repository.findById(cronjobId);
-        if (!cronjob?.isActive) return;
-        cronjobName = cronjob.name;
-
-        // Skip if already running (guards against catch-up + tick overlap)
-        if (cronjob.lastStatus === JobStatus.RUNNING) {
-          this.logger.debug(`Cronjob "${cronjob.name}" skipped — already RUNNING`);
+        await queryRunner.connect();
+        const lockResult = await this.dataSource.query<Array<{ acquired: boolean }>>(
+          'SELECT pg_try_advisory_lock($1) AS acquired',
+          [lockId],
+          queryRunner,
+        );
+        if (!lockResult[0]?.acquired) {
+          this.logger.debug(`Cronjob "${cronjobId}" skipped — lock held by another replica`);
           return;
         }
 
-        this.logger.log(
-          `Executing cronjob "${cronjob.name}" → connection ${cronjob.connectionId}`,
-        );
-
-        await this.repository.updateRunMetadata(cronjobId, {
-          lastRunAt: startedAt,
-          lastStatus: JobStatus.RUNNING,
-        });
-
         try {
-          await this.backupService.createBackup(
-            { connectionId: cronjob.connectionId },
-            SYSTEM_USER,
-            FREQUENCY_TO_CATEGORY[cronjob.frequency],
+          const cronjob = await this.repository.findById(cronjobId);
+          if (!cronjob?.isActive) return;
+          cronjobName = cronjob.name;
+
+          if (cronjob.lastStatus === JobStatus.RUNNING) {
+            this.logger.debug(`Cronjob "${cronjob.name}" skipped — already RUNNING`);
+            return;
+          }
+
+          this.logger.log(
+            `Executing cronjob "${cronjob.name}" → connection ${cronjob.connectionId}`,
           );
 
           await this.repository.updateRunMetadata(cronjobId, {
             lastRunAt: startedAt,
-            lastStatus: JobStatus.COMPLETED,
-            nextRunAt: this.getNextRunDate(cronjobId),
+            lastStatus: JobStatus.RUNNING,
           });
 
-          this.logger.log(`Cronjob "${cronjob.name}" completed`);
+          try {
+            await this.backupService.createBackup(
+              { connectionId: cronjob.connectionId },
+              SYSTEM_USER,
+              FREQUENCY_TO_CATEGORY[cronjob.frequency],
+            );
 
-          // Retention runs AFTER a successful backup and must never fail the run.
-          await this.applyRetention(cronjob);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Error desconocido';
-          this.logger.error(`Cronjob "${cronjob.name}" failed: ${message}`);
-
-          await this.repository
-            .updateRunMetadata(cronjobId, {
+            await this.repository.updateRunMetadata(cronjobId, {
               lastRunAt: startedAt,
-              lastStatus: JobStatus.FAILED,
-            })
-            .catch((updateErr) => {
-              this.logger.error(
-                `Failed to persist FAILED status for "${cronjob.name}": ${
-                  updateErr instanceof Error ? updateErr.message : String(updateErr)
-                }`,
-              );
+              lastStatus: JobStatus.COMPLETED,
+              nextRunAt: this.getNextRunDate(cronjobId),
             });
+
+            this.logger.log(`Cronjob "${cronjob.name}" completed`);
+
+            await this.applyRetention(cronjob);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : 'Error desconocido';
+            this.logger.error(`Cronjob "${cronjob.name}" failed: ${message}`);
+
+            await this.repository
+              .updateRunMetadata(cronjobId, {
+                lastRunAt: startedAt,
+                lastStatus: JobStatus.FAILED,
+              })
+              .catch((updateErr) => {
+                this.logger.error(
+                  `Failed to persist FAILED status for "${cronjob.name}": ${
+                    updateErr instanceof Error ? updateErr.message : String(updateErr)
+                  }`,
+                );
+              });
+          }
+        } finally {
+          try {
+            const unlockResult = await this.dataSource.query<Array<{ released: boolean }>>(
+              'SELECT pg_advisory_unlock($1) AS released',
+              [lockId],
+              queryRunner,
+            );
+            if (!unlockResult[0]?.released) {
+              this.logger.error(`Cronjob "${cronjobId}" advisory lock release failed`);
+            }
+          } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.logger.error(
+              `Cronjob "${cronjobId}" advisory lock release failed: ${message}`,
+            );
+          }
         }
       } finally {
-        await this.dataSource.query('SELECT pg_advisory_unlock($1)', [lockId]);
+        await queryRunner.release();
       }
     } catch (error) {
       const message =
