@@ -1,15 +1,23 @@
 import { ForbiddenException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { encrypt } from '../../common/utils/encryption';
 import { ConnectionEntity } from '../../database/entities/connection.entity';
 import { Environment } from '../../database/enums/environment.enum';
+import { DbTypeEnum } from '../../database/enums/db-type.enum';
+import { JobStatus } from '../../database/enums/job-status.enum';
 import { RestoreJobEntity } from '../../database/entities/restore-job.entity';
 import { CreateRestoreLeases1778716800018 } from '../../database/migrations/1778716800018-create-restore-leases';
 import { ConnectionsRepository } from '../connections/connections.repository';
 import { ConnectionsService } from '../connections/connections.service';
+import { BackupService } from '../backup/backup.service';
+import { R2Service } from '../backup/r2.service';
+import { RestoreStrategy } from '../backup/interfaces/restore-strategy.interface';
+import { SseService } from '../../shared/sse/sse.service';
 import { RestoreLeaseRepository } from './restore-lease.repository';
 import { RestoreExecutionOwnershipService } from './restore-execution-ownership.service';
 import { RestoreRepository } from './restore.repository';
+import { RestoreService } from './restore.service';
 
 function resolveTestDatabaseUrl(): string | null {
   const value = process.env.RESTORE_LEASE_TEST_DATABASE_URL;
@@ -51,6 +59,9 @@ integration('restore lease PostgreSQL integration', () => {
   let secondRestoreRepository: RestoreRepository;
   let firstOwnershipService: RestoreExecutionOwnershipService;
   let secondOwnershipService: RestoreExecutionOwnershipService;
+  let secondRestoreService: RestoreService;
+  let secondRestoreModule: TestingModule;
+  let strategyExecutions = 0;
   const migration = new CreateRestoreLeases1778716800018();
   const target = '00000000-0000-0000-0000-000000000001';
   const targetTwo = '00000000-0000-0000-0000-000000000002';
@@ -117,13 +128,51 @@ integration('restore lease PostgreSQL integration', () => {
     );
     firstOwnershipService = new RestoreExecutionOwnershipService(firstDataSource);
     secondOwnershipService = new RestoreExecutionOwnershipService(secondDataSource);
+    secondRestoreModule = await Test.createTestingModule({
+      providers: [
+        RestoreService,
+        { provide: RestoreRepository, useValue: secondRestoreRepository },
+        { provide: RestoreLeaseRepository, useValue: secondRepository },
+        {
+          provide: RestoreExecutionOwnershipService,
+          useValue: secondOwnershipService,
+        },
+        { provide: R2Service, useValue: {} },
+        { provide: BackupService, useValue: {} },
+        { provide: ConnectionsService, useValue: {} },
+        {
+          provide: SseService,
+          useValue: { complete: () => undefined, emit: () => undefined },
+        },
+        {
+          provide: 'RESTORE_STRATEGIES',
+          useValue: new Map<DbTypeEnum, RestoreStrategy>([
+            [DbTypeEnum.POSTGRES, { execute: async () => { strategyExecutions += 1; } }],
+          ]),
+        },
+      ],
+    }).compile();
+    secondRestoreService = secondRestoreModule.get(RestoreService);
   });
 
   beforeEach(async () => {
+    strategyExecutions = 0;
     await firstDataSource.query('DELETE FROM restore_leases');
     await firstDataSource.query('DELETE FROM restore_jobs');
     await firstDataSource.query('DELETE FROM connections');
   });
+
+  async function insertRestoreJob(
+    id: string,
+    targetConnectionId: string,
+    status: JobStatus.PENDING | JobStatus.RUNNING,
+  ): Promise<void> {
+    await firstDataSource.query(
+      `INSERT INTO restore_jobs (id, "targetConnectionId", "targetEnvironment", status, "isDryRun", "startedAt", "triggeredBy")
+       VALUES ($1, $2, 'dev', $3, FALSE, CURRENT_TIMESTAMP, 'recovery-test')`,
+      [id, targetConnectionId, status],
+    );
+  }
 
   afterAll(async () => {
     try {
@@ -139,6 +188,7 @@ integration('restore lease PostgreSQL integration', () => {
         }
       }
     } finally {
+      await secondRestoreModule.close();
       if (secondDataSource.isInitialized) await secondDataSource.destroy();
       if (firstDataSource.isInitialized) await firstDataSource.destroy();
     }
@@ -293,5 +343,139 @@ integration('restore lease PostgreSQL integration', () => {
     } finally {
       await firstOwnershipService.release(ownership);
     }
+  });
+
+  it('recovers only abandoned jobs through the second replica bootstrap lifecycle', async () => {
+    const liveJobId = '00000000-0000-0000-0000-000000000121';
+    const pendingJobId = '00000000-0000-0000-0000-000000000122';
+    const runningJobId = '00000000-0000-0000-0000-000000000123';
+    const expiredAt = new Date(Date.now() - 1_000);
+    await insertRestoreJob(liveJobId, target, JobStatus.RUNNING);
+    await insertRestoreJob(pendingJobId, targetTwo, JobStatus.PENDING);
+    await insertRestoreJob(runningJobId, targetTwo, JobStatus.RUNNING);
+    expect(await firstRepository.tryAcquire(
+      target,
+      liveJobId,
+      '00000000-0000-0000-0000-000000000221',
+      expiredAt,
+    )).toBe(true);
+    expect(await firstRepository.tryAcquire(
+      targetTwo,
+      pendingJobId,
+      '00000000-0000-0000-0000-000000000222',
+      expiredAt,
+    )).toBe(true);
+    const owner = await firstOwnershipService.tryAcquire(target);
+    expect(owner).not.toBeNull();
+    if (!owner) throw new Error('first ownership was not acquired');
+
+    try {
+      await secondRestoreService.onApplicationBootstrap();
+    } finally {
+      await firstOwnershipService.release(owner);
+    }
+
+    const jobs = await firstDataSource.query<{ id: string; status: string; errorMessage: string | null }[]>(
+      'SELECT id, status, "errorMessage" FROM restore_jobs ORDER BY id',
+    );
+    expect(jobs).toEqual([
+      { id: liveJobId, status: JobStatus.RUNNING, errorMessage: null },
+      { id: pendingJobId, status: JobStatus.FAILED, errorMessage: 'Job interrupted — process restarted' },
+      { id: runningJobId, status: JobStatus.FAILED, errorMessage: 'Job interrupted — process restarted' },
+    ]);
+    const leases = await firstDataSource.query<{ targetConnectionId: string }[]>(
+      'SELECT "targetConnectionId" FROM restore_leases ORDER BY "targetConnectionId"',
+    );
+    expect(leases).toEqual([{ targetConnectionId: target }]);
+  });
+
+  it('terminalizes a delayed stale callback without touching its successor lease', async () => {
+    const staleJobId = '00000000-0000-0000-0000-000000000124';
+    const staleToken = '00000000-0000-0000-0000-000000000224';
+    const successorJobId = '00000000-0000-0000-0000-000000000125';
+    const successorToken = '00000000-0000-0000-0000-000000000225';
+    await insertRestoreJob(staleJobId, target, JobStatus.PENDING);
+    expect(await firstRepository.tryAcquire(
+      target,
+      staleJobId,
+      staleToken,
+      new Date(Date.now() - 1_000),
+    )).toBe(true);
+    await insertRestoreJob(successorJobId, target, JobStatus.PENDING);
+    expect(await secondRepository.tryAcquire(
+      target,
+      successorJobId,
+      successorToken,
+      new Date(Date.now() + 60_000),
+    )).toBe(true);
+
+    await secondRestoreService.executeRestoreAsync(
+      staleJobId,
+      { targetConnectionId: target, isDryRun: false, r2Key: 'source/manual/stale.dump' },
+      { id: 'recovery-test', email: 'recovery@example.test', name: 'Recovery', role: 'admin' },
+      staleToken,
+    );
+
+    const [stale] = await firstDataSource.query<{ status: string; errorMessage: string }[]>(
+      'SELECT status, "errorMessage" FROM restore_jobs WHERE id = $1',
+      [staleJobId],
+    );
+    const [successor] = await firstDataSource.query<{ status: string }[]>(
+      'SELECT status FROM restore_jobs WHERE id = $1',
+      [successorJobId],
+    );
+    const [lease] = await firstDataSource.query<{ restoreJobId: string; leaseToken: string }[]>(
+      'SELECT "restoreJobId", "leaseToken" FROM restore_leases WHERE "targetConnectionId" = $1',
+      [target],
+    );
+    expect(stale).toEqual({ status: JobStatus.FAILED, errorMessage: 'Restore execution became stale before it started' });
+    expect(successor?.status).toBe(JobStatus.PENDING);
+    expect(lease).toEqual({ restoreJobId: successorJobId, leaseToken: successorToken });
+    expect(strategyExecutions).toBe(0);
+  });
+
+  it('does not race a newly admitted worker or release its lease', async () => {
+    const abandonedJobId = '00000000-0000-0000-0000-000000000125';
+    const activeJobId = '00000000-0000-0000-0000-000000000126';
+    const activeToken = '00000000-0000-0000-0000-000000000226';
+    await insertRestoreJob(abandonedJobId, target, JobStatus.RUNNING);
+    await firstRepository.tryAcquire(
+      target,
+      abandonedJobId,
+      '00000000-0000-0000-0000-000000000225',
+      new Date(Date.now() - 1_000),
+    );
+    await insertRestoreJob(activeJobId, target, JobStatus.PENDING);
+    expect(await secondRepository.tryAcquire(
+      target,
+      activeJobId,
+      activeToken,
+      new Date(Date.now() + 60_000),
+    )).toBe(true);
+
+    const ownership = await firstOwnershipService.tryAcquire(target);
+    expect(ownership).not.toBeNull();
+    if (!ownership) throw new Error('recovery ownership was not acquired');
+    try {
+      expect(await firstRestoreRepository.recoverIfReclaimable(
+        abandonedJobId,
+        target,
+        'Job interrupted — process restarted',
+        new Date(),
+      )).toBe(false);
+    } finally {
+      await firstOwnershipService.release(ownership);
+    }
+
+    const [abandoned] = await firstDataSource.query<{ status: string }[]>(
+      'SELECT status FROM restore_jobs WHERE id = $1',
+      [abandonedJobId],
+    );
+    const [lease] = await firstDataSource.query<{ restoreJobId: string; leaseToken: string }[]>(
+      'SELECT "restoreJobId", "leaseToken" FROM restore_leases WHERE "targetConnectionId" = $1',
+      [target],
+    );
+    expect(abandoned?.status).toBe(JobStatus.RUNNING);
+    expect(lease).toEqual({ restoreJobId: activeJobId, leaseToken: activeToken });
   });
 });
