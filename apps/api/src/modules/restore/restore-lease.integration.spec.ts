@@ -8,6 +8,7 @@ import { CreateRestoreLeases1778716800018 } from '../../database/migrations/1778
 import { ConnectionsRepository } from '../connections/connections.repository';
 import { ConnectionsService } from '../connections/connections.service';
 import { RestoreLeaseRepository } from './restore-lease.repository';
+import { RestoreExecutionOwnershipService } from './restore-execution-ownership.service';
 import { RestoreRepository } from './restore.repository';
 
 function resolveTestDatabaseUrl(): string | null {
@@ -48,6 +49,8 @@ integration('restore lease PostgreSQL integration', () => {
   let secondRepository: RestoreLeaseRepository;
   let firstRestoreRepository: RestoreRepository;
   let secondRestoreRepository: RestoreRepository;
+  let firstOwnershipService: RestoreExecutionOwnershipService;
+  let secondOwnershipService: RestoreExecutionOwnershipService;
   const migration = new CreateRestoreLeases1778716800018();
   const target = '00000000-0000-0000-0000-000000000001';
   const targetTwo = '00000000-0000-0000-0000-000000000002';
@@ -112,6 +115,8 @@ integration('restore lease PostgreSQL integration', () => {
       secondDataSource.getRepository(RestoreJobEntity),
       secondDataSource,
     );
+    firstOwnershipService = new RestoreExecutionOwnershipService(firstDataSource);
+    secondOwnershipService = new RestoreExecutionOwnershipService(secondDataSource);
   });
 
   beforeEach(async () => {
@@ -162,6 +167,31 @@ integration('restore lease PostgreSQL integration', () => {
     expect(await firstRepository.release(target, firstJob, firstToken)).toBe(false);
     expect(await secondRepository.renew(target, secondJob, secondToken, expiresAt)).toBe(true);
     expect(await secondRepository.release(target, secondJob, secondToken)).toBe(true);
+  });
+
+  it('keeps target execution exclusive after an expired lease is taken over', async () => {
+    const firstOwnership = await firstOwnershipService.tryAcquire(target);
+    expect(firstOwnership).not.toBeNull();
+    if (!firstOwnership) throw new Error('first ownership was not acquired');
+
+    const firstJob = '00000000-0000-0000-0000-000000000111';
+    const firstToken = '00000000-0000-0000-0000-000000000211';
+    const secondJob = '00000000-0000-0000-0000-000000000112';
+    const secondToken = '00000000-0000-0000-0000-000000000212';
+
+    try {
+      expect(await firstRepository.tryAcquire(target, firstJob, firstToken, new Date(Date.now() - 1_000))).toBe(true);
+      expect(await secondRepository.tryAcquire(target, secondJob, secondToken, new Date(Date.now() + 60_000))).toBe(true);
+      expect(await firstOwnershipService.hasActiveLease(firstOwnership, firstJob, firstToken)).toBe(false);
+      expect(await secondOwnershipService.tryAcquire(target)).toBeNull();
+    } finally {
+      await firstOwnershipService.release(firstOwnership);
+    }
+
+    const secondOwnership = await secondOwnershipService.tryAcquire(target);
+    expect(secondOwnership).not.toBeNull();
+    if (!secondOwnership) throw new Error('second ownership was not acquired');
+    await secondOwnershipService.release(secondOwnership);
   });
 
   it('admits exactly one concurrent restore job and target lease', async () => {
@@ -251,5 +281,17 @@ integration('restore lease PostgreSQL integration', () => {
     expect(targetRow[0]?.environment).toBe(Environment.PROD);
     expect(await firstDataSource.query('SELECT id FROM restore_jobs')).toHaveLength(0);
     expect(await firstDataSource.query('SELECT "restoreJobId" FROM restore_leases')).toHaveLength(0);
+  });
+
+  it('rejects a missing or inactive target during the live preflight session', async () => {
+    const ownership = await firstOwnershipService.tryAcquire(target);
+    expect(ownership).not.toBeNull();
+    if (!ownership) throw new Error('ownership was not acquired');
+
+    try {
+      expect(await firstOwnershipService.findActiveTarget(ownership)).toBeNull();
+    } finally {
+      await firstOwnershipService.release(ownership);
+    }
   });
 });
