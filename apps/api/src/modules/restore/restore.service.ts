@@ -1,17 +1,20 @@
 import {
   ForbiddenException,
+  ConflictException,
   Inject,
   Injectable,
   Logger,
   NotFoundException,
   OnApplicationBootstrap,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { createWriteStream, unlinkSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { pipeline } from 'stream/promises';
 import { CreateRestoreDto } from './dto/create-restore.dto';
 import { RestoreRepository } from './restore.repository';
+import { RestoreLeaseRepository } from './restore-lease.repository';
 import { R2Service } from '../backup/r2.service';
 import { BackupService } from '../backup/backup.service';
 import { ConnectionsService } from '../connections/connections.service';
@@ -29,6 +32,7 @@ import { Client } from 'pg';
 import { createConnection as createMysqlConnection, RowDataPacket } from 'mysql2/promise';
 
 const SNAPSHOT_TIMEOUT_MS = 10_000;
+const RESTORE_LEASE_DURATION_MS = 15 * 60_000;
 
 @Injectable()
 export class RestoreService implements OnApplicationBootstrap {
@@ -36,6 +40,7 @@ export class RestoreService implements OnApplicationBootstrap {
 
   constructor(
     private readonly restoreRepository: RestoreRepository,
+    private readonly restoreLeaseRepository: RestoreLeaseRepository,
     private readonly r2Service: R2Service,
     private readonly backupService: BackupService,
     private readonly connectionsService: ConnectionsService,
@@ -125,30 +130,40 @@ export class RestoreService implements OnApplicationBootstrap {
       return { jobId: dryJob.id, dryRunResult: result };
     }
 
-    const job = await this.restoreRepository.create({
+    const jobId = randomUUID();
+    const leaseToken = randomUUID();
+    const admittedJobId = await this.restoreRepository.tryCreateWithLease({
+      id: jobId,
       sourceBackupId: isR2Restore ? null : dto.sourceBackupId!,
       r2Key: isR2Restore ? dto.r2Key! : null,
       targetConnectionId: targetConnection.id,
       targetEnvironment,
-      status: JobStatus.PENDING,
-      isDryRun: false,
       triggeredBy: user.id,
       startedAt: new Date(),
+      leaseToken,
+      expiresAt: new Date(Date.now() + RESTORE_LEASE_DURATION_MS),
     });
 
-    this.sseService.register(job.id);
+    if (!admittedJobId) {
+      throw new ConflictException(
+        `Ya existe una restauración activa para la conexión "${targetConnection.name}".`,
+      );
+    }
+
+    this.sseService.register(admittedJobId);
 
     setImmediate(() => {
-      this.executeRestoreAsync(job.id, dto, user);
+      this.executeRestoreAsync(admittedJobId, dto, user, leaseToken);
     });
 
-    return { jobId: job.id };
+    return { jobId: admittedJobId };
   }
 
   private async executeRestoreAsync(
     jobId: string,
     dto: CreateRestoreDto,
     _user: AuthUser,
+    leaseToken: string,
   ): Promise<void> {
     const startedAt = new Date();
     let tempFilePath: string | null = null;
@@ -247,6 +262,11 @@ export class RestoreService implements OnApplicationBootstrap {
         }
       }
       this.sseService.complete(jobId);
+      await this.restoreLeaseRepository.release(
+        dto.targetConnectionId,
+        jobId,
+        leaseToken,
+      );
     }
   }
 

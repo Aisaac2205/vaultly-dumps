@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Client } from 'pg';
 import { createConnection as createMysqlConnection } from 'mysql2/promise';
 import { CreateConnectionDto } from './dto/create-connection.dto';
@@ -88,19 +88,28 @@ export class ConnectionsService {
   }
 
   async update(id: string, dto: UpdateConnectionDto) {
-    const existing = await this.repository.findById(id);
-    if (!existing) {
+    const result = await this.repository.update(id, dto);
+    if (result === 'missing') {
       throw new NotFoundException(`Conexión con ID "${id}" no encontrada`);
     }
-    return this.repository.update(id, dto);
+    if (result === 'leased') {
+      throw new ForbiddenException(
+        'No se puede modificar una conexión con una restauración activa.',
+      );
+    }
+    return result;
   }
 
   async delete(id: string) {
-    const existing = await this.repository.findById(id);
-    if (!existing) {
+    const result = await this.repository.softDelete(id);
+    if (result === 'missing') {
       throw new NotFoundException(`Conexión con ID "${id}" no encontrada`);
     }
-    await this.repository.softDelete(id);
+    if (result === 'leased') {
+      throw new ForbiddenException(
+        'No se puede eliminar una conexión con una restauración activa.',
+      );
+    }
   }
 
   async testByConnectionId(id: string): Promise<ConnectionTestResult> {
