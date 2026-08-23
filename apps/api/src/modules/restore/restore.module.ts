@@ -13,6 +13,10 @@ import { RestoreService } from './restore.service';
 import { RestoreRepository } from './restore.repository';
 import { RestoreLeaseRepository } from './restore-lease.repository';
 import { RestoreExecutionOwnershipService } from './restore-execution-ownership.service';
+import {
+  RESTORE_STAGING_OWNERSHIP,
+  RestoreStagingService,
+} from './restore-staging.service';
 
 @Module({
   imports: [
@@ -22,7 +26,14 @@ import { RestoreExecutionOwnershipService } from './restore-execution-ownership.
     SseModule,
   ],
   controllers: [RestoreController, RestoreSseController],
-  providers: [RestoreService, RestoreRepository, RestoreLeaseRepository, RestoreExecutionOwnershipService],
+  providers: [
+    RestoreService,
+    RestoreRepository,
+    RestoreLeaseRepository,
+    RestoreExecutionOwnershipService,
+    { provide: RESTORE_STAGING_OWNERSHIP, useExisting: RestoreExecutionOwnershipService },
+    RestoreStagingService,
+  ],
   exports: [RestoreService, RestoreRepository, RestoreLeaseRepository],
 })
 export class RestoreModule {}
