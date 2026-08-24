@@ -12,6 +12,7 @@ import { RestoreSseController } from './restore-sse.controller';
 import { RestoreService } from './restore.service';
 import { RestoreRepository } from './restore.repository';
 import { RestoreLeaseRepository } from './restore-lease.repository';
+import { RestoreExecutionOwnershipService } from './restore-execution-ownership.service';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { RestoreLeaseRepository } from './restore-lease.repository';
     SseModule,
   ],
   controllers: [RestoreController, RestoreSseController],
-  providers: [RestoreService, RestoreRepository, RestoreLeaseRepository],
+  providers: [RestoreService, RestoreRepository, RestoreLeaseRepository, RestoreExecutionOwnershipService],
   exports: [RestoreService, RestoreRepository, RestoreLeaseRepository],
 })
 export class RestoreModule {}

@@ -15,6 +15,7 @@ import { pipeline } from 'stream/promises';
 import { CreateRestoreDto } from './dto/create-restore.dto';
 import { RestoreRepository } from './restore.repository';
 import { RestoreLeaseRepository } from './restore-lease.repository';
+import { RestoreExecutionOwnershipService } from './restore-execution-ownership.service';
 import { R2Service } from '../backup/r2.service';
 import { BackupService } from '../backup/backup.service';
 import { ConnectionsService } from '../connections/connections.service';
@@ -41,6 +42,7 @@ export class RestoreService implements OnApplicationBootstrap {
   constructor(
     private readonly restoreRepository: RestoreRepository,
     private readonly restoreLeaseRepository: RestoreLeaseRepository,
+    private readonly restoreExecutionOwnershipService: RestoreExecutionOwnershipService,
     private readonly r2Service: R2Service,
     private readonly backupService: BackupService,
     private readonly connectionsService: ConnectionsService,
@@ -88,22 +90,8 @@ export class RestoreService implements OnApplicationBootstrap {
       );
     }
 
-    // Determine source: from R2 key or from existing backup job
     const isR2Restore = !!dto.r2Key;
-    const fileKey = isR2Restore
-      ? dto.r2Key!
-      : (await this.backupService.getBackupById(dto.sourceBackupId!)).fileKey;
-
-    if (!fileKey) {
-      throw new NotFoundException(
-        `El backup no tiene un archivo asociado`,
-      );
-    }
-
-    // Reject arbitrary or cross-type R2 keys before any destructive operation.
-    if (isR2Restore) {
-      await this.assertR2KeyMatchesTarget(dto.r2Key!, targetConnection);
-    }
+    const fileKey = await this.resolveSourceFileKey(dto, targetConnection);
 
     if (dto.isDryRun) {
       const result = await this.dryRun(fileKey, targetConnection);
@@ -178,25 +166,10 @@ export class RestoreService implements OnApplicationBootstrap {
         payload: { percent: 10 },
       });
 
-      const targetConnection = await this.connectionsService.findById(
+      const initialTarget = await this.connectionsService.findById(
         dto.targetConnectionId,
       );
-
-      const strategy = this.restoreStrategies.get(targetConnection.dbType);
-      if (!strategy) {
-        throw new Error(
-          `No hay estrategia de restauración configurada para tipo "${targetConnection.dbType}"`,
-        );
-      }
-
-      // Resolve fileKey: from R2 key or from existing backup job
-      const fileKey = dto.r2Key
-        ? dto.r2Key
-        : (await this.backupService.getBackupById(dto.sourceBackupId!)).fileKey;
-
-      if (!fileKey) {
-        throw new Error(`El backup no tiene un archivo asociado`);
-      }
+      const fileKey = await this.resolveSourceFileKey(dto, initialTarget);
 
       tempFilePath = join(
         tmpdir(),
@@ -212,12 +185,52 @@ export class RestoreService implements OnApplicationBootstrap {
         payload: { percent: 25 },
       });
 
-      await strategy.execute(targetConnection, tempFilePath, (message: string) => {
-        this.sseService.emit(jobId, {
-          type: 'log',
-          payload: { message, timestamp: new Date() },
+      const ownership = await this.restoreExecutionOwnershipService.tryAcquire(
+        dto.targetConnectionId,
+      );
+      if (!ownership) {
+        throw new ConflictException('Otra restauración está ejecutándose para este destino.');
+      }
+
+      try {
+        const targetConnection = await this.restoreExecutionOwnershipService.findActiveTarget(
+          ownership,
+        );
+        if (!targetConnection) {
+          throw new NotFoundException('La conexión destino ya no existe o está inactiva.');
+        }
+        if (targetConnection.environment === Environment.PROD) {
+          throw new ForbiddenException('La conexión destino fue cambiada a producción.');
+        }
+        if (!await this.restoreExecutionOwnershipService.hasActiveLease(
+          ownership,
+          jobId,
+          leaseToken,
+        )) {
+          throw new ConflictException('El lease de restauración ya no pertenece a este trabajo.');
+        }
+
+        const liveFileKey = await this.resolveSourceFileKey(dto, targetConnection);
+        if (liveFileKey !== fileKey) {
+          throw new ConflictException('La fuente de restauración cambió antes de ejecutar.');
+        }
+
+        const strategy = this.restoreStrategies.get(targetConnection.dbType);
+        if (!strategy) {
+          throw new Error(
+            `No hay estrategia de restauración configurada para tipo "${targetConnection.dbType}"`,
+          );
+        }
+
+        await strategy.execute(targetConnection, tempFilePath, (message: string) => {
+          this.sseService.emit(jobId, {
+            type: 'log',
+            payload: { message, timestamp: new Date() },
+          });
         });
-      });
+      } finally {
+        await this.restoreExecutionOwnershipService.release(ownership);
+      }
 
       this.sseService.emit(jobId, {
         type: 'progress',
@@ -324,6 +337,29 @@ export class RestoreService implements OnApplicationBootstrap {
       sourceConnection,
       targetConnection: targetConnectionInfo,
     };
+  }
+
+  private async resolveSourceFileKey(
+    dto: CreateRestoreDto,
+    targetConnection: ConnectionEntity,
+  ): Promise<string> {
+    if (dto.r2Key) {
+      await this.assertR2KeyMatchesTarget(dto.r2Key, targetConnection);
+      return dto.r2Key;
+    }
+
+    const backup = await this.backupService.getBackupById(dto.sourceBackupId!);
+    if (backup.status !== JobStatus.COMPLETED || !backup.fileKey) {
+      throw new ForbiddenException('El backup fuente no está completado o no tiene archivo.');
+    }
+    if (backup.dbType !== targetConnection.dbType) {
+      throw new ForbiddenException(
+        `Tipo de base de datos incompatible: el backup es "${backup.dbType}" ` +
+          `pero el destino "${targetConnection.name}" es "${targetConnection.dbType}".`,
+      );
+    }
+
+    return backup.fileKey;
   }
 
   private async captureTargetPostgres(
