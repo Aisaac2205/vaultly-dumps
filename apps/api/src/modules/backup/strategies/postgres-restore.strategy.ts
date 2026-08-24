@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { spawn } from 'child_process';
 import { RestoreStrategy } from '../interfaces/restore-strategy.interface';
 import { ConnectionEntity } from '../../../database/entities/connection.entity';
+import { sanitizeMessage } from '../../../common/sanitization/sanitize-message';
 
 const RESTORE_TIMEOUT_MS = 300_000;
 
@@ -79,7 +80,8 @@ export class PostgresRestoreStrategy implements RestoreStrategy {
         if (code === 0) {
           settle(resolve);
         } else {
-          const errorDetail = stderrOutput.trim() || `exit code ${code ?? 'unknown'}`;
+          const errorDetail =
+            sanitizeMessage(stderrOutput.trim()) || `exit code ${code ?? 'unknown'}`;
           settle(
             reject,
             new Error(`pg_restore exited with code ${code ?? 'unknown'}: ${errorDetail}`),
