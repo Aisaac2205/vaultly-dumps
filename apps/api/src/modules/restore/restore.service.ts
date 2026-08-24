@@ -8,14 +8,14 @@ import {
   OnApplicationBootstrap,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { createWriteStream, unlinkSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { pipeline } from 'stream/promises';
 import { CreateRestoreDto } from './dto/create-restore.dto';
 import { RestoreRepository } from './restore.repository';
 import { RestoreLeaseRepository } from './restore-lease.repository';
-import { RestoreExecutionOwnershipService } from './restore-execution-ownership.service';
+import {
+  RestoreExecutionOwnership,
+  RestoreExecutionOwnershipService,
+} from './restore-execution-ownership.service';
+import { RestoreStaging, RestoreStagingService } from './restore-staging.service';
 import { R2Service } from '../backup/r2.service';
 import { BackupService } from '../backup/backup.service';
 import { ConnectionsService } from '../connections/connections.service';
@@ -43,6 +43,7 @@ export class RestoreService implements OnApplicationBootstrap {
     private readonly restoreRepository: RestoreRepository,
     private readonly restoreLeaseRepository: RestoreLeaseRepository,
     private readonly restoreExecutionOwnershipService: RestoreExecutionOwnershipService,
+    private readonly restoreStagingService: RestoreStagingService,
     private readonly r2Service: R2Service,
     private readonly backupService: BackupService,
     private readonly connectionsService: ConnectionsService,
@@ -52,6 +53,7 @@ export class RestoreService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
+    await this.restoreStagingService.sweepOrphans();
     const [pendingJobs, runningJobs] = await Promise.all([
       this.restoreRepository.findByStatus(JobStatus.PENDING),
       this.restoreRepository.findByStatus(JobStatus.RUNNING),
@@ -170,7 +172,8 @@ export class RestoreService implements OnApplicationBootstrap {
     leaseToken: string,
   ): Promise<void> {
     const startedAt = new Date();
-    let tempFilePath: string | null = null;
+    let staging: RestoreStaging | null = null;
+    let ownership: RestoreExecutionOwnership | null = null;
 
     try {
       const started = await this.restoreRepository.startIfLeaseActive(
@@ -190,6 +193,13 @@ export class RestoreService implements OnApplicationBootstrap {
         return;
       }
 
+      ownership = await this.restoreExecutionOwnershipService.tryAcquire(
+        dto.targetConnectionId,
+      );
+      if (!ownership) {
+        throw new ConflictException('Otra restauración está ejecutándose para este destino.');
+      }
+
       this.sseService.emit(jobId, {
         type: 'progress',
         payload: { percent: 10 },
@@ -199,67 +209,49 @@ export class RestoreService implements OnApplicationBootstrap {
         dto.targetConnectionId,
       );
       const fileKey = await this.resolveSourceFileKey(dto, initialTarget);
-
-      tempFilePath = join(
-        tmpdir(),
-        `restore-${Date.now()}-${jobId}.dump`,
-      );
-
-      const downloadStream = await this.r2Service.download(fileKey);
-      const writeStream = createWriteStream(tempFilePath);
-      await pipeline(downloadStream, writeStream);
+      staging = await this.restoreStagingService.create(jobId, dto.targetConnectionId);
+      await this.restoreStagingService.writeDump(staging, await this.r2Service.download(fileKey));
 
       this.sseService.emit(jobId, {
         type: 'progress',
         payload: { percent: 25 },
       });
 
-      const ownership = await this.restoreExecutionOwnershipService.tryAcquire(
-        dto.targetConnectionId,
+      const targetConnection = await this.restoreExecutionOwnershipService.findActiveTarget(
+        ownership,
       );
-      if (!ownership) {
-        throw new ConflictException('Otra restauración está ejecutándose para este destino.');
+      if (!targetConnection) {
+        throw new NotFoundException('La conexión destino ya no existe o está inactiva.');
+      }
+      if (targetConnection.environment === Environment.PROD) {
+        throw new ForbiddenException('La conexión destino fue cambiada a producción.');
+      }
+      if (!await this.restoreExecutionOwnershipService.hasActiveLease(
+        ownership,
+        jobId,
+        leaseToken,
+      )) {
+        throw new ConflictException('El lease de restauración ya no pertenece a este trabajo.');
       }
 
-      try {
-        const targetConnection = await this.restoreExecutionOwnershipService.findActiveTarget(
-          ownership,
+      const liveFileKey = await this.resolveSourceFileKey(dto, targetConnection);
+      if (liveFileKey !== fileKey) {
+        throw new ConflictException('La fuente de restauración cambió antes de ejecutar.');
+      }
+
+      const strategy = this.restoreStrategies.get(targetConnection.dbType);
+      if (!strategy) {
+        throw new Error(
+          `No hay estrategia de restauración configurada para tipo "${targetConnection.dbType}"`,
         );
-        if (!targetConnection) {
-          throw new NotFoundException('La conexión destino ya no existe o está inactiva.');
-        }
-        if (targetConnection.environment === Environment.PROD) {
-          throw new ForbiddenException('La conexión destino fue cambiada a producción.');
-        }
-        if (!await this.restoreExecutionOwnershipService.hasActiveLease(
-          ownership,
-          jobId,
-          leaseToken,
-        )) {
-          throw new ConflictException('El lease de restauración ya no pertenece a este trabajo.');
-        }
-
-        const liveFileKey = await this.resolveSourceFileKey(dto, targetConnection);
-        if (liveFileKey !== fileKey) {
-          throw new ConflictException('La fuente de restauración cambió antes de ejecutar.');
-        }
-
-        const strategy = this.restoreStrategies.get(targetConnection.dbType);
-        if (!strategy) {
-          throw new Error(
-            `No hay estrategia de restauración configurada para tipo "${targetConnection.dbType}"`,
-          );
-        }
-
-        await strategy.execute(targetConnection, tempFilePath, (message: string) => {
-          this.sseService.emit(jobId, {
-            type: 'log',
-            payload: { message, timestamp: new Date() },
-          });
-        });
-      } finally {
-        await this.restoreExecutionOwnershipService.release(ownership);
       }
+
+      await strategy.execute(targetConnection, staging.dumpFilePath, (message: string) => {
+        this.sseService.emit(jobId, {
+          type: 'log',
+          payload: { message, timestamp: new Date() },
+        });
+      });
 
       this.sseService.emit(jobId, {
         type: 'progress',
@@ -296,19 +288,40 @@ export class RestoreService implements OnApplicationBootstrap {
         payload: { jobId, error: errorMessage },
       });
     } finally {
-      if (tempFilePath) {
+      if (staging) {
         try {
-          unlinkSync(tempFilePath);
+          await this.restoreStagingService.cleanup(staging);
         } catch {
-          this.logger.warn(`Failed to delete temp file: ${tempFilePath}`);
+          this.logger.warn(`Failed to delete restore staging: ${staging.directoryPath}`);
         }
       }
-      this.sseService.complete(jobId);
-      await this.restoreLeaseRepository.release(
-        dto.targetConnectionId,
-        jobId,
-        leaseToken,
-      );
+      if (ownership) {
+        try {
+          await this.restoreExecutionOwnershipService.release(ownership);
+        } catch (err) {
+          this.logger.error(
+            `Failed to release restore execution ownership for job ${jobId}: ${(err as Error).message}`,
+          );
+        }
+      }
+      try {
+        this.sseService.complete(jobId);
+      } catch (err) {
+        this.logger.error(
+          `Failed to complete SSE stream for job ${jobId}: ${(err as Error).message}`,
+        );
+      }
+      try {
+        await this.restoreLeaseRepository.release(
+          dto.targetConnectionId,
+          jobId,
+          leaseToken,
+        );
+      } catch (err) {
+        this.logger.error(
+          `Failed to release restore lease for job ${jobId}: ${(err as Error).message}`,
+        );
+      }
     }
   }
 

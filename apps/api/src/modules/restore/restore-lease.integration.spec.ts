@@ -1,5 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { lstat, mkdtemp, rm, utimes } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { DataSource } from 'typeorm';
 import { encrypt } from '../../common/utils/encryption';
 import { ConnectionEntity } from '../../database/entities/connection.entity';
@@ -18,6 +21,7 @@ import { RestoreLeaseRepository } from './restore-lease.repository';
 import { RestoreExecutionOwnershipService } from './restore-execution-ownership.service';
 import { RestoreRepository } from './restore.repository';
 import { RestoreService } from './restore.service';
+import { RestoreStagingService } from './restore-staging.service';
 
 function resolveTestDatabaseUrl(): string | null {
   const value = process.env.RESTORE_LEASE_TEST_DATABASE_URL;
@@ -141,6 +145,15 @@ integration('restore lease PostgreSQL integration', () => {
         { provide: BackupService, useValue: {} },
         { provide: ConnectionsService, useValue: {} },
         {
+          provide: RestoreStagingService,
+          useValue: {
+            cleanup: async () => undefined,
+            create: async () => { throw new Error('Unexpected restore staging creation'); },
+            sweepOrphans: async () => undefined,
+            writeDump: async () => { throw new Error('Unexpected restore staging write'); },
+          },
+        },
+        {
           provide: SseService,
           useValue: { complete: () => undefined, emit: () => undefined },
         },
@@ -242,6 +255,34 @@ integration('restore lease PostgreSQL integration', () => {
     expect(secondOwnership).not.toBeNull();
     if (!secondOwnership) throw new Error('second ownership was not acquired');
     await secondOwnershipService.release(secondOwnership);
+  });
+
+  it('does not sweep old staging while another replica holds execution ownership', async () => {
+    const stagingRoot = await mkdtemp(join(tmpdir(), 'vaultly-restore-staging-integration-'));
+    const stagingService = new RestoreStagingService(secondOwnershipService, stagingRoot);
+    const staging = await stagingService.create(
+      '00000000-0000-0000-0000-000000000111',
+      target,
+    );
+    if (!staging.dumpFileHandle) throw new Error('staging dump file was not opened');
+    await staging.dumpFileHandle.close();
+    staging.dumpFileHandle = null;
+    const old = new Date(Date.now() - 3_600_001);
+    await utimes(staging.directoryPath, old, old);
+    const ownership = await firstOwnershipService.tryAcquire(target);
+    expect(ownership).not.toBeNull();
+    if (!ownership) throw new Error('first ownership was not acquired');
+
+    try {
+      await stagingService.sweepOrphans();
+      expect((await lstat(staging.directoryPath)).isDirectory()).toBe(true);
+    } finally {
+      await firstOwnershipService.release(ownership);
+    }
+
+    await stagingService.sweepOrphans();
+    await expect(lstat(staging.directoryPath)).rejects.toMatchObject({ code: 'ENOENT' });
+    await rm(stagingRoot, { recursive: true, force: true });
   });
 
   it('admits exactly one concurrent restore job and target lease', async () => {
