@@ -64,6 +64,64 @@ describe('SseService', () => {
     expect(events).toEqual([{ type: 'progress', payload: { percent: 100 } }]);
   });
 
+  it('scrubs credentials out of log payloads before they reach a subscriber', () => {
+    service.register('job-log');
+    const received: unknown[] = [];
+    service.subscribe('job-log').subscribe((event) => received.push(event));
+
+    const timestamp = new Date('2026-01-01T00:00:00.000Z');
+    service.emit('job-log', {
+      type: 'log',
+      payload: {
+        message: 'connecting with PGPASSWORD=hunter2 to postgres://admin:pw@10.0.0.5:5432/erp',
+        timestamp,
+      },
+    });
+
+    expect(received).toEqual([
+      {
+        type: 'log',
+        payload: { message: 'connecting with PGPASSWORD=*** to [REDACTED]', timestamp },
+      },
+    ]);
+  });
+
+  it('scrubs credentials out of failed payloads before they reach a subscriber', () => {
+    service.register('job-failed');
+    const received: unknown[] = [];
+    service.subscribe('job-failed').subscribe((event) => received.push(event));
+
+    service.emit('job-failed', {
+      type: 'failed',
+      payload: { jobId: 'job-failed', error: 'pg_restore failed: password=hunter2' },
+    });
+
+    expect(received).toEqual([
+      {
+        type: 'failed',
+        payload: { jobId: 'job-failed', error: 'pg_restore failed: password=***' },
+      },
+    ]);
+  });
+
+  it('leaves progress and completed payloads byte-identical', () => {
+    service.register('job-untouched');
+    const received: unknown[] = [];
+    service.subscribe('job-untouched').subscribe((event) => received.push(event));
+
+    const completedAt = new Date('2026-01-01T00:00:00.000Z');
+    service.emit('job-untouched', { type: 'progress', payload: { percent: 42 } });
+    service.emit('job-untouched', {
+      type: 'completed',
+      payload: { jobId: 'job-untouched', completedAt },
+    });
+
+    expect(received).toEqual([
+      { type: 'progress', payload: { percent: 42 } },
+      { type: 'completed', payload: { jobId: 'job-untouched', completedAt } },
+    ]);
+  });
+
   it('this is the fixed leak: subscribing to a job that finished and aged out never recreates an entry', () => {
     jest.useFakeTimers();
 

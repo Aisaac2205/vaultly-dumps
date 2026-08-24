@@ -11,6 +11,7 @@ import { Observable, tap } from 'rxjs';
 import { Repository } from 'typeorm';
 import { AuthUser } from '../../auth/decorators/current-user.decorator';
 import { getAuditContext } from '../audit/audit-context';
+import { JsonRecord, redactSensitive } from '../sanitization/redact-sensitive';
 import { AuditLogEntity } from '../../database/entities/audit-log.entity';
 import { Environment } from '../../database/enums/environment.enum';
 
@@ -19,41 +20,6 @@ interface AuthenticatedRequest extends Request {
 }
 
 const AUDITED_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
-
-// Keys whose values must NEVER reach the audit_logs table. Matched
-// case-insensitively against object keys at any depth. Sin esto, el
-// body de POST /connections (password de la conexión), test-raw,
-// y cualquier PATCH con campos sensibles termina en jsonb y se
-// renderiza tal cual en la UI de /audit.
-const SENSITIVE_KEY_PATTERNS: readonly RegExp[] = [
-  /password/i,
-  /passwd/i,
-  /secret/i,
-  /token/i,
-  /api[_-]?key/i,
-  /access[_-]?key/i,
-  /authorization/i,
-  /credential/i,
-  /private[_-]?key/i,
-];
-
-const REDACTED = '[REDACTED]';
-
-function isSensitiveKey(key: string): boolean {
-  return SENSITIVE_KEY_PATTERNS.some((pattern) => pattern.test(key));
-}
-
-function redactSensitive(input: unknown): unknown {
-  if (input === null || input === undefined) return input;
-  if (Array.isArray(input)) return input.map(redactSensitive);
-  if (typeof input !== 'object') return input;
-
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-    out[key] = isSensitiveKey(key) ? REDACTED : redactSensitive(value);
-  }
-  return out;
-}
 
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
@@ -99,9 +65,9 @@ export class AuditInterceptor implements NestInterceptor {
       const resourceId =
         ctx?.resourceId ?? params['id'] ?? 'unknown';
 
-      const baseMetadata: Record<string, unknown> = {
-        body: redactSensitive(body),
-        query: redactSensitive(request.query),
+      const baseMetadata: JsonRecord = {
+        body: redactSensitive(body as JsonRecord),
+        query: redactSensitive(request.query as JsonRecord),
       };
 
       await this.auditRepo.save({
@@ -111,7 +77,7 @@ export class AuditInterceptor implements NestInterceptor {
         resourceType: context.getClass().name,
         resourceId,
         metadata: ctx?.metadata
-          ? { ...baseMetadata, ...ctx.metadata }
+          ? { ...baseMetadata, ...redactSensitive(ctx.metadata as JsonRecord) }
           : baseMetadata,
         environment: env,
       });

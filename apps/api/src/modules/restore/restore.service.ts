@@ -20,6 +20,7 @@ import { R2Service } from '../backup/r2.service';
 import { BackupService } from '../backup/backup.service';
 import { ConnectionsService } from '../connections/connections.service';
 import { AuthUser } from '../../auth/decorators/current-user.decorator';
+import { sanitizeMessage } from '../../common/sanitization/sanitize-message';
 import { Environment } from '../../database/enums/environment.enum';
 import { DbTypeEnum } from '../../database/enums/db-type.enum';
 import { JobStatus } from '../../database/enums/job-status.enum';
@@ -269,10 +270,11 @@ export class RestoreService implements OnApplicationBootstrap {
       });
     } catch (error) {
       const completedAt = new Date();
-      const errorMessage =
+      const rawMessage =
         error instanceof Error ? error.message : 'Error desconocido en restore';
+      const errorMessage = sanitizeMessage(rawMessage);
 
-      this.logger.error(`Restore job ${jobId} failed: ${errorMessage}`);
+      this.logger.error(`Restore job ${jobId} failed: ${rawMessage}`);
 
       await this.restoreRepository.updateStatus(jobId, JobStatus.FAILED, {
         errorMessage,

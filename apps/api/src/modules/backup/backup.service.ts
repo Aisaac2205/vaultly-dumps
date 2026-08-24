@@ -9,6 +9,7 @@ import {
 import { Readable } from 'stream';
 import { Client } from 'pg';
 import { createConnection as createMysqlConnection, RowDataPacket } from 'mysql2/promise';
+import { sanitizeMessage } from '../../common/sanitization/sanitize-message';
 import { CreateBackupDto } from './dto/create-backup.dto';
 import { ListHistoryQueryDto } from './dto/list-history-query.dto';
 import { BackupRepository } from './backup.repository';
@@ -138,7 +139,7 @@ export class BackupService {
       const completedAt = new Date();
       const rawMessage =
         error instanceof Error ? error.message : 'Error desconocido en backup';
-      const errorMessage = this.sanitizeErrorMessage(rawMessage);
+      const errorMessage = sanitizeMessage(rawMessage);
 
       this.logger.error(`Backup failed for connection ${connection.id}: ${errorMessage}`);
 
@@ -373,12 +374,4 @@ export class BackupService {
     }
   }
 
-  private sanitizeErrorMessage(message: string): string {
-    return message
-      .split('\n')[0]
-      .replace(/password\s*[:=]\s*\S+/gi, 'password=***')
-      .replace(/PGPASSWORD\s*[:=]\s*\S+/gi, 'PGPASSWORD=***')
-      .replace(/MYSQL_PWD\s*[:=]\s*\S+/gi, 'MYSQL_PWD=***')
-      .slice(0, 500);
-  }
 }

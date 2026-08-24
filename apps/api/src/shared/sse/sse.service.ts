@@ -1,10 +1,12 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { EMPTY, Observable, ReplaySubject } from 'rxjs';
+import { sanitizeMessage } from '../../common/sanitization/sanitize-message';
 
-export interface SseEvent {
-  type: 'progress' | 'log' | 'completed' | 'failed';
-  payload: SseProgressPayload | SseLogPayload | SseCompletedPayload | SseFailedPayload;
-}
+export type SseEvent =
+  | { type: 'progress'; payload: SseProgressPayload }
+  | { type: 'log'; payload: SseLogPayload }
+  | { type: 'completed'; payload: SseCompletedPayload }
+  | { type: 'failed'; payload: SseFailedPayload };
 
 export interface SseProgressPayload {
   percent: number;
@@ -34,6 +36,23 @@ interface StreamEntry {
   cleanupTimer?: ReturnType<typeof setTimeout>;
 }
 
+function sanitizeEvent(event: SseEvent): SseEvent {
+  switch (event.type) {
+    case 'log':
+      return {
+        type: 'log',
+        payload: { ...event.payload, message: sanitizeMessage(event.payload.message) },
+      };
+    case 'failed':
+      return {
+        type: 'failed',
+        payload: { ...event.payload, error: sanitizeMessage(event.payload.error) },
+      };
+    default:
+      return event;
+  }
+}
+
 @Injectable()
 export class SseService implements OnModuleDestroy {
   private readonly streams = new Map<string, StreamEntry>();
@@ -52,7 +71,7 @@ export class SseService implements OnModuleDestroy {
   }
 
   emit(jobId: string, event: SseEvent): void {
-    this.streams.get(jobId)?.subject.next(event);
+    this.streams.get(jobId)?.subject.next(sanitizeEvent(event));
   }
 
   complete(jobId: string): void {

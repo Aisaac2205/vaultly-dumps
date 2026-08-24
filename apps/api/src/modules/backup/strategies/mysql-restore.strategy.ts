@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import { createReadStream } from 'fs';
 import { RestoreStrategy } from '../interfaces/restore-strategy.interface';
 import { ConnectionEntity } from '../../../database/entities/connection.entity';
+import { sanitizeMessage } from '../../../common/sanitization/sanitize-message';
 
 const RESTORE_TIMEOUT_MS = 300_000;
 
@@ -165,7 +166,9 @@ export class MySQLRestoreStrategy implements RestoreStrategy {
         if (code !== 0) {
           settle(
             reject,
-            new Error(`mysql execute exited with code ${code ?? 'unknown'}: ${stderr.trim()}`),
+            new Error(
+              `mysql execute exited with code ${code ?? 'unknown'}: ${sanitizeMessage(stderr.trim())}`,
+            ),
           );
           return;
         }
