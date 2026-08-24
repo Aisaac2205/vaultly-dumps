@@ -52,25 +52,41 @@ export class RestoreService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    const runningJobs = await this.restoreRepository.findByStatus(
-      JobStatus.RUNNING,
-    );
+    const [pendingJobs, runningJobs] = await Promise.all([
+      this.restoreRepository.findByStatus(JobStatus.PENDING),
+      this.restoreRepository.findByStatus(JobStatus.RUNNING),
+    ]);
+    const jobs = [...pendingJobs, ...runningJobs];
 
-    if (runningJobs.length === 0) {
+    if (jobs.length === 0) {
       return;
     }
 
     this.logger.warn(
-      `Found ${runningJobs.length} running restore jobs on startup — marking as failed`,
+      `Checking ${jobs.length} unfinished restore jobs on startup`,
     );
 
-    for (const job of runningJobs) {
-      await this.restoreRepository.updateStatus(job.id, JobStatus.FAILED, {
-        errorMessage: 'Job interrupted — process restarted',
-        completedAt: new Date(),
-      });
+    for (const job of jobs) {
+      const ownership = await this.restoreExecutionOwnershipService.tryAcquire(
+        job.targetConnectionId,
+      );
+      if (!ownership) {
+        continue;
+      }
 
-      this.logger.warn(`Marked restore job ${job.id} as failed (interrupted)`);
+      try {
+        const recovered = await this.restoreRepository.recoverIfReclaimable(
+          job.id,
+          job.targetConnectionId,
+          'Job interrupted — process restarted',
+          new Date(),
+        );
+        if (recovered) {
+          this.logger.warn(`Marked restore job ${job.id} as failed (interrupted)`);
+        }
+      } finally {
+        await this.restoreExecutionOwnershipService.release(ownership);
+      }
     }
   }
 
@@ -147,7 +163,7 @@ export class RestoreService implements OnApplicationBootstrap {
     return { jobId: admittedJobId };
   }
 
-  private async executeRestoreAsync(
+  async executeRestoreAsync(
     jobId: string,
     dto: CreateRestoreDto,
     _user: AuthUser,
@@ -157,9 +173,22 @@ export class RestoreService implements OnApplicationBootstrap {
     let tempFilePath: string | null = null;
 
     try {
-      await this.restoreRepository.updateStatus(jobId, JobStatus.RUNNING, {
+      const started = await this.restoreRepository.startIfLeaseActive(
+        jobId,
+        dto.targetConnectionId,
+        leaseToken,
         startedAt,
-      });
+      );
+      if (!started) {
+        await this.restoreRepository.failPendingIfLeaseInactive(
+          jobId,
+          dto.targetConnectionId,
+          leaseToken,
+          'Restore execution became stale before it started',
+          new Date(),
+        );
+        return;
+      }
 
       this.sseService.emit(jobId, {
         type: 'progress',

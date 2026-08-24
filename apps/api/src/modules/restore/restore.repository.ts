@@ -17,6 +17,11 @@ interface RestoreQueueAdmission {
   expiresAt: Date;
 }
 
+type RestoreMutationRow = { id: string };
+type RestoreMutationResult =
+  | RestoreMutationRow[]
+  | [RestoreMutationRow[], number];
+
 @Injectable()
 export class RestoreRepository {
   constructor(
@@ -100,5 +105,135 @@ export class RestoreRepository {
     updates?: Partial<RestoreJobEntity>,
   ): Promise<RestoreJobEntity> {
     return this.repository.save({ id, status, ...updates });
+  }
+
+  async startIfLeaseActive(
+    id: string,
+    targetConnectionId: string,
+    leaseToken: string,
+    startedAt: Date,
+  ): Promise<boolean> {
+    const result = await this.dataSource.query<RestoreMutationResult>(
+      `UPDATE restore_jobs
+       SET status = $4, "startedAt" = $5
+       WHERE id = $1
+         AND "targetConnectionId" = $2
+         AND status = $3
+         AND EXISTS (
+           SELECT 1
+           FROM restore_leases
+           WHERE "targetConnectionId" = $2
+             AND "restoreJobId" = $1
+             AND "leaseToken" = $6
+             AND "expiresAt" > CURRENT_TIMESTAMP
+         )
+       RETURNING id`,
+      [
+        id,
+        targetConnectionId,
+        JobStatus.PENDING,
+        JobStatus.RUNNING,
+        startedAt,
+        leaseToken,
+      ],
+    );
+
+    return this.hasAffectedRows(result);
+  }
+
+  async recoverIfReclaimable(
+    id: string,
+    targetConnectionId: string,
+    errorMessage: string,
+    completedAt: Date,
+  ): Promise<boolean> {
+    const result = await this.dataSource.query<RestoreMutationResult>(
+      `WITH recovered AS (
+         UPDATE restore_jobs
+         SET status = $5,
+             "errorMessage" = $3,
+             "completedAt" = $4
+         WHERE id = $1
+           AND "targetConnectionId" = $2
+           AND status IN ($6, $7)
+           AND NOT EXISTS (
+             SELECT 1
+             FROM restore_leases
+             WHERE "targetConnectionId" = $2
+               AND "expiresAt" > CURRENT_TIMESTAMP
+           )
+         RETURNING id
+       ), released AS (
+         DELETE FROM restore_leases
+         USING recovered
+         WHERE restore_leases."targetConnectionId" = $2
+           AND restore_leases."restoreJobId" = recovered.id
+           AND restore_leases."expiresAt" <= CURRENT_TIMESTAMP
+       )
+       SELECT id FROM recovered`,
+      [
+        id,
+        targetConnectionId,
+        errorMessage,
+        completedAt,
+        JobStatus.FAILED,
+        JobStatus.PENDING,
+        JobStatus.RUNNING,
+      ],
+    );
+
+    return this.hasAffectedRows(result);
+  }
+
+  async failPendingIfLeaseInactive(
+    id: string,
+    targetConnectionId: string,
+    leaseToken: string,
+    errorMessage: string,
+    completedAt: Date,
+  ): Promise<boolean> {
+    const result = await this.dataSource.query<RestoreMutationResult>(
+      `UPDATE restore_jobs
+       SET status = $4,
+           "errorMessage" = $5,
+           "completedAt" = $6
+       WHERE id = $1
+         AND "targetConnectionId" = $2
+         AND status = $3
+         AND NOT EXISTS (
+           SELECT 1
+           FROM restore_leases
+           WHERE "targetConnectionId" = $2
+             AND "restoreJobId" = $1
+             AND "leaseToken" = $7
+             AND "expiresAt" > CURRENT_TIMESTAMP
+         )
+       RETURNING id`,
+      [
+        id,
+        targetConnectionId,
+        JobStatus.PENDING,
+        JobStatus.FAILED,
+        errorMessage,
+        completedAt,
+        leaseToken,
+      ],
+    );
+
+    return this.hasAffectedRows(result);
+  }
+
+  private hasAffectedRows(result: RestoreMutationResult): boolean {
+    if (this.isMutationResult(result)) {
+      return result[1] > 0;
+    }
+
+    return result.length > 0;
+  }
+
+  private isMutationResult(
+    result: RestoreMutationResult,
+  ): result is [RestoreMutationRow[], number] {
+    return Array.isArray(result[0]);
   }
 }
