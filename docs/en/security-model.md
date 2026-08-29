@@ -82,29 +82,43 @@ Conscious exception: `/health` does not require auth (it is hit by the K8s probe
 
 ### What gets audited?
 
-Any HTTP request with method `POST`, `PUT`, `PATCH` or `DELETE` that passes through the global `AuditInterceptor`.
+Two independent sources write to the same append-only `audit_logs` table:
 
-**Both successes and errors are audited** (`tap({ next, error })`). A failed attempt to delete PROD is also recorded.
+1. **Resource mutations** — any HTTP request with method `POST`, `PUT`, `PATCH` or `DELETE` that passes through the global `AuditInterceptor`. **Both successes and errors are audited** (`tap({ next, error })`). A failed attempt to delete PROD is also recorded.
+
+2. **Authentication events** — sign-in, sign-out and password change, captured by a Better Auth `hooks.after` middleware (`src/auth/audit/`). The `AuditInterceptor` cannot see these: `auth.controller.ts` uses `@Res()` and discards the handler with `void`, so the Nest pipeline never observes the result.
+
+The set of audited auth endpoints is an **allowlist** (`AUDITED_PATHS`), not a denylist. `hooks.after` fires on every auth endpoint including `/get-session`, which the SPA polls, so an unlisted path is never recorded and a new endpoint cannot silently flood the table.
+
+The auth hook writes through the `pg` pool Better Auth already owns (`authPool`), because `auth.config.ts` is evaluated at import time, outside the Nest DI container. Every write is wrapped in `try/catch`: Better Auth re-throws anything that is not an `APIError` out of `runAfterHooks`, so an unhandled audit failure would replace the authentication response with a crash. **A missing audit row must never cost a user their sign-in.**
 
 ### Record structure
 
 ```typescript
 {
   id: uuid,
-  action: "DELETE /connections/abc-123",
-  userId: "user-sub-from-jwt",
-  userEmail: "user@example.com" | "anonymous",
-  resourceType: "ConnectionsController",
-  resourceId: "abc-123",
-  metadata: { ...body... },
-  environment: "prod" | "dev" | "sqa",
+  action: "DELETE /connections/abc-123" | "auth.sign-in.email",
+  userId: "user-id" | "anonymous",
+  username: "user@example.com" | "anonymous",
+  resourceType: "ConnectionsController" | "Auth",
+  resourceId: "abc-123" | "sign-in/email",
+  metadata: { ...redacted body... },
+  environment: "prod" | "dev" | "qa" | null,
+  ipAddress: "203.0.113.7" | null,
+  userAgent: string | null,
+  outcome: "success" | "failure",
+  severity: "low" | "medium" | "high" | "critical",
   createdAt: timestamp
 }
 ```
 
+`ipAddress`, `userAgent`, `outcome` and `severity` exist because the OWASP Logging Cheat Sheet requires source address, outcome and severity on every security event. The client address is read from `x-real-ip`, which nginx overwrites with a single validated value — the multi-hop `X-Forwarded-For` chain is spoofable and is never consulted.
+
+`environment` is `null` for authentication events: the enum describes the environment of an audited ERP connection, and a sign-in belongs to none of them. Stamping one would poison the environment filter on the audit list.
+
 ### Known limitations
 
-1. **`environment` defaults to `dev`** when the request includes neither an `environment` field in the body nor in params. This contaminates the dashboard with false DEVs. Fixing it properly means making `AuditLogEntity.environment` nullable (requires a migration).
+1. **`environment` defaults to `dev`** for resource mutations when the request includes neither an `environment` field in the body nor in params. This contaminates the dashboard with false DEVs. The column is now nullable (migration `1778716800019`), so the interceptor's `Environment.DEV` fallback can be dropped — that change is not made yet.
 
 2. **Cronjobs are not audited in `audit_logs`.** They run in-process, not over HTTP, so the interceptor doesn't see them. Their traceability lives in `backup_jobs.triggeredBy = 'system-cronjob'`. If you need unified auditing, you must invoke the log manually from `CronjobsService.executeCronjob`.
 

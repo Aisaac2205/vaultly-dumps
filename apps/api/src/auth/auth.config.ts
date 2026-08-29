@@ -1,10 +1,21 @@
 import { betterAuth } from 'better-auth';
+import { createAuthMiddleware } from 'better-auth/api';
 import { admin } from 'better-auth/plugins';
 import { Pool } from 'pg';
+import { createAuthAuditHook } from './audit/auth-audit-hook';
+import { toJsonRecord } from './audit/to-json-record';
 
 export const authPool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 5,
+});
+
+// Better Auth already owns this pool for its own tables, so auditing through
+// it adds no second route to the database and no second lifecycle to manage —
+// AuthModule.onModuleDestroy already closes it. The Nest DI container is not
+// available here: this module is evaluated at import time, before bootstrap.
+const auditAuthEvent = createAuthAuditHook(async (sql, params) => {
+  await authPool.query(sql, [...params]);
 });
 
 export const auth = betterAuth({
@@ -19,6 +30,19 @@ export const auth = betterAuth({
     enabled: true,
   },
   plugins: [admin()],
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      await auditAuthEvent({
+        path: ctx.path,
+        body: toJsonRecord(ctx.body),
+        headers: ctx.headers,
+        context: {
+          returned: ctx.context.returned,
+          newSession: ctx.context.newSession,
+        },
+      });
+    }),
+  },
   session: {
     cookieCache: {
       enabled: true,
