@@ -14,6 +14,7 @@ export const lazyRoutes = {
   connections: () => import("@/features/connections"),
   users: () => import("@/features/users"),
   audit: () => import("@/features/audit"),
+  auditDetail: () => import("@/features/audit/AuditDetailPage"),
 } as const;
 
 export type RouteKey = keyof typeof lazyRoutes;
@@ -25,3 +26,4 @@ export const LazyRestore = lazy(lazyRoutes.restore);
 export const LazyCronjobs = lazy(lazyRoutes.cronjobs);
 export const LazyConnections = lazy(lazyRoutes.connections);
 export const LazyAudit = lazy(lazyRoutes.audit);
+export const LazyAuditDetail = lazy(lazyRoutes.auditDetail);

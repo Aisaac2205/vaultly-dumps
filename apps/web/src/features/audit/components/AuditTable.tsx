@@ -281,6 +281,8 @@ export default function AuditTable({
           data={logs}
           loading={isLoading}
           emptyMessage={t('empty.title')}
+          rowHref={(log) => `/audit/${log.id}`}
+          rowLinkLabel={(log) => t('detail.linkLabel', { id: log.id })}
           pagination={
             <AuditPagination
               page={page}

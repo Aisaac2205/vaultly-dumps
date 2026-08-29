@@ -121,3 +121,36 @@ describe("AuditTable", () => {
     expect(screen.getByText(/No hay registros de auditoría/i)).toBeInTheDocument();
   });
 });
+
+describe("AuditTable row navigation", () => {
+  function renderTable() {
+    return render(
+      <MemoryRouter>
+        <AuditTable
+          logs={mockLogs}
+          isLoading={false}
+          total={mockLogs.length}
+          page={1}
+          pageSize={25}
+          onPageChange={() => {}}
+        />
+      </MemoryRouter>,
+    );
+  }
+
+  it("exposes each entry as a keyboard-reachable link to its detail page", () => {
+    renderTable();
+
+    const link = screen.getByRole("link", { name: /log-1/i });
+    expect(link).toHaveAttribute("href", "/audit/log-1");
+  });
+
+  it("gives every row its own detail link", () => {
+    renderTable();
+
+    const links = screen
+      .getAllByRole("link")
+      .filter((el) => el.getAttribute("href")?.startsWith("/audit/"));
+    expect(links).toHaveLength(mockLogs.length);
+  });
+});

@@ -8,6 +8,8 @@ import {
 } from "@/shared/ui/table";
 import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 
 export interface Column<T> {
@@ -26,6 +28,17 @@ interface DataTableProps<T> {
   compact?: boolean;
   /** Slot rendered below the table for pagination or other footer controls. */
   pagination?: ReactNode;
+  /**
+   * Makes each row navigable. A real link is rendered in a trailing cell and
+   * stretched over the row with an ::after overlay, so the whole row is
+   * clickable while the DOM still holds exactly one focusable, screen-reader
+   * announced control per row. Double-click is deliberately not used: it has
+   * no keyboard equivalent, does not exist on touch, and would hijack the
+   * text-selection gesture users need to copy ids out of these tables.
+   */
+  rowHref?: (item: T) => string;
+  /** Accessible name for the row link. Falls back to a generic label. */
+  rowLinkLabel?: (item: T) => string;
 }
 
 export function DataTable<T>({
@@ -35,6 +48,8 @@ export function DataTable<T>({
   className,
   compact = false,
   pagination,
+  rowHref,
+  rowLinkLabel,
 }: DataTableProps<T>) {
   const { t } = useTranslation("common");
   const resolvedEmptyMessage = emptyMessage ?? t("empty.data");
@@ -72,6 +87,7 @@ export function DataTable<T>({
                   {col.header}
                 </TableHead>
               ))}
+              {rowHref ? <TableHead className={cn(headPadding, "w-10")} /> : null}
             </TableRow>
           </TableHeader>
 
@@ -79,7 +95,10 @@ export function DataTable<T>({
             {data.map((item, rowIdx) => (
               <TableRow
                 key={rowIdx}
-                className="transition-colors hover:bg-muted/30"
+                className={cn(
+                  "transition-colors hover:bg-muted/30",
+                  rowHref && "relative focus-within:bg-muted/30",
+                )}
               >
                 {columns.map((col, colIdx) => (
                   <TableCell
@@ -89,6 +108,23 @@ export function DataTable<T>({
                     {col.accessor(item)}
                   </TableCell>
                 ))}
+                {rowHref ? (
+                  <TableCell className={cn(cellPadding, "align-middle w-10")}>
+                    <Link
+                      to={rowHref(item)}
+                      aria-label={rowLinkLabel?.(item) ?? t("actions.viewDetail")}
+                      className={cn(
+                        "inline-flex items-center justify-center rounded-md text-muted-foreground",
+                        "outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                        // Stretches the link over the whole row without adding
+                        // a second interactive element to the accessibility tree.
+                        "after:absolute after:inset-0 after:content-['']",
+                      )}
+                    >
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </TableCell>
+                ) : null}
               </TableRow>
             ))}
           </TableBody>

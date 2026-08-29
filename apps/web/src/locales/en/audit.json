@@ -31,5 +31,29 @@
   "action.cronjob.created": "Cronjob created",
   "action.cronjob.updated": "Cronjob updated",
   "action.cronjob.deleted": "Cronjob deleted",
-  "action.cronjob.toggled": "Cronjob toggled"
+  "action.cronjob.toggled": "Cronjob toggled",
+  "detail": {
+    "linkLabel": "View detail for log {{id}}",
+    "actor": "Actor",
+    "username": "User",
+    "userId": "User ID",
+    "ipAddress": "IP address",
+    "userAgent": "User agent",
+    "event": "Event",
+    "resourceType": "Resource type",
+    "resourceId": "Resource ID",
+    "severity": "Severity",
+    "environment": "Environment",
+    "metadata": "Metadata"
+  },
+  "outcome": {
+    "success": "Success",
+    "failure": "Failure"
+  },
+  "severity": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "critical": "Critical"
+  }
 }

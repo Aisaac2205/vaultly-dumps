@@ -12,6 +12,7 @@ import {
   LazyCronjobs,
   LazyConnections,
   LazyAudit,
+  LazyAuditDetail,
 } from "./shared/lib/lazy-routes";
 
 // eslint-disable-next-line react-refresh/only-export-components -- route-level lazy import, not a co-located constant
@@ -114,6 +115,19 @@ export const router = createBrowserRouter([
       <ProtectedRoute>
         <AuthenticatedLayout>
           <LazyAudit />
+        </AuthenticatedLayout>
+      </ProtectedRoute>
+    ),
+  },
+  {
+    // GET /audit/:id is admin-only on the API (audit.controller.ts), so the
+    // route guards to the same role rather than letting the page render and
+    // then fail on a 403.
+    path: "/audit/:id",
+    element: (
+      <ProtectedRoute requiredRole="admin">
+        <AuthenticatedLayout>
+          <LazyAuditDetail />
         </AuthenticatedLayout>
       </ProtectedRoute>
     ),

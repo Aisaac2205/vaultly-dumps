@@ -31,5 +31,29 @@
   "action.cronjob.created": "Cronjob creado",
   "action.cronjob.updated": "Cronjob actualizado",
   "action.cronjob.deleted": "Cronjob eliminado",
-  "action.cronjob.toggled": "Cronjob cambiado"
+  "action.cronjob.toggled": "Cronjob cambiado",
+  "detail": {
+    "linkLabel": "Ver detalle del registro {{id}}",
+    "actor": "Actor",
+    "username": "Usuario",
+    "userId": "ID de usuario",
+    "ipAddress": "Dirección IP",
+    "userAgent": "Agente de usuario",
+    "event": "Evento",
+    "resourceType": "Tipo de recurso",
+    "resourceId": "ID de recurso",
+    "severity": "Severidad",
+    "environment": "Entorno",
+    "metadata": "Metadatos"
+  },
+  "outcome": {
+    "success": "Éxito",
+    "failure": "Fallo"
+  },
+  "severity": {
+    "low": "Baja",
+    "medium": "Media",
+    "high": "Alta",
+    "critical": "Crítica"
+  }
 }

@@ -16,6 +16,10 @@ export type ResourceType = "backup" | "restore" | "connection" | "cronjob";
 
 export type Environment = "prod" | "dev" | "qa";
 
+export type AuditOutcome = "success" | "failure";
+
+export type AuditSeverity = "low" | "medium" | "high" | "critical";
+
 export interface AuditLog {
   id: string;
   action: AuditAction | string;
@@ -24,8 +28,13 @@ export interface AuditLog {
   resourceType: ResourceType | string;
   resourceId: string;
   metadata?: Record<string, unknown>;
-  environment: Environment | string;
+  /** Null for authentication events, which belong to no ERP environment. */
+  environment: Environment | string | null;
   createdAt: string; // ISO date
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  outcome?: AuditOutcome;
+  severity?: AuditSeverity;
 }
 
 export interface AuditFilters {
