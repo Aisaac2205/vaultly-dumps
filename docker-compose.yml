@@ -50,9 +50,9 @@ services:
       # Fail-loud: si una de estas falta en .env, `docker compose
       # up` aborta antes de arrancar Postgres en lugar de caer a
       # un default inseguro (antes había :-changeme).
-      POSTGRES_DB: ${DB_NAME:?DB_NAME es obligatorio (ver env.example)}
-      POSTGRES_USER: ${DB_USER:?DB_USER es obligatorio (ver env.example)}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatorio (ver env.example)}
+      POSTGRES_DB: ${DB_NAME:?DB_NAME es obligatorio (ver .env.example)}
+      POSTGRES_USER: ${DB_USER:?DB_USER es obligatorio (ver .env.example)}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD es obligatorio (ver .env.example)}
     volumes:
       - db_data:/var/lib/postgresql/data
     # NO exponer puerto al host en prod: la API se conecta vía la
