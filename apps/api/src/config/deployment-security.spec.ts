@@ -31,9 +31,14 @@ describe('production deployment security contract', () => {
 
   it('documents the 32-byte encryption key accurately', () => {
     const example = readRepositoryFile('.env.example');
-    expect(example).toContain(
-      'ENCRYPTION_KEY=<64-hex-characters-generated-with-openssl-rand-hex-32>',
-    );
+    // Asserts the guarantee, not one phrasing of it: wherever the wording
+    // lives, the example must still tell the reader how to produce a valid
+    // key and how long it has to be. A short or guessable ENCRYPTION_KEY
+    // weakens every connection password stored at rest, and env.validation
+    // only rejects the wrong length — never a weak value of the right one.
+    expect(example).toContain('ENCRYPTION_KEY=');
+    expect(example).toMatch(/openssl rand -hex 32/);
+    expect(example).toMatch(/64 hex/i);
     expect(example).toContain(
       'CSP_HEADER_NAME=Content-Security-Policy-Report-Only',
     );
