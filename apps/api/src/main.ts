@@ -2,7 +2,7 @@
 // at import time (auth.config.ts) and needs DATABASE_URL available.
 import 'dotenv/config';
 
-import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import { Logger, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -103,17 +103,6 @@ async function bootstrap(): Promise<void> {
 
   app.enableCors({ origin: allowedOrigins, credentials: true });
   app.enableShutdownHooks();
-
-  // Global DTO validation. Without this, decorators like @IsEnum / @IsUUID
-  // are no-ops at runtime — bad payloads reach the service layer or worse,
-  // hit Postgres as NOT NULL violations instead of clear 400 responses.
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
 
   if (config.get<string>('NODE_ENV') === 'development') {
     const swaggerConfig = new DocumentBuilder()

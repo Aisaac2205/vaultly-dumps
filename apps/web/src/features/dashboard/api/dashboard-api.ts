@@ -37,7 +37,7 @@ export const dashboardApi = {
 
   getRecentAudit: (limit = 10) =>
     apiClient
-      .get<AuditLog[]>("/audit", { params: { limit } })
+      .get<AuditLog[]>("/audit", { params: { pageSize: limit } })
       .then((r) => r.data),
 
   getDumpsFromR2: () =>

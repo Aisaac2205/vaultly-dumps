@@ -9,6 +9,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { validationPipeOptions } from './common/pipes/validation-pipe.options';
 import databaseConfig from './config/database.config';
 import r2Config from './config/r2.config';
 import { envValidationSchema } from './config/env.validation';
@@ -67,11 +68,7 @@ import { HealthModule } from './health/health.module';
     },
     {
       provide: APP_PIPE,
-      useValue: new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
+      useValue: new ValidationPipe(validationPipeOptions),
     },
     {
       provide: APP_INTERCEPTOR,
