@@ -97,12 +97,14 @@ describe("AuditTable", () => {
     expect(screen.getByText("Dev DB")).toBeInTheDocument();
   });
 
-  it("renders metadata cell with expandable details", () => {
+  it("leaves the raw payload to the detail page instead of nesting it in a cell", () => {
     renderTable();
 
-    // "Ver metadata" button for logs with metadata
-    const metadataButtons = screen.getAllByText("Ver metadata");
-    expect(metadataButtons.length).toBeGreaterThanOrEqual(2);
+    // The table gives the shape of the event; the full record lives at
+    // /audit/:id. A <pre> of JSON inside a <td> fights the table layout and
+    // grows unbounded as the record gains fields.
+    expect(screen.queryByText("Ver metadata")).not.toBeInTheDocument();
+    expect(document.querySelector("table pre")).toBeNull();
   });
 
   it("renders empty state when no logs", () => {

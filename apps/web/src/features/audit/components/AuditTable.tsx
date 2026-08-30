@@ -12,16 +12,13 @@ import {
 import { useTranslation } from "react-i18next";
 import { formatDateTimeShort, formatEnvironment } from "@/lib/format";
 import {
-  Database,
   Trash2,
-  RotateCw,
-  CheckCircle2,
-  XCircle,
-  Link,
   Pencil,
-  Clock,
+  Plus,
+  LogIn,
+  LogOut,
+  KeyRound,
   FileText,
-  ChevronRight,
   ClipboardList,
 } from "lucide-react";
 import type { AuditLog } from "../types";
@@ -39,27 +36,36 @@ function shortenId(id: string): string {
   return id.length > 8 ? `${id.slice(0, 8)}…` : id;
 }
 
-const ACTION_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  "backup.created": Database,
-  "backup.deleted": Trash2,
-  "restore.started": RotateCw,
-  "restore.completed": CheckCircle2,
-  "restore.failed": XCircle,
-  "connection.created": Link,
-  "connection.updated": Pencil,
-  "connection.deleted": Link,
-  "cronjob.created": Clock,
-  "cronjob.updated": Clock,
-  "cronjob.deleted": Clock,
-  "cronjob.toggled": Clock,
+// Keyed on what the backend actually writes. The AuditInterceptor stores
+// "<METHOD> <path>" and the Better Auth hook stores "auth.<endpoint>" — an
+// earlier map keyed on names like "backup.created" that nothing ever
+// produced, so every row silently fell through to the default icon.
+const AUTH_ACTION_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
+  "auth.sign-in.email": LogIn,
+  "auth.sign-out": LogOut,
+  "auth.change-password": KeyRound,
+};
+
+const METHOD_ICONS: Record<
+  string,
+  React.ComponentType<{ className?: string }>
+> = {
+  POST: Plus,
+  PUT: Pencil,
+  PATCH: Pencil,
+  DELETE: Trash2,
 };
 
 function ActionCell({ action }: { action: string }) {
-  const Icon = ACTION_ICONS[action] ?? FileText;
+  const Icon =
+    AUTH_ACTION_ICONS[action] ?? METHOD_ICONS[action.split(" ")[0]] ?? FileText;
   return (
     <div className="flex items-center gap-2">
       <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <code className="text-xs font-mono text-text-primary">{action}</code>
+      <span className="text-xs text-text-primary">{action}</span>
     </div>
   );
 }
@@ -69,20 +75,13 @@ function formatResourceType(type: string): string {
   return type.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
 
-function MetadataCell({
-  log,
-  viewLabel,
-}: {
-  log: AuditLog;
-  viewLabel: string;
-}) {
+function MetadataCell({ log }: { log: AuditLog }) {
   const meta = log.metadata ?? {};
   const metaName =
     (typeof meta.name === "string" && meta.name) ||
     (typeof meta.connectionName === "string" && meta.connectionName) ||
     undefined;
 
-  const hasMeta = Object.keys(meta).length > 0;
   const showId = log.resourceId && log.resourceId !== "unknown";
   const formattedType = formatResourceType(log.resourceType);
 
@@ -97,7 +96,7 @@ function MetadataCell({
           </span>
         ) : showId ? (
           <span
-            className="font-mono text-xs text-muted-foreground truncate"
+            className="text-xs text-muted-foreground truncate"
             title={log.resourceId}
           >
             #{shortenId(log.resourceId)}
@@ -110,17 +109,6 @@ function MetadataCell({
         )}
       </div>
 
-      {hasMeta && (
-        <details className="group w-full block text-center">
-          <summary className="cursor-pointer text-xs font-mono text-muted-foreground hover:text-foreground list-none inline-flex items-center justify-center gap-1 transition-colors">
-            <ChevronRight className="h-3 w-3 transition-transform group-open:rotate-90 text-muted-foreground/70 shrink-0" />
-            <span>{viewLabel}</span>
-          </summary>
-          <pre className="mt-2 w-full rounded-lg border border-border/50 bg-muted/40 p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-60 overflow-y-auto text-muted-foreground text-left leading-relaxed">
-            {JSON.stringify(meta, null, 2)}
-          </pre>
-        </details>
-      )}
     </div>
   );
 }
@@ -224,7 +212,7 @@ export default function AuditTable({
     {
       header: t('column.date'),
       accessor: (log) => (
-        <span className="text-xs text-muted-foreground whitespace-nowrap font-mono">
+        <span className="text-xs text-muted-foreground whitespace-nowrap">
           {formatDateTimeShort(log.createdAt)}
         </span>
       ),
@@ -257,7 +245,7 @@ export default function AuditTable({
     },
     {
       header: t('column.metadata'),
-      accessor: (log) => <MetadataCell log={log} viewLabel={t('metadata.view')} />,
+      accessor: (log) => <MetadataCell log={log} />,
       className: "text-center",
       headerClassName: "text-center",
     },

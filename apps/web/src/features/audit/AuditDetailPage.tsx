@@ -31,41 +31,47 @@ async function fetchAuditLog(id: string): Promise<AuditLog> {
 function Field({
   label,
   children,
-  mono = false,
 }: {
   label: string;
   children: React.ReactNode;
-  mono?: boolean;
 }) {
   return (
     <div className="space-y-1">
-      <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <dt className="text-xs font-medium capitalize text-muted-foreground">
         {label}
       </dt>
-      <dd
-        className={
-          mono
-            ? "font-mono text-sm break-all text-text-primary"
-            : "text-sm text-text-primary"
-        }
-      >
-        {children}
-      </dd>
+      <dd className="text-sm break-words text-text-primary">{children}</dd>
     </div>
   );
 }
 
-function MetadataEntries({ metadata }: { metadata: Record<string, unknown> }) {
-  const entries = Object.entries(metadata);
+/**
+ * An empty object is not data. A DELETE carries no body and most mutations
+ * carry no query string, so the interceptor stores {body:{}, query:{}} —
+ * rendering those gives the reader boxes to scan that hold nothing.
+ */
+function hasContent(value: unknown): boolean {
+  if (value === null || value === undefined || value === "") return false;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value).length > 0;
+  return true;
+}
 
+function presentMetadata(
+  metadata: Record<string, unknown>,
+): [string, unknown][] {
+  return Object.entries(metadata).filter(([, value]) => hasContent(value));
+}
+
+function MetadataEntries({ entries }: { entries: [string, unknown][] }) {
   return (
     <dl className="grid gap-4 sm:grid-cols-2">
       {entries.map(([key, value]) => (
-        <Field key={key} label={key} mono>
+        <Field key={key} label={key}>
           {typeof value === "string" || typeof value === "number" ? (
             String(value)
           ) : (
-            <pre className="overflow-x-auto whitespace-pre-wrap text-xs leading-relaxed">
+            <pre className="overflow-x-auto whitespace-pre-wrap text-sm leading-relaxed">
               {JSON.stringify(value, null, 2)}
             </pre>
           )}
@@ -85,8 +91,7 @@ export default function AuditDetailPage() {
     enabled: Boolean(id),
   });
 
-  const metadata = log?.metadata ?? {};
-  const hasMetadata = Object.keys(metadata).length > 0;
+  const metadataEntries = presentMetadata(log?.metadata ?? {});
 
   return (
     <div className="space-y-6 p-4 sm:p-6 lg:p-8">
@@ -108,9 +113,9 @@ export default function AuditDetailPage() {
         <article className="space-y-8 rounded-xl bg-card p-6 shadow-sm">
           <header className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <code className="font-mono text-lg text-text-primary">
+              <h1 className="text-lg font-semibold text-text-primary">
                 {log.action}
-              </code>
+              </h1>
               {log.outcome ? (
                 <Badge
                   data-testid="audit-outcome"
@@ -134,16 +139,16 @@ export default function AuditDetailPage() {
             </h2>
             <dl className="grid gap-4 sm:grid-cols-2">
               <Field label={t("detail.username")}>{log.username}</Field>
-              <Field label={t("detail.userId")} mono>
+              <Field label={t("detail.userId")}>
                 {log.userId}
               </Field>
               {log.ipAddress ? (
-                <Field label={t("detail.ipAddress")} mono>
+                <Field label={t("detail.ipAddress")}>
                   {log.ipAddress}
                 </Field>
               ) : null}
               {log.userAgent ? (
-                <Field label={t("detail.userAgent")} mono>
+                <Field label={t("detail.userAgent")}>
                   {log.userAgent}
                 </Field>
               ) : null}
@@ -158,7 +163,7 @@ export default function AuditDetailPage() {
             </h2>
             <dl className="grid gap-4 sm:grid-cols-2">
               <Field label={t("detail.resourceType")}>{log.resourceType}</Field>
-              <Field label={t("detail.resourceId")} mono>
+              <Field label={t("detail.resourceId")}>
                 {log.resourceId}
               </Field>
               {log.severity ? (
@@ -176,16 +181,14 @@ export default function AuditDetailPage() {
             </dl>
           </section>
 
-          {hasMetadata ? (
+          {metadataEntries.length > 0 ? (
             <>
               <Separator />
               <section className="space-y-4">
                 <h2 className="text-sm font-semibold text-text-primary">
                   {t("detail.metadata")}
                 </h2>
-                <MetadataEntries
-                  metadata={metadata as Record<string, unknown>}
-                />
+                <MetadataEntries entries={metadataEntries} />
               </section>
             </>
           ) : null}
