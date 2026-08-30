@@ -155,15 +155,18 @@ Configurar en producción con el dominio exacto del frontend (ej: `https://app.e
 
 ## 6. Validación de input
 
-`ValidationPipe` global con:
+Un único `ValidationPipe` global, registrado una sola vez como `APP_PIPE` en `app.module.ts` y configurado en `apps/api/src/common/pipes/validation-pipe.options.ts`:
 
 ```typescript
 {
   whitelist: true,            // ignora props no declaradas en el DTO
   forbidNonWhitelisted: true, // rechaza requests con props extra (400)
-  transform: true,            // convierte a la clase del DTO + tipos primitivos
+  transform: true,            // convierte a la clase del DTO
+  transformOptions: { enableImplicitConversion: true }, // coacciona tipos primitivos
 }
 ```
+
+El rechazo aplica tanto al body como al query string, así que un parámetro de query no declarado devuelve 400 en vez de ignorarse en silencio.
 
 Combinado con `class-validator` en cada DTO (`@IsString`, `@IsUUID`, `@IsEnum`, etc.). Esto cubre la **mayoría** de los OWASP Top 10 input-related. Lo que NO cubre:
 
